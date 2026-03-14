@@ -3,12 +3,12 @@
 @theme inline {
   --color-background: #ffffff;
   --color-foreground: #111111;
-  --color-primary: #2563eb;
-  --color-primary-dark: #1d4ed8;
-  --color-accent: #06d6a0;
-  --color-accent-dark: #05b384;
-  --color-muted: #f8fafc;
-  --color-border: #e2e8f0;
+  --color-primary: #dc2626;
+  --color-primary-dark: #991b1b;
+  --color-primary-light: #fef2f2;
+  --color-accent: #f87171;
+  --color-muted: #fafafa;
+  --color-border: #e5e7eb;
   --font-sans: var(--font-geist-sans);
 }
 
