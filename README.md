@@ -1,36 +1,107 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# aemi 業務フロー整理
 
-## Getting Started
+## 全体像
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```mermaid
+graph LR
+    A[新規クライアント獲得] --> B[案件受注・処理]
+    B --> C[請求・入金]
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## フロー① 新規クライアント獲得（LINE登録まで）
 
-To learn more about Next.js, take a look at the following resources:
+```mermaid
+flowchart TD
+    A[インスタ DM 送信] --> B{返信あり？}
+    B -->|YES| C[面談日程調整]
+    B -->|NO| D{フォローアップ？}
+    D -->|YES| A
+    D -->|NO| E[終了]
+    C --> F[面談実施]
+    F --> G[LINE 友達追加]
+    G --> H[クライアント登録完了]
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+| #   | ステップ       | 担当  | ツール          | 備考               |
+| --- | ---------- | --- | ------------ | ---------------- |
+| 1   | インスタ DM 送信 | 自社  | Instagram    | ターゲットリスト基に送信     |
+| 2   | 返信確認・アポ調整  | 自社  | Instagram DM | 未返信は一定期間後フォローアップ |
+| 3   | 面談実施       | 双方  | 対面 / オンライン   | サービス説明・条件すり合わせ   |
+| 4   | LINE 友達追加  | 双方  | LINE         | グループLINE招待       |
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+---
+
+## フロー② 案件受注〜処理
+
+```mermaid
+flowchart TD
+    A[先方からグループLINEに案件投稿] --> B[グループLINEに案件を展開]
+    B --> C[個人LINEで案件希望を回収]
+    C --> D[先方に履歴書を送信]
+    D --> E[スプシにスケジュール入力]
+    E --> F[請求書発行]
+    F --> G[振込作業]
+```
+
+
+
+
+| #   | ステップ     | 担当  | ツール         | 備考             |
+| --- | -------- | --- | ----------- | -------------- |
+| 1   | 案件投稿受信   | 先方  | グループLINE    | 案件内容・条件の確認     |
+| 2   | 案件展開     | 自社  | グループLINE    | 登録者向けに案件を共有    |
+| 3   | 希望者回収    | 自社  | 個人LINE      | 個別に希望・可否を確認    |
+| 4   | 履歴書送付    | 自社  | LINE / メール？ | フォーマット統一が必要？   |
+| 5   | スケジュール入力 | 自社  | スプレッドシート    | 管理方法の詳細要確認     |
+| 6   | 請求書発行    | 自社  | ？           | ツール未確認         |
+| 7   | 振込作業     | 自社  | 銀行          | 締め日・支払いサイクル要確認 |
+
+
+
+
+---
+
+## DX（業務自動化）の提案
+
+### 1. 案件配信の自動化
+- 先方からグループLINEに案件が投稿されたら、登録者へ**自動で案件を配信**する
+
+### 2. 案件申込時の自動処理
+案件の申し込みがあった際に、以下2つを自動化：
+
+| # | 自動化内容 | 現状 | 効果 |
+|---|----------|------|------|
+| 1 | avex向け提出資料（履歴書等）の自動生成 | 手動で作成・送付 | 作業時間削減・フォーマット統一 |
+| 2 | スケジュール管理表への自動記録 + 重複アラート | 手動でスプシ入力 | 入力漏れ防止・ダブルブッキング防止 |
+
+### 3. インスタDM自動送信
+- ターゲットリストに基づきDMを自動送信
+- フォローアップDMの自動リマインドも検討
+
+---
+
+## 現状の課題
+
+| # | 課題 | 影響 | 優先度 |
+|---|------|------|--------|
+| 1 | サブスクの解約管理ができていない | 解約漏れによる不要コスト発生リスク | 高 |
+
+---
+
+## 要確認事項
+
+| # | 質問 | 目的 |
+|---|------|------|
+| 1 | サブスクの支払いは何を使っている？（Stripe / 銀行振替 / その他） | 解約管理の自動化方法を検討するため |
+| 2 | avexへの提出資料のフォーマット・必須項目は？ | 資料自動生成の仕様策定のため |
+| 3 | スケジュール管理スプシの現在の項目構成は？ | 自動記録の設計のため |
+| 4 | 案件配信の対象者選定に条件はある？（エリア・スキル等） | 自動配信のフィルタリング設計のため |
+
