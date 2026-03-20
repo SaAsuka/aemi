@@ -1,0 +1,55 @@
+export const GENDER_LABELS: Record<string, string> = {
+  MALE: "男性",
+  FEMALE: "女性",
+  OTHER: "その他",
+}
+
+export const TALENT_STATUS_LABELS: Record<string, string> = {
+  ACTIVE: "アクティブ",
+  INACTIVE: "非アクティブ",
+  WITHDRAWN: "退会",
+}
+
+export const JOB_STATUS_LABELS: Record<string, string> = {
+  DRAFT: "下書き",
+  OPEN: "募集中",
+  CLOSED: "募集終了",
+  CANCELLED: "キャンセル",
+}
+
+export const APPLICATION_STATUS_LABELS: Record<string, string> = {
+  APPLIED: "応募済み",
+  RESUME_SENT: "書類送付済",
+  ACCEPTED: "合格",
+  REJECTED: "不合格",
+  AUTO_REJECTED: "自動不合格",
+  CANCELLED: "キャンセル",
+}
+
+export const SCHEDULE_STATUS_LABELS: Record<string, string> = {
+  CONFIRMED: "確定",
+  COMPLETED: "完了",
+  NO_SHOW: "無断欠席",
+  CANCELLED: "キャンセル",
+}
+
+export const STATUS_COLORS: Record<string, string> = {
+  ACTIVE: "bg-green-100 text-green-800",
+  INACTIVE: "bg-gray-100 text-gray-800",
+  WITHDRAWN: "bg-red-100 text-red-800",
+  DRAFT: "bg-gray-100 text-gray-800",
+  OPEN: "bg-blue-100 text-blue-800",
+  CLOSED: "bg-yellow-100 text-yellow-800",
+  CANCELLED: "bg-red-100 text-red-800",
+  APPLIED: "bg-blue-100 text-blue-800",
+  RESUME_SENT: "bg-purple-100 text-purple-800",
+  ACCEPTED: "bg-green-100 text-green-800",
+  REJECTED: "bg-red-100 text-red-800",
+  AUTO_REJECTED: "bg-orange-100 text-orange-800",
+  CONFIRMED: "bg-blue-100 text-blue-800",
+  COMPLETED: "bg-green-100 text-green-800",
+  NO_SHOW: "bg-red-100 text-red-800",
+  MALE: "bg-blue-100 text-blue-800",
+  FEMALE: "bg-pink-100 text-pink-800",
+  OTHER: "bg-gray-100 text-gray-800",
+}

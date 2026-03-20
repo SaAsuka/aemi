@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist } from "next/font/google";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -8,13 +9,13 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "aemi | 業務DXコンサルティング",
+  title: "aemi | 案件マッチングプラットフォーム",
   description:
-    "業務フローの可視化から自動化まで。LINE・Instagram連携、スケジュール管理、請求書自動化であなたのビジネスを加速します。",
+    "モデル・タレントのための案件マッチングプラットフォーム。月額¥4,000で案件が届き続ける。",
   openGraph: {
-    title: "aemi | 業務DXコンサルティング",
+    title: "aemi | 案件マッチングプラットフォーム",
     description:
-      "業務フローの可視化から自動化まで。あなたのビジネスを加速します。",
+      "モデル・タレントのための案件マッチングプラットフォーム。",
     type: "website",
   },
 };
@@ -27,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="ja">
       <body className={`${geistSans.variable} font-sans antialiased`}>
-        {children}
+        <TooltipProvider>{children}</TooltipProvider>
       </body>
     </html>
   );

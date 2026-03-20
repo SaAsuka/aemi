@@ -1,8 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
   output   = "../src/generated/prisma"
@@ -10,4 +5,139 @@ generator client {
 
 datasource db {
   provider = "postgresql"
+}
+
+enum TalentStatus {
+  ACTIVE
+  INACTIVE
+  WITHDRAWN
+}
+
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+enum JobStatus {
+  DRAFT
+  OPEN
+  CLOSED
+  CANCELLED
+}
+
+enum ApplicationStatus {
+  APPLIED
+  RESUME_SENT
+  ACCEPTED
+  REJECTED
+  AUTO_REJECTED
+  CANCELLED
+}
+
+enum ScheduleStatus {
+  CONFIRMED
+  COMPLETED
+  NO_SHOW
+  CANCELLED
+}
+
+model Talent {
+  id           String       @id @default(cuid())
+  name         String
+  nameKana     String
+  email        String?
+  phone        String?
+  gender       Gender?
+  birthDate    DateTime?
+  height       Int?
+  lineUserId   String?
+  profileImage String?
+  resume       String?
+  status       TalentStatus @default(ACTIVE)
+  note         String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  applications Application[]
+
+  @@map("talents")
+}
+
+model Client {
+  id           String   @id @default(cuid())
+  companyName  String
+  contactName  String?
+  contactEmail String?
+  contactPhone String?
+  lineGroupId  String?
+  note         String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  jobs Job[]
+
+  @@map("clients")
+}
+
+model Job {
+  id          String    @id @default(cuid())
+  clientId    String
+  client      Client    @relation(fields: [clientId], references: [id])
+  title       String
+  description String?
+  location    String?
+  fee         Int?
+  genderReq   Gender?
+  ageMin      Int?
+  ageMax      Int?
+  heightMin   Int?
+  heightMax   Int?
+  startsAt    DateTime?
+  endsAt      DateTime?
+  deadline    DateTime?
+  capacity    Int?
+  status      JobStatus @default(DRAFT)
+  note        String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  applications Application[]
+
+  @@map("jobs")
+}
+
+model Application {
+  id        String            @id @default(cuid())
+  talentId  String
+  talent    Talent            @relation(fields: [talentId], references: [id])
+  jobId     String
+  job       Job               @relation(fields: [jobId], references: [id])
+  status    ApplicationStatus @default(APPLIED)
+  appliedAt DateTime          @default(now())
+  decidedAt DateTime?
+  note      String?
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  schedule Schedule?
+
+  @@unique([talentId, jobId])
+  @@map("applications")
+}
+
+model Schedule {
+  id            String         @id @default(cuid())
+  applicationId String         @unique
+  application   Application    @relation(fields: [applicationId], references: [id])
+  date          DateTime
+  startTime     String?
+  endTime       String?
+  location      String?
+  status        ScheduleStatus @default(CONFIRMED)
+  note          String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  @@map("schedules")
 }
