@@ -1,6 +1,7 @@
 "use client"
 
-import { useActionState } from "react"
+import { useState, useActionState, useRef } from "react"
+import { upload } from "@vercel/blob/client"
 import { registerTalent } from "@/lib/actions/talent-register"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,15 +14,67 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import { X, ImagePlus, Loader2 } from "lucide-react"
 
 type ActionResult = { success?: boolean; error?: Record<string, string[]> } | null
 
-async function action(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
-  return await registerTalent(formData)
-}
-
 export function TalentRegisterForm() {
-  const [state, formAction, isPending] = useActionState(action, null)
+  const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([])
+  const [uploading, setUploading] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
+  const [state, setState] = useState<ActionResult>(null)
+  const [isPending, setIsPending] = useState(false)
+  const formRef = useRef<HTMLFormElement>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const addPhotos = (files: FileList | null) => {
+    if (!files) return
+    const newPhotos = Array.from(files).map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+    }))
+    setPhotos(prev => [...prev, ...newPhotos])
+  }
+
+  const removePhoto = (index: number) => {
+    setPhotos(prev => {
+      URL.revokeObjectURL(prev[index].preview)
+      return prev.filter((_, i) => i !== index)
+    })
+  }
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setIsPending(true)
+    setSubmitError(null)
+
+    try {
+      // 写真をVercel Blobにアップロード
+      const photoUrls: string[] = []
+      if (photos.length > 0) {
+        setUploading(true)
+        for (const photo of photos) {
+          const blob = await upload(photo.file.name, photo.file, {
+            access: "public",
+            handleUploadUrl: "/api/upload",
+          })
+          photoUrls.push(blob.url)
+        }
+        setUploading(false)
+      }
+
+      // フォームデータ送信
+      const formData = new FormData(formRef.current!)
+      formData.set("photoUrls", JSON.stringify(photoUrls))
+      const result = await registerTalent(formData)
+      setState(result)
+    } catch (err) {
+      setSubmitError(err instanceof Error ? err.message : "エラーが発生しました")
+    } finally {
+      setIsPending(false)
+      setUploading(false)
+    }
+  }
 
   if (state?.success) {
     return (
@@ -34,7 +87,7 @@ export function TalentRegisterForm() {
   }
 
   return (
-    <form action={formAction} className="space-y-6">
+    <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="name">名前 *</Label>
@@ -209,8 +262,42 @@ export function TalentRegisterForm() {
         </div>
       </div>
 
+      <h3 className="text-sm font-semibold text-muted-foreground pt-2">宣材写真</h3>
+      <p className="text-xs text-muted-foreground">バストアップ・全身写真など、宣材写真をアップロードしてください。</p>
+      <div className="flex flex-wrap gap-3">
+        {photos.map((photo, i) => (
+          <div key={i} className="relative w-24 h-24">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={photo.preview} alt={`写真${i + 1}`} className="w-24 h-24 object-cover rounded border" />
+            <button type="button" onClick={() => removePhoto(i)} className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5">
+              <X className="h-3 w-3" />
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          className="w-24 h-24 border-2 border-dashed rounded flex flex-col items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+        >
+          <ImagePlus className="h-6 w-6" />
+          <span className="text-xs mt-1">追加</span>
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={e => { addPhotos(e.target.files); e.target.value = "" }}
+        />
+      </div>
+
+      {submitError && <p className="text-sm text-destructive">{submitError}</p>}
+
       <Button type="submit" disabled={isPending} className="w-full">
-        {isPending ? "送信中..." : "登録する"}
+        {uploading ? (
+          <><Loader2 className="h-4 w-4 animate-spin mr-2" />写真アップロード中...</>
+        ) : isPending ? "送信中..." : "登録する"}
       </Button>
     </form>
   )

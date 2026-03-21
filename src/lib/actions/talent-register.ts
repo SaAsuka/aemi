@@ -12,7 +12,14 @@ export async function registerTalent(formData: FormData) {
   }
 
   const data = parsed.data
-  await prisma.talent.create({
+
+  let photoUrls: string[] = []
+  const photoUrlsRaw = formData.get("photoUrls")
+  if (typeof photoUrlsRaw === "string" && photoUrlsRaw) {
+    try { photoUrls = JSON.parse(photoUrlsRaw) } catch { /* ignore */ }
+  }
+
+  const talent = await prisma.talent.create({
     data: {
       name: data.name,
       nameKana: data.nameKana,
@@ -44,7 +51,11 @@ export async function registerTalent(formData: FormData) {
       bankAccountType: data.bankAccountType || null,
       bankAccountNumber: data.bankAccountNumber || null,
       bankAccountHolder: data.bankAccountHolder || null,
+      profileImage: photoUrls[0] || null,
       status: "ACTIVE",
+      photos: photoUrls.length > 0 ? {
+        create: photoUrls.map((url, i) => ({ url, sortOrder: i })),
+      } : undefined,
     },
   })
 
