@@ -10,11 +10,11 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "aemi | 案件マッチングプラットフォーム",
+  title: "VOZEL | 案件マッチングプラットフォーム",
   description:
     "モデル・タレントのための案件マッチングプラットフォーム。月額¥4,000で案件が届き続ける。",
   openGraph: {
-    title: "aemi | 案件マッチングプラットフォーム",
+    title: "VOZEL | 案件マッチングプラットフォーム",
     description:
       "モデル・タレントのための案件マッチングプラットフォーム。",
     type: "website",

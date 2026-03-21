@@ -31,7 +31,7 @@ export function AdminSidebar() {
     <Sidebar>
       <SidebarHeader className="border-b p-4">
         <Link href="/admin" className="font-bold text-xl">
-          aemi
+          VOZEL
         </Link>
         <p className="text-xs text-muted-foreground">案件管理システム</p>
       </SidebarHeader>

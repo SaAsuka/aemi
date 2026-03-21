@@ -16,7 +16,7 @@ export default function AdminLayout({
           <SidebarTrigger />
           <Separator orientation="vertical" className="h-6" />
           <Link href="/admin" className="font-semibold text-lg">
-            aemi 管理
+            VOZEL 管理
           </Link>
         </header>
         <main className="p-3 sm:p-6">{children}</main>

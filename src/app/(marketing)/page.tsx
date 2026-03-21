@@ -17,7 +17,7 @@ export default function Home() {
             <span className="text-accent">時間をかけない。</span>
           </h1>
           <p className="text-lg md:text-xl text-white/70 max-w-2xl mx-auto mb-10">
-            aemiに登録するだけで、あなたに合った案件が続々届く。
+            VOZELに登録するだけで、あなたに合った案件が続々届く。
             <br className="hidden md:block" />
             モデル・タレントのための案件マッチングプラットフォーム。
           </p>
@@ -33,7 +33,7 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 数字で見るaemi */}
+      {/* 数字で見るVOZEL */}
       <section className="py-16 px-6 border-b border-border">
         <div className="max-w-4xl mx-auto grid grid-cols-3 gap-8 text-center">
           {[
@@ -78,15 +78,15 @@ export default function Home() {
             ))}
           </div>
           <p className="text-center text-primary font-bold text-xl mt-10">
-            aemiなら、全部解決できます。
+            VOZELなら、全部解決できます。
           </p>
         </div>
       </section>
 
-      {/* aemiとは */}
+      {/* VOZELとは */}
       <section className="py-20 px-6">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-4">aemiとは？</h2>
+          <h2 className="text-3xl font-bold text-center mb-4">VOZELとは？</h2>
           <p className="text-center text-foreground/60 mb-12 max-w-2xl mx-auto">
             月額¥4,000で、あなたに合った案件が自動で届くモデル・タレント専用の案件マッチングプラットフォームです。
           </p>
@@ -270,7 +270,7 @@ export default function Home() {
             案件探しは、もう終わり。
           </h2>
           <p className="text-white/60 mb-10">
-            aemiに登録して、あなたに合った案件を受け取りましょう。
+            VOZELに登録して、あなたに合った案件を受け取りましょう。
           </p>
           <a
             href="#"
@@ -321,7 +321,7 @@ export default function Home() {
 
       {/* フッター */}
       <footer className="py-8 px-6 text-center text-foreground/40 text-sm border-t border-border">
-        <p>&copy; 2025 aemi. All rights reserved.</p>
+        <p>&copy; 2025 VOZEL. All rights reserved.</p>
       </footer>
     </main>
   );
