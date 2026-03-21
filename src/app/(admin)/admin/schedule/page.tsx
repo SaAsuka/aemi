@@ -28,6 +28,18 @@ export default async function SchedulePage({
     orderBy: { appliedAt: "desc" },
   })
 
+  const filterTalents = await prisma.talent.findMany({
+    select: { name: true },
+    orderBy: { name: "asc" },
+  })
+  const filterJobs = await prisma.job.findMany({
+    select: { title: true },
+    orderBy: { title: "asc" },
+  })
+
+  const talentOptions = filterTalents.map((t) => ({ value: t.name, label: t.name }))
+  const jobOptions = filterJobs.map((j) => ({ value: j.title, label: j.title }))
+
   const items: ScheduleItem[] = schedules.map((s) => ({
     id: s.id,
     date: s.date.toISOString(),
@@ -50,7 +62,7 @@ export default async function SchedulePage({
 
       <MonthNav currentMonth={currentMonth} />
 
-      <ScheduleFilters />
+      <ScheduleFilters talentOptions={talentOptions} jobOptions={jobOptions} />
 
       <ScheduleCalendar
         schedules={items}
