@@ -15,6 +15,7 @@ import { TALENT_STATUS_LABELS, GENDER_LABELS } from "@/types"
 import { calcAge } from "@/lib/utils/date"
 import { SearchForm } from "@/components/admin/search-form"
 import { TalentFilters } from "@/components/admin/talent-filters"
+import { JobLinkCopyButton } from "@/components/admin/job-link-copy-button"
 
 type TalentSearchParams = {
   q?: string
@@ -84,12 +85,13 @@ export default async function TalentsPage({
                 <TableHead className="hidden md:table-cell">B/W/H</TableHead>
                 <TableHead className="hidden md:table-cell">靴</TableHead>
                 <TableHead>ステータス</TableHead>
+                <TableHead>案件リンク</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {talents.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground">
                     データがありません
                   </TableCell>
                 </TableRow>
@@ -128,6 +130,11 @@ export default async function TalentsPage({
                         status={talent.status}
                         label={TALENT_STATUS_LABELS[talent.status]}
                       />
+                    </TableCell>
+                    <TableCell>
+                      {talent.accessToken && (
+                        <JobLinkCopyButton accessToken={talent.accessToken} />
+                      )}
                     </TableCell>
                   </TableRow>
                 ))
