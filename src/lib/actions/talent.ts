@@ -68,7 +68,7 @@ export async function getTalents(filters: TalentFilters = {}) {
 }
 
 export async function getTalent(id: string) {
-  return prisma.talent.findUnique({
+  const talent = await prisma.talent.findUnique({
     where: { id },
     include: {
       applications: {
@@ -81,6 +81,17 @@ export async function getTalent(id: string) {
       },
     },
   })
+
+  if (talent && !talent.accessToken) {
+    const updated = await prisma.talent.update({
+      where: { id },
+      data: { accessToken: crypto.randomUUID().replace(/-/g, "").slice(0, 25) },
+      select: { accessToken: true },
+    })
+    talent.accessToken = updated.accessToken
+  }
+
+  return talent
 }
 
 export async function createTalent(formData: FormData) {
