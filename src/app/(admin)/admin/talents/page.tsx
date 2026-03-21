@@ -70,13 +70,13 @@ export default async function TalentsPage({
       <TalentFilters />
 
       <Card>
-        <CardHeader>
-          <CardTitle>タレント一覧（{talents.length}件）{hasFilters && <span className="ml-2 text-sm font-normal text-muted-foreground">フィルタ中</span>}</CardTitle>
+        <CardHeader className="border-b">
+          <CardTitle className="text-primary text-lg">タレント一覧<span className="ml-2 text-sm font-normal text-muted-foreground">({talents.length}件){hasFilters && " フィルタ中"}</span></CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent className="overflow-x-auto px-0">
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="bg-muted/60 hover:bg-muted/60">
                 <TableHead>名前</TableHead>
                 <TableHead className="hidden sm:table-cell">フリガナ</TableHead>
                 <TableHead>性別</TableHead>
@@ -91,23 +91,23 @@ export default async function TalentsPage({
             <TableBody>
               {talents.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                     データがありません
                   </TableCell>
                 </TableRow>
               ) : (
-                talents.map((talent) => (
-                  <TableRow key={talent.id}>
+                talents.map((talent, i) => (
+                  <TableRow key={talent.id} className={i % 2 === 1 ? "bg-muted/30" : ""}>
                     <TableCell>
                       <Link
                         href={`/admin/talents/${talent.id}`}
-                        className="font-medium hover:underline"
+                        className="font-medium text-primary hover:underline"
                       >
                         {talent.name}
                       </Link>
                       <p className="text-xs text-muted-foreground sm:hidden">{talent.nameKana}</p>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">{talent.nameKana}</TableCell>
+                    <TableCell className="hidden sm:table-cell text-muted-foreground">{talent.nameKana}</TableCell>
                     <TableCell>
                       {talent.gender ? GENDER_LABELS[talent.gender] : "−"}
                     </TableCell>
