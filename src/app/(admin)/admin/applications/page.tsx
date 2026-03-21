@@ -19,6 +19,7 @@ import { ApplicationStatusSelect } from "@/components/admin/application-status-s
 import { NewApplicationDialog } from "@/components/admin/new-application-dialog"
 import { LineCopyButton } from "@/components/admin/line-copy-button"
 import { Button } from "@/components/ui/button"
+import { SubmissionLinks } from "@/components/admin/submission-links"
 
 async function ApplicationDialogData() {
   const [talents, jobs] = await Promise.all([
@@ -70,6 +71,7 @@ export default async function ApplicationsPage({
                 <TableHead>案件</TableHead>
                 <TableHead className="hidden sm:table-cell">クライアント</TableHead>
                 <TableHead>ステータス</TableHead>
+                <TableHead className="hidden sm:table-cell">提出物</TableHead>
                 <TableHead className="hidden sm:table-cell">応募日</TableHead>
                 <TableHead>操作</TableHead>
               </TableRow>
@@ -77,7 +79,7 @@ export default async function ApplicationsPage({
             <TableBody>
               {applications.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
                     データがありません
                   </TableCell>
                 </TableRow>
@@ -109,6 +111,9 @@ export default async function ApplicationsPage({
                         status={app.status}
                         label={APPLICATION_STATUS_LABELS[app.status]}
                       />
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <SubmissionLinks submissions={app.submissions} />
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{formatDate(app.appliedAt)}</TableCell>
                     <TableCell>

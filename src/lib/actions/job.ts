@@ -33,6 +33,7 @@ export async function getJob(id: string) {
     where: { id },
     include: {
       client: true,
+      requirements: true,
       applications: {
         select: {
           id: true,
@@ -43,6 +44,11 @@ export async function getJob(id: string) {
               id: true, name: true,
               birthDate: true, height: true, gender: true,
               nearestStation: true, resume: true,
+            },
+          },
+          submissions: {
+            select: {
+              id: true, category: true, fileUrl: true, externalUrl: true, fileName: true,
             },
           },
         },
@@ -72,8 +78,36 @@ export async function getOpenJob(id: string) {
       genderReq: true, ageMin: true, ageMax: true, heightMin: true, heightMax: true,
       startsAt: true, endsAt: true, deadline: true, capacity: true,
       client: { select: { companyName: true } },
+      requirements: {
+        select: {
+          id: true, category: true, description: true, referenceUrl: true, referenceFile: true,
+        },
+      },
     },
   })
+}
+
+const SUBMISSION_CATEGORIES = ["ACTING_VIDEO", "VOICE_SAMPLE", "PAST_WORK_VIDEO", "PROFILE_PHOTO"] as const
+
+function extractRequirements(formData: FormData) {
+  const reqs: {
+    category: (typeof SUBMISSION_CATEGORIES)[number]
+    description: string | null
+    referenceUrl: string | null
+    referenceFile: string | null
+  }[] = []
+
+  for (const cat of SUBMISSION_CATEGORIES) {
+    if (formData.get(`req_${cat}_enabled`) === "on") {
+      reqs.push({
+        category: cat,
+        description: (formData.get(`req_${cat}_description`) as string) || null,
+        referenceUrl: (formData.get(`req_${cat}_referenceUrl`) as string) || null,
+        referenceFile: (formData.get(`req_${cat}_referenceFile`) as string) || null,
+      })
+    }
+  }
+  return reqs
 }
 
 export async function createJob(formData: FormData) {
@@ -85,6 +119,8 @@ export async function createJob(formData: FormData) {
   }
 
   const data = parsed.data
+  const requirements = extractRequirements(formData)
+
   await prisma.job.create({
     data: {
       clientId: data.clientId,
@@ -103,6 +139,9 @@ export async function createJob(formData: FormData) {
       capacity: typeof data.capacity === "number" ? data.capacity : null,
       status: data.status,
       note: data.note || null,
+      requirements: {
+        create: requirements,
+      },
     },
   })
 
@@ -120,26 +159,37 @@ export async function updateJob(id: string, formData: FormData) {
   }
 
   const data = parsed.data
-  await prisma.job.update({
-    where: { id },
-    data: {
-      clientId: data.clientId,
-      title: data.title,
-      description: data.description || null,
-      location: data.location || null,
-      fee: typeof data.fee === "number" ? data.fee : null,
-      genderReq: data.genderReq || null,
-      ageMin: typeof data.ageMin === "number" ? data.ageMin : null,
-      ageMax: typeof data.ageMax === "number" ? data.ageMax : null,
-      heightMin: typeof data.heightMin === "number" ? data.heightMin : null,
-      heightMax: typeof data.heightMax === "number" ? data.heightMax : null,
-      startsAt: data.startsAt ? new Date(data.startsAt) : null,
-      endsAt: data.endsAt ? new Date(data.endsAt) : null,
-      deadline: data.deadline ? new Date(data.deadline) : null,
-      capacity: typeof data.capacity === "number" ? data.capacity : null,
-      status: data.status,
-      note: data.note || null,
-    },
+  const requirements = extractRequirements(formData)
+
+  await prisma.$transaction(async (tx) => {
+    await tx.job.update({
+      where: { id },
+      data: {
+        clientId: data.clientId,
+        title: data.title,
+        description: data.description || null,
+        location: data.location || null,
+        fee: typeof data.fee === "number" ? data.fee : null,
+        genderReq: data.genderReq || null,
+        ageMin: typeof data.ageMin === "number" ? data.ageMin : null,
+        ageMax: typeof data.ageMax === "number" ? data.ageMax : null,
+        heightMin: typeof data.heightMin === "number" ? data.heightMin : null,
+        heightMax: typeof data.heightMax === "number" ? data.heightMax : null,
+        startsAt: data.startsAt ? new Date(data.startsAt) : null,
+        endsAt: data.endsAt ? new Date(data.endsAt) : null,
+        deadline: data.deadline ? new Date(data.deadline) : null,
+        capacity: typeof data.capacity === "number" ? data.capacity : null,
+        status: data.status,
+        note: data.note || null,
+      },
+    })
+
+    await tx.jobRequirement.deleteMany({ where: { jobId: id } })
+    if (requirements.length > 0) {
+      await tx.jobRequirement.createMany({
+        data: requirements.map((r) => ({ ...r, jobId: id })),
+      })
+    }
   })
 
   revalidatePath("/admin/jobs")

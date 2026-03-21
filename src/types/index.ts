@@ -33,6 +33,13 @@ export const SCHEDULE_STATUS_LABELS: Record<string, string> = {
   CANCELLED: "キャンセル",
 }
 
+export const SUBMISSION_CATEGORY_LABELS: Record<string, string> = {
+  ACTING_VIDEO: "課題演技動画",
+  VOICE_SAMPLE: "ボイスサンプル",
+  PAST_WORK_VIDEO: "過去出演動画",
+  PROFILE_PHOTO: "宣材写真",
+}
+
 export const STATUS_COLORS: Record<string, string> = {
   ACTIVE: "bg-green-100 text-green-800",
   INACTIVE: "bg-gray-100 text-gray-800",

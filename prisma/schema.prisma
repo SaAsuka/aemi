@@ -42,6 +42,13 @@ enum ScheduleStatus {
   CANCELLED
 }
 
+enum SubmissionCategory {
+  ACTING_VIDEO
+  VOICE_SAMPLE
+  PAST_WORK_VIDEO
+  PROFILE_PHOTO
+}
+
 model Talent {
   id           String       @id @default(cuid())
   name         String
@@ -112,6 +119,7 @@ model Job {
   updatedAt   DateTime  @updatedAt
 
   applications Application[]
+  requirements JobRequirement[]
 
   @@index([clientId])
   @@index([status])
@@ -131,7 +139,8 @@ model Application {
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 
-  schedule Schedule?
+  schedule    Schedule?
+  submissions ApplicationSubmission[]
 
   @@unique([talentId, jobId])
   @@index([talentId])
@@ -155,4 +164,33 @@ model Schedule {
 
   @@index([date])
   @@map("schedules")
+}
+
+model JobRequirement {
+  id            String             @id @default(cuid())
+  jobId         String
+  job           Job                @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  category      SubmissionCategory
+  description   String?
+  referenceUrl  String?
+  referenceFile String?
+
+  @@unique([jobId, category])
+  @@index([jobId])
+  @@map("job_requirements")
+}
+
+model ApplicationSubmission {
+  id            String             @id @default(cuid())
+  applicationId String
+  application   Application        @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  category      SubmissionCategory
+  fileUrl       String?
+  externalUrl   String?
+  fileName      String?
+  createdAt     DateTime           @default(now())
+
+  @@unique([applicationId, category])
+  @@index([applicationId])
+  @@map("application_submissions")
 }

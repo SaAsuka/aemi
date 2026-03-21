@@ -18,6 +18,7 @@ import { APPLICATION_STATUS_LABELS, GENDER_LABELS } from "@/types"
 import { formatDate } from "@/lib/utils/date"
 import { ApplicationStatusSelect } from "@/components/admin/application-status-select"
 import { LineCopyButton } from "@/components/admin/line-copy-button"
+import { SubmissionLinks } from "@/components/admin/submission-links"
 
 export default async function JobDetailPage({
   params,
@@ -44,7 +45,7 @@ export default async function JobDetailPage({
           <CardTitle>案件情報</CardTitle>
         </CardHeader>
         <CardContent>
-          <JobForm job={job} clients={clients} />
+          <JobForm job={job} clients={clients} requirements={job.requirements} />
         </CardContent>
       </Card>
 
@@ -88,6 +89,7 @@ export default async function JobDetailPage({
               <TableRow>
                 <TableHead>タレント名</TableHead>
                 <TableHead>ステータス</TableHead>
+                <TableHead className="hidden sm:table-cell">提出物</TableHead>
                 <TableHead className="hidden sm:table-cell">応募日</TableHead>
                 <TableHead>操作</TableHead>
               </TableRow>
@@ -95,7 +97,7 @@ export default async function JobDetailPage({
             <TableBody>
               {job.applications.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center text-muted-foreground">
                     応募がありません
                   </TableCell>
                 </TableRow>
@@ -115,6 +117,9 @@ export default async function JobDetailPage({
                         status={app.status}
                         label={APPLICATION_STATUS_LABELS[app.status]}
                       />
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      <SubmissionLinks submissions={app.submissions} />
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{formatDate(app.appliedAt)}</TableCell>
                     <TableCell>

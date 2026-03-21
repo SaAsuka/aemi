@@ -86,7 +86,7 @@ export default async function TalentJobDetailPage({
         </div>
       )}
 
-      <JobApplicationForm jobId={job.id} talentId={talent.id} talentName={talent.name} />
+      <JobApplicationForm jobId={job.id} talentId={talent.id} talentName={talent.name} requirements={job.requirements} />
     </div>
   )
 }

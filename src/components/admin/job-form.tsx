@@ -2,7 +2,8 @@
 
 import { useActionState } from "react"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useEffect, useState, useCallback } from "react"
+import { upload } from "@vercel/blob/client"
 import { createJob, updateJob } from "@/lib/actions/job"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,8 +17,17 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { Job } from "@/generated/prisma/client"
+import { SUBMISSION_CATEGORY_LABELS } from "@/types"
 
 type ActionResult = { success?: boolean; error?: Record<string, string[]> } | null
+
+type Requirement = {
+  id: string
+  category: string
+  description: string | null
+  referenceUrl: string | null
+  referenceFile: string | null
+}
 
 function jobAction(job?: Job) {
   return async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
@@ -28,15 +38,52 @@ function jobAction(job?: Job) {
   }
 }
 
+const CATEGORIES = ["ACTING_VIDEO", "VOICE_SAMPLE", "PAST_WORK_VIDEO", "PROFILE_PHOTO"] as const
+
 export function JobForm({
   job,
   clients,
+  requirements,
 }: {
   job?: Job
   clients: { id: string; companyName: string }[]
+  requirements?: Requirement[]
 }) {
   const [state, action, isPending] = useActionState(jobAction(job), null)
   const router = useRouter()
+
+  const reqMap = new Map(requirements?.map((r) => [r.category, r]))
+  const [enabledCategories, setEnabledCategories] = useState<Set<string>>(
+    new Set(requirements?.map((r) => r.category) ?? [])
+  )
+  const [refFiles, setRefFiles] = useState<Record<string, string>>(
+    Object.fromEntries(requirements?.filter((r) => r.referenceFile).map((r) => [r.category, r.referenceFile!]) ?? [])
+  )
+  const [uploading, setUploading] = useState<string | null>(null)
+
+  const toggleCategory = useCallback((cat: string) => {
+    setEnabledCategories((prev) => {
+      const next = new Set(prev)
+      if (next.has(cat)) next.delete(cat)
+      else next.add(cat)
+      return next
+    })
+  }, [])
+
+  const handleRefFileUpload = useCallback(async (cat: string, file: File) => {
+    setUploading(cat)
+    try {
+      const blob = await upload(file.name, file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+      })
+      setRefFiles((prev) => ({ ...prev, [cat]: blob.url }))
+    } catch {
+      alert("アップロードに失敗しました")
+    } finally {
+      setUploading(null)
+    }
+  }, [])
 
   useEffect(() => {
     if (state?.success && !job) {
@@ -221,6 +268,87 @@ export function JobForm({
               className="max-w-32"
             />
           </div>
+        </div>
+      </div>
+
+      <div className="border-t pt-4">
+        <p className="text-sm font-medium mb-3">提出要件</p>
+        <p className="text-xs text-muted-foreground mb-4">タレントに提出を求めるものを選択してください</p>
+        <div className="space-y-3">
+          {CATEGORIES.map((cat) => {
+            const enabled = enabledCategories.has(cat)
+            const existing = reqMap.get(cat)
+            return (
+              <div key={cat} className="rounded-lg border p-3 space-y-3">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    name={`req_${cat}_enabled`}
+                    checked={enabled}
+                    onChange={() => toggleCategory(cat)}
+                    className="h-4 w-4 rounded border-gray-300 accent-primary"
+                  />
+                  <span className="text-sm font-medium">{SUBMISSION_CATEGORY_LABELS[cat]}</span>
+                </label>
+                {enabled && (
+                  <div className="pl-6 space-y-3">
+                    <div className="space-y-1">
+                      <Label className="text-xs">補足説明</Label>
+                      <Input
+                        name={`req_${cat}_description`}
+                        defaultValue={existing?.description ?? ""}
+                        placeholder="例: 30秒以内の自己PR動画"
+                        className="text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">参考資料URL</Label>
+                      <Input
+                        name={`req_${cat}_referenceUrl`}
+                        defaultValue={existing?.referenceUrl ?? ""}
+                        placeholder="https://..."
+                        className="text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">参考ファイル</Label>
+                      <input type="hidden" name={`req_${cat}_referenceFile`} value={refFiles[cat] ?? ""} />
+                      {refFiles[cat] ? (
+                        <div className="flex items-center gap-2 text-sm">
+                          <a href={refFiles[cat]} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline truncate max-w-64">
+                            {refFiles[cat].split("/").pop()}
+                          </a>
+                          <button
+                            type="button"
+                            onClick={() => setRefFiles((prev) => {
+                              const next = { ...prev }
+                              delete next[cat]
+                              return next
+                            })}
+                            className="text-xs text-red-600 hover:underline"
+                          >
+                            削除
+                          </button>
+                        </div>
+                      ) : (
+                        <Input
+                          type="file"
+                          accept=".pdf,.mp4,.mov,.webm,.jpg,.jpeg,.png,.webp"
+                          disabled={uploading === cat}
+                          onChange={(e) => {
+                            const file = e.target.files?.[0]
+                            if (file) handleRefFileUpload(cat, file)
+                          }}
+                          className="text-sm"
+                        />
+                      )}
+                      {uploading === cat && <p className="text-xs text-muted-foreground">アップロード中...</p>}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )
+          })}
         </div>
       </div>
 
