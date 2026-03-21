@@ -21,6 +21,11 @@ export async function getApplications(status?: string, jobId?: string) {
       id: true,
       status: true,
       appliedAt: true,
+      reviewedAt: true,
+      preferredDate: true,
+      preferredTime: true,
+      reviewComment: true,
+      rejectionReason: true,
       talent: { select: { id: true, name: true } },
       job: {
         select: {
