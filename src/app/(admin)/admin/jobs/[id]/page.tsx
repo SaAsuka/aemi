@@ -123,6 +123,8 @@ export default async function JobDetailPage({
                       <ApplicationStatusSelect
                         applicationId={app.id}
                         currentStatus={app.status}
+                        talentName={app.talent.name}
+                        jobTitle={job.title}
                       />
                     </TableCell>
                   </TableRow>

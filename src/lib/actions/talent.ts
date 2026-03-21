@@ -4,16 +4,49 @@ import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/db"
 import { talentSchema } from "@/lib/validations/talent"
 
-export async function getTalents(search?: string) {
-  const where = search
-    ? {
-        OR: [
-          { name: { contains: search, mode: "insensitive" as const } },
-          { nameKana: { contains: search, mode: "insensitive" as const } },
-          { email: { contains: search, mode: "insensitive" as const } },
-        ],
-      }
-    : {}
+type TalentFilters = {
+  search?: string
+  heightMin?: number
+  heightMax?: number
+  bustMin?: number
+  bustMax?: number
+  waistMin?: number
+  waistMax?: number
+  hipMin?: number
+  hipMax?: number
+  shoeMin?: number
+  shoeMax?: number
+}
+
+export async function getTalents(filters: TalentFilters = {}) {
+  const where: Record<string, unknown> = {}
+
+  if (filters.search) {
+    where.OR = [
+      { name: { contains: filters.search, mode: "insensitive" as const } },
+      { nameKana: { contains: filters.search, mode: "insensitive" as const } },
+      { email: { contains: filters.search, mode: "insensitive" as const } },
+    ]
+  }
+
+  const rangeFields = [
+    ["height", "heightMin", "heightMax"],
+    ["bust", "bustMin", "bustMax"],
+    ["waist", "waistMin", "waistMax"],
+    ["hip", "hipMin", "hipMax"],
+    ["shoeSize", "shoeMin", "shoeMax"],
+  ] as const
+
+  for (const [field, minKey, maxKey] of rangeFields) {
+    const min = filters[minKey]
+    const max = filters[maxKey]
+    if (min !== undefined || max !== undefined) {
+      const cond: Record<string, number> = {}
+      if (min !== undefined) cond.gte = min
+      if (max !== undefined) cond.lte = max
+      where[field] = cond
+    }
+  }
 
   return prisma.talent.findMany({
     where,

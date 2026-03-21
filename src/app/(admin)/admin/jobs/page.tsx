@@ -59,12 +59,13 @@ export default async function JobsPage({
                 <TableHead className="hidden sm:table-cell">締切</TableHead>
                 <TableHead>応募数</TableHead>
                 <TableHead>ステータス</TableHead>
+                <TableHead>操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {jobs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
                     データがありません
                   </TableCell>
                 </TableRow>
@@ -93,6 +94,11 @@ export default async function JobsPage({
                         status={job.status}
                         label={JOB_STATUS_LABELS[job.status]}
                       />
+                    </TableCell>
+                    <TableCell>
+                      <LinkButton href={`/admin/jobs/${job.id}`} size="sm" variant="outline">
+                        詳細
+                      </LinkButton>
                     </TableCell>
                   </TableRow>
                 ))

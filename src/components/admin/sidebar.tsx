@@ -18,10 +18,10 @@ import {
 const navItems = [
   { title: "ダッシュボード", href: "/admin", icon: "📊" },
   { title: "タレント管理", href: "/admin/talents", icon: "👤" },
-  { title: "クライアント管理", href: "/admin/clients", icon: "🏢" },
   { title: "案件管理", href: "/admin/jobs", icon: "📋" },
   { title: "応募管理", href: "/admin/applications", icon: "📝" },
   { title: "スケジュール", href: "/admin/schedule", icon: "📅" },
+  { title: "クライアント管理", href: "/admin/clients", icon: "🏢" },
 ]
 
 export function AdminSidebar() {
