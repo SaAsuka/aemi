@@ -16,6 +16,7 @@ import { SearchForm } from "@/components/admin/search-form"
 import { TalentFilters } from "@/components/admin/talent-filters"
 import { JobLinkCopyButton } from "@/components/admin/job-link-copy-button"
 import { CompositePdfIconButton } from "@/components/admin/composite-pdf-button"
+import { RegisterLinkCopy } from "@/components/admin/register-link-copy"
 
 type TalentSearchParams = {
   q?: string
@@ -62,7 +63,10 @@ export default async function TalentsPage({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl sm:text-2xl font-bold">タレント管理</h1>
-        <LinkButton href="/admin/talents/new">新規登録</LinkButton>
+        <div className="flex items-center gap-2">
+          <RegisterLinkCopy />
+          <LinkButton href="/admin/talents/new">新規登録</LinkButton>
+        </div>
       </div>
 
       <SearchForm placeholder="名前・フリガナ・メールで検索" defaultValue={params.q} />
