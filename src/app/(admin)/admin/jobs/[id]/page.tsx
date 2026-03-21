@@ -24,11 +24,13 @@ export default async function JobDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const job = await getJob(id)
-  const clients = await prisma.client.findMany({
-    orderBy: { companyName: "asc" },
-    select: { id: true, companyName: true },
-  })
+  const [job, clients] = await Promise.all([
+    getJob(id),
+    prisma.client.findMany({
+      orderBy: { companyName: "asc" },
+      select: { id: true, companyName: true },
+    }),
+  ])
 
   if (!job) notFound()
 

@@ -13,29 +13,30 @@ export default async function SchedulePage({
 }) {
   const { month, talent, job } = await searchParams
   const currentMonth = month ?? new Date().toISOString().slice(0, 7)
-
-  const schedules = await getSchedules({ month: currentMonth, talent, job })
   const hasFilters = !!(talent || job)
-  const acceptedApplications = await prisma.application.findMany({
-    where: {
-      status: "ACCEPTED",
-      schedule: null,
-    },
-    include: {
-      talent: true,
-      job: true,
-    },
-    orderBy: { appliedAt: "desc" },
-  })
 
-  const filterTalents = await prisma.talent.findMany({
-    select: { name: true },
-    orderBy: { name: "asc" },
-  })
-  const filterJobs = await prisma.job.findMany({
-    select: { title: true },
-    orderBy: { title: "asc" },
-  })
+  const [schedules, acceptedApplications, filterTalents, filterJobs] = await Promise.all([
+    getSchedules({ month: currentMonth, talent, job }),
+    prisma.application.findMany({
+      where: {
+        status: "ACCEPTED",
+        schedule: null,
+      },
+      include: {
+        talent: true,
+        job: true,
+      },
+      orderBy: { appliedAt: "desc" },
+    }),
+    prisma.talent.findMany({
+      select: { name: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.job.findMany({
+      select: { title: true },
+      orderBy: { title: "asc" },
+    }),
+  ])
 
   const talentOptions = filterTalents.map((t) => ({ value: t.name, label: t.name }))
   const jobOptions = filterJobs.map((j) => ({ value: j.title, label: j.title }))

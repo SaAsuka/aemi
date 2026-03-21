@@ -23,17 +23,19 @@ export default async function ApplicationsPage({
   searchParams: Promise<{ status?: string }>
 }) {
   const { status } = await searchParams
-  const applications = await getApplications(status)
-  const talents = await prisma.talent.findMany({
-    where: { status: "ACTIVE" },
-    orderBy: { name: "asc" },
-    select: { id: true, name: true, nameKana: true },
-  })
-  const jobs = await prisma.job.findMany({
-    where: { status: "OPEN" },
-    orderBy: { title: "asc" },
-    select: { id: true, title: true },
-  })
+  const [applications, talents, jobs] = await Promise.all([
+    getApplications(status),
+    prisma.talent.findMany({
+      where: { status: "ACTIVE" },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, nameKana: true },
+    }),
+    prisma.job.findMany({
+      where: { status: "OPEN" },
+      orderBy: { title: "asc" },
+      select: { id: true, title: true },
+    }),
+  ])
 
   return (
     <div className="space-y-6">

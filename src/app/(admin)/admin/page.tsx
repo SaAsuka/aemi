@@ -3,28 +3,29 @@ import { prisma } from "@/lib/db"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default async function AdminDashboard() {
-  const talentCount = await prisma.talent.count()
-  const clientCount = await prisma.client.count()
-  const jobCount = await prisma.job.count()
-  const applicationCount = await prisma.application.count()
-
-  const recentApplications = await prisma.application.findMany({
-    take: 5,
-    orderBy: { appliedAt: "desc" },
-    select: {
-      id: true,
-      appliedAt: true,
-      talent: { select: { name: true } },
-      job: {
+  const [talentCount, clientCount, jobCount, applicationCount, recentApplications, openJobs] =
+    await Promise.all([
+      prisma.talent.count(),
+      prisma.client.count(),
+      prisma.job.count(),
+      prisma.application.count(),
+      prisma.application.findMany({
+        take: 5,
+        orderBy: { appliedAt: "desc" },
         select: {
-          title: true,
-          client: { select: { companyName: true } },
+          id: true,
+          appliedAt: true,
+          talent: { select: { name: true } },
+          job: {
+            select: {
+              title: true,
+              client: { select: { companyName: true } },
+            },
+          },
         },
-      },
-    },
-  })
-
-  const openJobs = await prisma.job.count({ where: { status: "OPEN" } })
+      }),
+      prisma.job.count({ where: { status: "OPEN" } }),
+    ])
 
   const stats = [
     { label: "タレント", value: talentCount, href: "/admin/talents" },

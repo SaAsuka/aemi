@@ -111,6 +111,8 @@ model Job {
 
   applications Application[]
 
+  @@index([clientId])
+  @@index([status])
   @@map("jobs")
 }
 
@@ -130,6 +132,9 @@ model Application {
   schedule Schedule?
 
   @@unique([talentId, jobId])
+  @@index([talentId])
+  @@index([jobId])
+  @@index([status])
   @@map("applications")
 }
 
@@ -146,5 +151,6 @@ model Schedule {
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 
+  @@index([date])
   @@map("schedules")
 }
