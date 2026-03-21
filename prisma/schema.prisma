@@ -60,9 +60,11 @@ model Talent {
   career       String?      @db.Text
   lineUserId   String?
   profileImage String?
-  resume       String?
-  status       TalentStatus @default(ACTIVE)
-  note         String?
+  resume         String?
+  nearestStation String?
+  accessToken    String?      @unique @default(cuid())
+  status         TalentStatus @default(ACTIVE)
+  note           String?
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 

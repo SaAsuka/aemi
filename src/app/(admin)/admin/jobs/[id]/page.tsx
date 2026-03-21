@@ -17,6 +17,7 @@ import { StatusBadge } from "@/components/admin/status-badge"
 import { APPLICATION_STATUS_LABELS, GENDER_LABELS } from "@/types"
 import { formatDate } from "@/lib/utils/date"
 import { ApplicationStatusSelect } from "@/components/admin/application-status-select"
+import { LineCopyButton } from "@/components/admin/line-copy-button"
 
 export default async function JobDetailPage({
   params,
@@ -117,12 +118,15 @@ export default async function JobDetailPage({
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{formatDate(app.appliedAt)}</TableCell>
                     <TableCell>
-                      <ApplicationStatusSelect
-                        applicationId={app.id}
-                        currentStatus={app.status}
-                        talentName={app.talent.name}
-                        jobTitle={job.title}
-                      />
+                      <div className="flex items-center gap-1">
+                        <LineCopyButton talent={app.talent} />
+                        <ApplicationStatusSelect
+                          applicationId={app.id}
+                          currentStatus={app.status}
+                          talentName={app.talent.name}
+                          jobTitle={job.title}
+                        />
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

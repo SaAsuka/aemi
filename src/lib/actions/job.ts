@@ -38,10 +38,40 @@ export async function getJob(id: string) {
           id: true,
           status: true,
           appliedAt: true,
-          talent: { select: { id: true, name: true } },
+          talent: {
+            select: {
+              id: true, name: true,
+              birthDate: true, height: true, gender: true,
+              nearestStation: true, resume: true,
+            },
+          },
         },
         orderBy: { appliedAt: "desc" },
       },
+    },
+  })
+}
+
+export async function getOpenJobs() {
+  return prisma.job.findMany({
+    where: { status: "OPEN" },
+    orderBy: { createdAt: "desc" },
+    select: {
+      id: true, title: true, location: true, fee: true,
+      genderReq: true, startsAt: true, endsAt: true, deadline: true,
+      client: { select: { companyName: true } },
+    },
+  })
+}
+
+export async function getOpenJob(id: string) {
+  return prisma.job.findUnique({
+    where: { id, status: "OPEN" },
+    select: {
+      id: true, title: true, description: true, location: true, fee: true,
+      genderReq: true, ageMin: true, ageMax: true, heightMin: true, heightMax: true,
+      startsAt: true, endsAt: true, deadline: true, capacity: true,
+      client: { select: { companyName: true } },
     },
   })
 }

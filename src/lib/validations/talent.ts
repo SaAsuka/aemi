@@ -18,6 +18,7 @@ export const talentSchema = z.object({
   lineUserId: z.string().optional().or(z.literal("")),
   profileImage: z.string().optional().or(z.literal("")),
   resume: z.string().optional().or(z.literal("")),
+  nearestStation: z.string().optional().or(z.literal("")),
   status: z.enum(["ACTIVE", "INACTIVE", "WITHDRAWN"]).default("ACTIVE"),
   note: z.string().optional().or(z.literal("")),
 })

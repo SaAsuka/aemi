@@ -180,7 +180,16 @@ export function TalentForm({ talent }: { talent?: Talent }) {
         />
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="space-y-2">
+          <Label htmlFor="nearestStation">最寄駅</Label>
+          <Input
+            id="nearestStation"
+            name="nearestStation"
+            defaultValue={talent?.nearestStation ?? ""}
+            placeholder="例: 渋谷駅"
+          />
+        </div>
         <div className="space-y-2">
           <Label htmlFor="lineUserId">LINE ユーザーID</Label>
           <Input

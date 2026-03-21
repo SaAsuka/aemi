@@ -17,6 +17,7 @@ import { StatusFilter } from "@/components/admin/status-filter"
 import { formatDate } from "@/lib/utils/date"
 import { ApplicationStatusSelect } from "@/components/admin/application-status-select"
 import { NewApplicationDialog } from "@/components/admin/new-application-dialog"
+import { LineCopyButton } from "@/components/admin/line-copy-button"
 import { Button } from "@/components/ui/button"
 
 async function ApplicationDialogData() {
@@ -111,12 +112,15 @@ export default async function ApplicationsPage({
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{formatDate(app.appliedAt)}</TableCell>
                     <TableCell>
-                      <ApplicationStatusSelect
-                        applicationId={app.id}
-                        currentStatus={app.status}
-                        talentName={app.talent.name}
-                        jobTitle={app.job.title}
-                      />
+                      <div className="flex items-center gap-1">
+                        <LineCopyButton talent={app.talent} />
+                        <ApplicationStatusSelect
+                          applicationId={app.id}
+                          currentStatus={app.status}
+                          talentName={app.talent.name}
+                          jobTitle={app.job.title}
+                        />
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))

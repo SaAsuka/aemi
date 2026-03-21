@@ -21,7 +21,13 @@ export async function getApplications(status?: string, jobId?: string) {
       id: true,
       status: true,
       appliedAt: true,
-      talent: { select: { id: true, name: true } },
+      talent: {
+        select: {
+          id: true, name: true,
+          birthDate: true, height: true, gender: true,
+          nearestStation: true, resume: true,
+        },
+      },
       job: {
         select: {
           id: true,
@@ -71,6 +77,7 @@ export async function createApplication(formData: FormData) {
   })
 
   revalidatePath("/admin/applications")
+  revalidatePath("/jobs")
   updateTag("talents")
   updateTag("jobs")
   return { success: true }

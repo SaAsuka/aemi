@@ -111,6 +111,7 @@ export async function createTalent(formData: FormData) {
       lineUserId: data.lineUserId || null,
       profileImage: data.profileImage || null,
       resume: data.resume || null,
+      nearestStation: data.nearestStation || null,
       status: data.status,
       note: data.note || null,
     },
@@ -150,6 +151,7 @@ export async function updateTalent(id: string, formData: FormData) {
       lineUserId: data.lineUserId || null,
       profileImage: data.profileImage || null,
       resume: data.resume || null,
+      nearestStation: data.nearestStation || null,
       status: data.status,
       note: data.note || null,
     },
@@ -159,6 +161,13 @@ export async function updateTalent(id: string, formData: FormData) {
   revalidatePath(`/admin/talents/${id}`)
   updateTag("talents")
   return { success: true }
+}
+
+export async function getTalentByToken(token: string) {
+  return prisma.talent.findUnique({
+    where: { accessToken: token },
+    select: { id: true, name: true, status: true },
+  })
 }
 
 export async function deleteTalent(id: string) {

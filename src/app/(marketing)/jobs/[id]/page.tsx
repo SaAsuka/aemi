@@ -1,0 +1,92 @@
+import { notFound } from "next/navigation"
+import Link from "next/link"
+import { getTalentByToken } from "@/lib/actions/talent"
+import { getOpenJob } from "@/lib/actions/job"
+import { formatDate } from "@/lib/utils/date"
+import { GENDER_LABELS } from "@/types"
+import { JobApplicationForm } from "@/components/job-application-form"
+
+export default async function TalentJobDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>
+  searchParams: Promise<{ t?: string }>
+}) {
+  const [{ id }, { t }] = await Promise.all([params, searchParams])
+  if (!t) notFound()
+
+  const talent = await getTalentByToken(t)
+  if (!talent || talent.status !== "ACTIVE") notFound()
+
+  const job = await getOpenJob(id)
+  if (!job) notFound()
+
+  return (
+    <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
+      <Link href={`/jobs?t=${t}`} className="text-sm text-muted-foreground hover:underline">
+        ← 案件一覧に戻る
+      </Link>
+
+      <div>
+        <h1 className="text-xl font-bold">{job.title}</h1>
+        <p className="text-sm text-muted-foreground mt-1">{job.client.companyName}</p>
+      </div>
+
+      <div className="rounded-lg border p-4 space-y-3 text-sm">
+        {job.location && (
+          <div>
+            <span className="text-muted-foreground">場所: </span>{job.location}
+          </div>
+        )}
+        {job.fee != null && (
+          <div>
+            <span className="text-muted-foreground">報酬: </span>¥{job.fee.toLocaleString()}
+          </div>
+        )}
+        {(job.startsAt || job.endsAt) && (
+          <div>
+            <span className="text-muted-foreground">期間: </span>
+            {job.startsAt ? formatDate(job.startsAt) : "−"} 〜 {job.endsAt ? formatDate(job.endsAt) : "−"}
+          </div>
+        )}
+        {job.deadline && (
+          <div>
+            <span className="text-muted-foreground">締切: </span>{formatDate(job.deadline)}
+          </div>
+        )}
+        {job.capacity != null && (
+          <div>
+            <span className="text-muted-foreground">募集人数: </span>{job.capacity}名
+          </div>
+        )}
+        {job.genderReq && (
+          <div>
+            <span className="text-muted-foreground">性別条件: </span>{GENDER_LABELS[job.genderReq]}
+          </div>
+        )}
+        {(job.ageMin != null || job.ageMax != null) && (
+          <div>
+            <span className="text-muted-foreground">年齢条件: </span>
+            {job.ageMin ?? "−"}〜{job.ageMax ?? "−"}歳
+          </div>
+        )}
+        {(job.heightMin != null || job.heightMax != null) && (
+          <div>
+            <span className="text-muted-foreground">身長条件: </span>
+            {job.heightMin ?? "−"}〜{job.heightMax ?? "−"}cm
+          </div>
+        )}
+      </div>
+
+      {job.description && (
+        <div className="text-sm">
+          <p className="text-muted-foreground mb-1">詳細</p>
+          <p className="whitespace-pre-wrap">{job.description}</p>
+        </div>
+      )}
+
+      <JobApplicationForm jobId={job.id} talentId={talent.id} talentName={talent.name} />
+    </div>
+  )
+}

@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/table"
 import { TalentForm } from "@/components/admin/talent-form"
 import { DeleteButton } from "@/components/admin/delete-button"
+import { TalentUrlCopy } from "./talent-url-copy"
 import { StatusBadge } from "@/components/admin/status-badge"
 import { APPLICATION_STATUS_LABELS } from "@/types"
 import { formatDate, calcAge } from "@/lib/utils/date"
@@ -32,6 +33,10 @@ export default async function TalentDetailPage({
         <h1 className="text-xl sm:text-2xl font-bold">{talent.name}</h1>
         <DeleteButton id={talent.id} type="talent" />
       </div>
+
+      {talent.accessToken && (
+        <TalentUrlCopy accessToken={talent.accessToken} />
+      )}
 
       <Card>
         <CardHeader>
