@@ -126,12 +126,6 @@ model Application {
   appliedAt       DateTime          @default(now())
   decidedAt       DateTime?
   note            String?
-  reviewToken     String?           @unique
-  reviewedAt      DateTime?
-  preferredDate   String?
-  preferredTime   String?
-  reviewComment   String?
-  rejectionReason String?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
 

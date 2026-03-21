@@ -33,14 +33,6 @@ export const SCHEDULE_STATUS_LABELS: Record<string, string> = {
   CANCELLED: "キャンセル",
 }
 
-export const REJECTION_REASONS: Record<string, string> = {
-  IMPRESSION_MISMATCH: "イメージと合わない",
-  SCHEDULE_MISMATCH: "スケジュールが合わない",
-  BUDGET_MISMATCH: "予算が合わない",
-  OTHER_TALENT: "他のタレントに決定",
-  OTHER: "その他",
-}
-
 export const STATUS_COLORS: Record<string, string> = {
   ACTIVE: "bg-green-100 text-green-800",
   INACTIVE: "bg-gray-100 text-gray-800",
