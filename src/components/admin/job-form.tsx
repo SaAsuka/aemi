@@ -119,10 +119,10 @@ export function JobForm({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="DRAFT">下書き</SelectItem>
-              <SelectItem value="OPEN">募集中</SelectItem>
-              <SelectItem value="CLOSED">募集終了</SelectItem>
-              <SelectItem value="CANCELLED">キャンセル</SelectItem>
+              <SelectItem value="DRAFT" label="下書き">下書き</SelectItem>
+              <SelectItem value="OPEN" label="募集中">募集中</SelectItem>
+              <SelectItem value="CLOSED" label="募集終了">募集終了</SelectItem>
+              <SelectItem value="CANCELLED" label="キャンセル">キャンセル</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -167,9 +167,9 @@ export function JobForm({
                 <SelectValue placeholder="指定なし" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="MALE">男性</SelectItem>
-                <SelectItem value="FEMALE">女性</SelectItem>
-                <SelectItem value="OTHER">その他</SelectItem>
+                <SelectItem value="MALE" label="男性">男性</SelectItem>
+                <SelectItem value="FEMALE" label="女性">女性</SelectItem>
+                <SelectItem value="OTHER" label="その他">その他</SelectItem>
               </SelectContent>
             </Select>
           </div>

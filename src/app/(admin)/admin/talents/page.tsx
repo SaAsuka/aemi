@@ -11,8 +11,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { StatusBadge } from "@/components/admin/status-badge"
-import { TALENT_STATUS_LABELS, GENDER_LABELS } from "@/types"
-import { calcAge } from "@/lib/utils/date"
+import { TALENT_STATUS_LABELS } from "@/types"
 import { SearchForm } from "@/components/admin/search-form"
 import { TalentFilters } from "@/components/admin/talent-filters"
 import { JobLinkCopyButton } from "@/components/admin/job-link-copy-button"
@@ -79,11 +78,6 @@ export default async function TalentsPage({
               <TableRow className="bg-muted/60 hover:bg-muted/60">
                 <TableHead>名前</TableHead>
                 <TableHead className="hidden sm:table-cell">フリガナ</TableHead>
-                <TableHead>性別</TableHead>
-                <TableHead>年齢</TableHead>
-                <TableHead>身長</TableHead>
-                <TableHead className="hidden md:table-cell">B/W/H</TableHead>
-                <TableHead className="hidden md:table-cell">靴</TableHead>
                 <TableHead>ステータス</TableHead>
                 <TableHead>案件リンク</TableHead>
               </TableRow>
@@ -91,7 +85,7 @@ export default async function TalentsPage({
             <TableBody>
               {talents.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
                     データがありません
                   </TableCell>
                 </TableRow>
@@ -108,23 +102,6 @@ export default async function TalentsPage({
                       <p className="text-xs text-muted-foreground sm:hidden">{talent.nameKana}</p>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell text-muted-foreground">{talent.nameKana}</TableCell>
-                    <TableCell>
-                      {talent.gender ? GENDER_LABELS[talent.gender] : "−"}
-                    </TableCell>
-                    <TableCell>
-                      {talent.birthDate ? `${calcAge(talent.birthDate)}歳` : "−"}
-                    </TableCell>
-                    <TableCell>
-                      {talent.height ? `${talent.height}cm` : "−"}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {talent.bust || talent.waist || talent.hip
-                        ? `${talent.bust ?? "−"}/${talent.waist ?? "−"}/${talent.hip ?? "−"}`
-                        : "−"}
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {talent.shoeSize ? `${talent.shoeSize}cm` : "−"}
-                    </TableCell>
                     <TableCell>
                       <StatusBadge
                         status={talent.status}

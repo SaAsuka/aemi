@@ -78,9 +78,9 @@ export function TalentForm({ talent }: { talent?: Talent }) {
               <SelectValue placeholder="選択" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="MALE">男性</SelectItem>
-              <SelectItem value="FEMALE">女性</SelectItem>
-              <SelectItem value="OTHER">その他</SelectItem>
+              <SelectItem value="MALE" label="男性">男性</SelectItem>
+              <SelectItem value="FEMALE" label="女性">女性</SelectItem>
+              <SelectItem value="OTHER" label="その他">その他</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -307,9 +307,9 @@ export function TalentForm({ talent }: { talent?: Talent }) {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ACTIVE">アクティブ</SelectItem>
-              <SelectItem value="INACTIVE">非アクティブ</SelectItem>
-              <SelectItem value="WITHDRAWN">退会</SelectItem>
+              <SelectItem value="ACTIVE" label="アクティブ">アクティブ</SelectItem>
+              <SelectItem value="INACTIVE" label="非アクティブ">非アクティブ</SelectItem>
+              <SelectItem value="WITHDRAWN" label="退会">退会</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -340,8 +340,8 @@ export function TalentForm({ talent }: { talent?: Talent }) {
               <SelectValue placeholder="選択" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="普通">普通</SelectItem>
-              <SelectItem value="当座">当座</SelectItem>
+              <SelectItem value="普通" label="普通">普通</SelectItem>
+              <SelectItem value="当座" label="当座">当座</SelectItem>
             </SelectContent>
           </Select>
         </div>
