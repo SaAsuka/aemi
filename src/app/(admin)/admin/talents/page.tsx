@@ -16,6 +16,7 @@ import { SearchForm } from "@/components/admin/search-form"
 import { TalentFilters } from "@/components/admin/talent-filters"
 import { JobLinkCopyButton } from "@/components/admin/job-link-copy-button"
 import { CompositePdfIconButton } from "@/components/admin/composite-pdf-button"
+import { ExternalLink } from "lucide-react"
 import { RegisterLinkCopy } from "@/components/admin/register-link-copy"
 
 type TalentSearchParams = {
@@ -115,7 +116,14 @@ export default async function TalentsPage({
                       />
                     </TableCell>
                     <TableCell>
-                      <CompositePdfIconButton talentId={talent.id} />
+                      <div className="flex items-center gap-1">
+                        <CompositePdfIconButton talentId={talent.id} />
+                        {talent.resume && (
+                          <a href={talent.resume} target="_blank" rel="noopener noreferrer" title="PDFを表示">
+                            <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-primary" />
+                          </a>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
                       {talent.accessToken && (

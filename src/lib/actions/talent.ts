@@ -64,6 +64,7 @@ export async function getTalents(filters: TalentFilters = {}) {
       shoeSize: true,
       status: true,
       accessToken: true,
+      resume: true,
     },
   })
 }
