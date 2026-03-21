@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,9 +19,6 @@ const allKeys: FilterKey[] = filterFields.flatMap((f) => [f.minKey, f.maxKey])
 export function TalentFilters() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const [open, setOpen] = useState(() => allKeys.some((k) => searchParams.get(k)))
-
-  const activeCount = allKeys.filter((k) => searchParams.get(k)).length
 
   function handleApply(formData: FormData) {
     const params = new URLSearchParams()
@@ -42,50 +38,42 @@ export function TalentFilters() {
     router.push(`?${params.toString()}`)
   }
 
-  return (
-    <div>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setOpen(!open)}
-      >
-        フィルタ{activeCount > 0 && ` (${activeCount})`}
-      </Button>
+  const hasActive = allKeys.some((k) => searchParams.get(k))
 
-      {open && (
-        <form action={handleApply} className="mt-3 rounded-lg border p-4 space-y-4">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
-            {filterFields.map((field) => (
-              <div key={field.minKey} className="space-y-1">
-                <Label className="text-xs">{field.label}</Label>
-                <div className="flex items-center gap-1">
-                  <Input
-                    name={field.minKey}
-                    type="number"
-                    placeholder="以上"
-                    defaultValue={searchParams.get(field.minKey) ?? ""}
-                    className="h-8 text-sm"
-                    step="any"
-                  />
-                  <span className="text-muted-foreground text-xs">〜</span>
-                  <Input
-                    name={field.maxKey}
-                    type="number"
-                    placeholder="以下"
-                    defaultValue={searchParams.get(field.maxKey) ?? ""}
-                    className="h-8 text-sm"
-                    step="any"
-                  />
-                </div>
-              </div>
-            ))}
+  return (
+    <form action={handleApply} className="rounded-lg border p-4 space-y-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+        {filterFields.map((field) => (
+          <div key={field.minKey} className="space-y-1">
+            <Label className="text-xs">{field.label}</Label>
+            <div className="flex items-center gap-1">
+              <Input
+                name={field.minKey}
+                type="number"
+                placeholder="以上"
+                defaultValue={searchParams.get(field.minKey) ?? ""}
+                className="h-8 text-sm"
+                step="any"
+              />
+              <span className="text-muted-foreground text-xs">〜</span>
+              <Input
+                name={field.maxKey}
+                type="number"
+                placeholder="以下"
+                defaultValue={searchParams.get(field.maxKey) ?? ""}
+                className="h-8 text-sm"
+                step="any"
+              />
+            </div>
           </div>
-          <div className="flex gap-2">
-            <Button type="submit" size="sm">適用</Button>
-            <Button type="button" variant="ghost" size="sm" onClick={handleClear}>クリア</Button>
-          </div>
-        </form>
-      )}
-    </div>
+        ))}
+      </div>
+      <div className="flex gap-2">
+        <Button type="submit" size="sm">適用</Button>
+        {hasActive && (
+          <Button type="button" variant="ghost" size="sm" onClick={handleClear}>クリア</Button>
+        )}
+      </div>
+    </form>
   )
 }

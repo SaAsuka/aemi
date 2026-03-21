@@ -15,18 +15,20 @@ import { formatDate } from "@/lib/utils/date"
 import { ScheduleStatusSelect } from "@/components/admin/schedule-status-select"
 import { MonthNav } from "@/components/admin/month-nav"
 import { NewScheduleDialog } from "@/components/admin/new-schedule-dialog"
+import { ScheduleFilters } from "@/components/admin/schedule-filters"
 import { prisma } from "@/lib/db"
 
 export default async function SchedulePage({
   searchParams,
 }: {
-  searchParams: Promise<{ month?: string }>
+  searchParams: Promise<{ month?: string; talent?: string; job?: string }>
 }) {
-  const { month } = await searchParams
+  const { month, talent, job } = await searchParams
   const currentMonth =
     month ?? new Date().toISOString().slice(0, 7)
 
-  const schedules = await getSchedules(currentMonth)
+  const schedules = await getSchedules({ month: currentMonth, talent, job })
+  const hasFilters = !!(talent || job)
   const acceptedApplications = await prisma.application.findMany({
     where: {
       status: "ACCEPTED",
@@ -48,10 +50,12 @@ export default async function SchedulePage({
 
       <MonthNav currentMonth={currentMonth} />
 
+      <ScheduleFilters />
+
       <Card>
         <CardHeader>
           <CardTitle>
-            {currentMonth} のスケジュール（{schedules.length}件）
+            {currentMonth} のスケジュール（{schedules.length}件）{hasFilters && <span className="ml-2 text-sm font-normal text-muted-foreground">フィルタ中</span>}
           </CardTitle>
         </CardHeader>
         <CardContent className="overflow-x-auto">

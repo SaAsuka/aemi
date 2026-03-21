@@ -4,13 +4,34 @@ import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/db"
 import { scheduleSchema } from "@/lib/validations/schedule"
 
-export async function getSchedules(month?: string) {
+type ScheduleFilters = {
+  month?: string
+  talent?: string
+  job?: string
+}
+
+export async function getSchedules(filters: ScheduleFilters = {}) {
   const where: Record<string, unknown> = {}
 
-  if (month) {
-    const start = new Date(`${month}-01`)
+  if (filters.month) {
+    const start = new Date(`${filters.month}-01`)
     const end = new Date(start.getFullYear(), start.getMonth() + 1, 0, 23, 59, 59)
     where.date = { gte: start, lte: end }
+  }
+
+  if (filters.talent) {
+    where.application = {
+      ...((where.application as Record<string, unknown>) ?? {}),
+      talent: { name: { contains: filters.talent, mode: "insensitive" as const } },
+    }
+  }
+
+  if (filters.job) {
+    const existing = (where.application as Record<string, unknown>) ?? {}
+    where.application = {
+      ...existing,
+      job: { title: { contains: filters.job, mode: "insensitive" as const } },
+    }
   }
 
   return prisma.schedule.findMany({
