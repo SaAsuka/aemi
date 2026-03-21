@@ -9,11 +9,13 @@ import {
   Font,
 } from "@react-pdf/renderer"
 
+const FONT_BASE = "https://github.com/notofonts/noto-cjk/raw/main/Sans/SubsetOTF/JP"
+
 Font.register({
   family: "NotoSansJP",
   fonts: [
-    { src: "https://fonts.gstatic.com/s/notosansjp/v53/8xJ_pC1EinGcSv41Nh-xTg.ttf", fontWeight: 400 },
-    { src: "https://fonts.gstatic.com/s/notosansjp/v53/8xJ_pC1EinGcSv41Nh-xTg.ttf", fontWeight: 700 },
+    { src: `${FONT_BASE}/NotoSansJP-Regular.otf`, fontWeight: 400 },
+    { src: `${FONT_BASE}/NotoSansJP-Bold.otf`, fontWeight: 700 },
   ],
 })
 
