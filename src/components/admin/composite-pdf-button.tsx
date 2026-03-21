@@ -6,7 +6,14 @@ import { saveResumeUrl } from "@/lib/actions/talent"
 import { Button } from "@/components/ui/button"
 import { FileText, RefreshCw, ExternalLink, Loader2 } from "lucide-react"
 
-async function generateAndUpload(talentId: string): Promise<{ pdfUrl: string; blobUrl?: string }> {
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
+  ])
+}
+
+async function generatePdf(talentId: string): Promise<string> {
   const res = await fetch(`/api/talents/${talentId}/composite`)
   if (!res.ok) {
     let detail = `HTTP ${res.status}`
@@ -25,17 +32,17 @@ async function generateAndUpload(talentId: string): Promise<{ pdfUrl: string; bl
   const pdfBlob = await res.blob()
   const pdfUrl = URL.createObjectURL(pdfBlob)
 
-  // Blobアップロード（失敗してもPDFは表示できる）
+  // Blobアップロード（10秒タイムアウト、失敗してもPDFは表示する）
   try {
     const file = new File([pdfBlob], `${talentId}_composite.pdf`, { type: "application/pdf" })
-    const uploaded = await upload(file.name, file, {
-      access: "public",
-      handleUploadUrl: "/api/upload",
-    })
+    const uploaded = await withTimeout(
+      upload(file.name, file, { access: "public", handleUploadUrl: "/api/upload" }),
+      10000,
+    )
     await saveResumeUrl(talentId, uploaded.url)
-    return { pdfUrl, blobUrl: uploaded.url }
+    return uploaded.url
   } catch {
-    return { pdfUrl }
+    return pdfUrl
   }
 }
 
@@ -45,8 +52,8 @@ export function CompositePdfButton({ talentId, resumeUrl }: { talentId: string; 
   const generate = async () => {
     setGenerating(true)
     try {
-      const { pdfUrl, blobUrl } = await generateAndUpload(talentId)
-      window.open(blobUrl || pdfUrl, "_blank")
+      const url = await generatePdf(talentId)
+      window.open(url, "_blank")
       window.location.reload()
     } catch (e) {
       alert(e instanceof Error ? e.message : "エラーが発生しました")
@@ -87,8 +94,8 @@ export function CompositePdfIconButton({ talentId }: { talentId: string }) {
     e.stopPropagation()
     setGenerating(true)
     try {
-      const { pdfUrl, blobUrl } = await generateAndUpload(talentId)
-      window.open(blobUrl || pdfUrl, "_blank")
+      const url = await generatePdf(talentId)
+      window.open(url, "_blank")
       window.location.reload()
     } catch (err) {
       alert(err instanceof Error ? err.message : "エラーが発生しました")

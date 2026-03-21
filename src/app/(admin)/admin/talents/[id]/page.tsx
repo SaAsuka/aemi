@@ -18,6 +18,8 @@ import { TalentPhotos } from "@/components/admin/talent-photos"
 import { TalentWorks } from "@/components/admin/talent-works"
 import { APPLICATION_STATUS_LABELS } from "@/types"
 import { formatDate, calcAge } from "@/lib/utils/date"
+import { Button } from "@/components/ui/button"
+import { ArrowLeft } from "lucide-react"
 
 export default async function TalentDetailPage({
   params,
@@ -32,7 +34,14 @@ export default async function TalentDetailPage({
   return (
     <div className="max-w-4xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl sm:text-2xl font-bold">{talent.name}</h1>
+        <div className="flex items-center gap-3">
+          <Link href="/admin/talents">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-5 w-5" />
+            </Button>
+          </Link>
+          <h1 className="text-xl sm:text-2xl font-bold">{talent.name}</h1>
+        </div>
         <div className="flex items-center gap-2">
           <CompositePdfButton talentId={talent.id} resumeUrl={talent.resume} />
           <DeleteButton id={talent.id} type="talent" />
