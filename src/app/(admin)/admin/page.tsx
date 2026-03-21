@@ -3,13 +3,10 @@ import { prisma } from "@/lib/db"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 export default async function AdminDashboard() {
-  const [talentCount, clientCount, jobCount, applicationCount] =
-    await Promise.all([
-      prisma.talent.count(),
-      prisma.client.count(),
-      prisma.job.count(),
-      prisma.application.count(),
-    ])
+  const talentCount = await prisma.talent.count()
+  const clientCount = await prisma.client.count()
+  const jobCount = await prisma.job.count()
+  const applicationCount = await prisma.application.count()
 
   const recentApplications = await prisma.application.findMany({
     take: 5,

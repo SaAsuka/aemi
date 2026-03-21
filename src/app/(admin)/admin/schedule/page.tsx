@@ -26,20 +26,18 @@ export default async function SchedulePage({
   const currentMonth =
     month ?? new Date().toISOString().slice(0, 7)
 
-  const [schedules, acceptedApplications] = await Promise.all([
-    getSchedules(currentMonth),
-    prisma.application.findMany({
-      where: {
-        status: "ACCEPTED",
-        schedule: null,
-      },
-      include: {
-        talent: true,
-        job: true,
-      },
-      orderBy: { appliedAt: "desc" },
-    }),
-  ])
+  const schedules = await getSchedules(currentMonth)
+  const acceptedApplications = await prisma.application.findMany({
+    where: {
+      status: "ACCEPTED",
+      schedule: null,
+    },
+    include: {
+      talent: true,
+      job: true,
+    },
+    orderBy: { appliedAt: "desc" },
+  })
 
   return (
     <div className="space-y-6">
