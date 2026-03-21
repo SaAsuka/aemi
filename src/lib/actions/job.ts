@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
 import { jobSchema } from "@/lib/validations/job"
 
@@ -77,6 +77,7 @@ export async function createJob(formData: FormData) {
   })
 
   revalidatePath("/admin/jobs")
+  updateTag("jobs")
   return { success: true }
 }
 
@@ -113,11 +114,13 @@ export async function updateJob(id: string, formData: FormData) {
 
   revalidatePath("/admin/jobs")
   revalidatePath(`/admin/jobs/${id}`)
+  updateTag("jobs")
   return { success: true }
 }
 
 export async function deleteJob(id: string) {
   await prisma.job.delete({ where: { id } })
   revalidatePath("/admin/jobs")
+  updateTag("jobs")
   return { success: true }
 }

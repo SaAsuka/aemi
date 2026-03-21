@@ -1,10 +1,36 @@
+import { Suspense } from "react"
 import { getSchedules } from "@/lib/actions/schedule"
+import { getTalentFilterOptions, getJobFilterOptions } from "@/lib/queries"
 import { MonthNav } from "@/components/admin/month-nav"
 import { NewScheduleDialog } from "@/components/admin/new-schedule-dialog"
 import { ScheduleFilters } from "@/components/admin/schedule-filters"
 import { ScheduleCalendar } from "@/components/admin/schedule-calendar"
 import { prisma } from "@/lib/db"
+import { Button } from "@/components/ui/button"
 import type { ScheduleItem } from "@/lib/utils/schedule"
+
+async function ScheduleFiltersData() {
+  const [talentOptions, jobOptions] = await Promise.all([
+    getTalentFilterOptions(),
+    getJobFilterOptions(),
+  ])
+  return <ScheduleFilters talentOptions={talentOptions} jobOptions={jobOptions} />
+}
+
+async function ScheduleDialogData() {
+  const acceptedApplications = await prisma.application.findMany({
+    where: {
+      status: "ACCEPTED",
+      schedule: null,
+    },
+    include: {
+      talent: true,
+      job: true,
+    },
+    orderBy: { appliedAt: "desc" },
+  })
+  return <NewScheduleDialog applications={acceptedApplications} />
+}
 
 export default async function SchedulePage({
   searchParams,
@@ -15,31 +41,7 @@ export default async function SchedulePage({
   const currentMonth = month ?? new Date().toISOString().slice(0, 7)
   const hasFilters = !!(talent || job)
 
-  const [schedules, acceptedApplications, filterTalents, filterJobs] = await Promise.all([
-    getSchedules({ month: currentMonth, talent, job }),
-    prisma.application.findMany({
-      where: {
-        status: "ACCEPTED",
-        schedule: null,
-      },
-      include: {
-        talent: true,
-        job: true,
-      },
-      orderBy: { appliedAt: "desc" },
-    }),
-    prisma.talent.findMany({
-      select: { name: true },
-      orderBy: { name: "asc" },
-    }),
-    prisma.job.findMany({
-      select: { title: true },
-      orderBy: { title: "asc" },
-    }),
-  ])
-
-  const talentOptions = filterTalents.map((t) => ({ value: t.name, label: t.name }))
-  const jobOptions = filterJobs.map((j) => ({ value: j.title, label: j.title }))
+  const schedules = await getSchedules({ month: currentMonth, talent, job })
 
   const items: ScheduleItem[] = schedules.map((s) => ({
     id: s.id,
@@ -58,12 +60,16 @@ export default async function SchedulePage({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl sm:text-2xl font-bold">スケジュール管理</h1>
-        <NewScheduleDialog applications={acceptedApplications} />
+        <Suspense fallback={<Button variant="outline" size="sm" disabled>新規登録</Button>}>
+          <ScheduleDialogData />
+        </Suspense>
       </div>
 
       <MonthNav currentMonth={currentMonth} />
 
-      <ScheduleFilters talentOptions={talentOptions} jobOptions={jobOptions} />
+      <Suspense fallback={<div className="h-10 animate-pulse rounded bg-muted" />}>
+        <ScheduleFiltersData />
+      </Suspense>
 
       <ScheduleCalendar
         schedules={items}

@@ -1,5 +1,7 @@
+import { Suspense } from "react"
 import Link from "next/link"
 import { getApplications } from "@/lib/actions/application"
+import { getActiveTalentOptions, getOpenJobOptions } from "@/lib/queries"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -15,7 +17,15 @@ import { StatusFilter } from "@/components/admin/status-filter"
 import { formatDate } from "@/lib/utils/date"
 import { ApplicationStatusSelect } from "@/components/admin/application-status-select"
 import { NewApplicationDialog } from "@/components/admin/new-application-dialog"
-import { prisma } from "@/lib/db"
+import { Button } from "@/components/ui/button"
+
+async function ApplicationDialogData() {
+  const [talents, jobs] = await Promise.all([
+    getActiveTalentOptions(),
+    getOpenJobOptions(),
+  ])
+  return <NewApplicationDialog talents={talents} jobs={jobs} />
+}
 
 export default async function ApplicationsPage({
   searchParams,
@@ -23,25 +33,15 @@ export default async function ApplicationsPage({
   searchParams: Promise<{ status?: string }>
 }) {
   const { status } = await searchParams
-  const [applications, talents, jobs] = await Promise.all([
-    getApplications(status),
-    prisma.talent.findMany({
-      where: { status: "ACTIVE" },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, nameKana: true },
-    }),
-    prisma.job.findMany({
-      where: { status: "OPEN" },
-      orderBy: { title: "asc" },
-      select: { id: true, title: true },
-    }),
-  ])
+  const applications = await getApplications(status)
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl sm:text-2xl font-bold">応募管理</h1>
-        <NewApplicationDialog talents={talents} jobs={jobs} />
+        <Suspense fallback={<Button variant="outline" size="sm" disabled>新規応募</Button>}>
+          <ApplicationDialogData />
+        </Suspense>
       </div>
 
       <StatusFilter

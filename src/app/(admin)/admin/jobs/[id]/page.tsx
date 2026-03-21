@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { getJob } from "@/lib/actions/job"
-import { prisma } from "@/lib/db"
+import { getClientOptions } from "@/lib/queries"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -26,10 +26,7 @@ export default async function JobDetailPage({
   const { id } = await params
   const [job, clients] = await Promise.all([
     getJob(id),
-    prisma.client.findMany({
-      orderBy: { companyName: "asc" },
-      select: { id: true, companyName: true },
-    }),
+    getClientOptions(),
   ])
 
   if (!job) notFound()

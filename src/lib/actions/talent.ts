@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
 import { talentSchema } from "@/lib/validations/talent"
 
@@ -117,6 +117,7 @@ export async function createTalent(formData: FormData) {
   })
 
   revalidatePath("/admin/talents")
+  updateTag("talents")
   return { success: true }
 }
 
@@ -156,11 +157,13 @@ export async function updateTalent(id: string, formData: FormData) {
 
   revalidatePath("/admin/talents")
   revalidatePath(`/admin/talents/${id}`)
+  updateTag("talents")
   return { success: true }
 }
 
 export async function deleteTalent(id: string) {
   await prisma.talent.delete({ where: { id } })
   revalidatePath("/admin/talents")
+  updateTag("talents")
   return { success: true }
 }

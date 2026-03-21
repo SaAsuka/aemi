@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
 import { applicationSchema } from "@/lib/validations/application"
 
@@ -71,6 +71,8 @@ export async function createApplication(formData: FormData) {
   })
 
   revalidatePath("/admin/applications")
+  updateTag("talents")
+  updateTag("jobs")
   return { success: true }
 }
 
@@ -91,11 +93,15 @@ export async function updateApplicationStatus(id: string, status: string) {
   })
 
   revalidatePath("/admin/applications")
+  updateTag("talents")
+  updateTag("jobs")
   return { success: true }
 }
 
 export async function deleteApplication(id: string) {
   await prisma.application.delete({ where: { id } })
   revalidatePath("/admin/applications")
+  updateTag("talents")
+  updateTag("jobs")
   return { success: true }
 }

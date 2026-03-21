@@ -1,6 +1,6 @@
 "use server"
 
-import { revalidatePath } from "next/cache"
+import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
 import { clientSchema } from "@/lib/validations/client"
 
@@ -66,6 +66,7 @@ export async function createClient(formData: FormData) {
   })
 
   revalidatePath("/admin/clients")
+  updateTag("clients")
   return { success: true }
 }
 
@@ -92,11 +93,13 @@ export async function updateClient(id: string, formData: FormData) {
 
   revalidatePath("/admin/clients")
   revalidatePath(`/admin/clients/${id}`)
+  updateTag("clients")
   return { success: true }
 }
 
 export async function deleteClient(id: string) {
   await prisma.client.delete({ where: { id } })
   revalidatePath("/admin/clients")
+  updateTag("clients")
   return { success: true }
 }
