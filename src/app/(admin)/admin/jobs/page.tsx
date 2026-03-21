@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { getJobs } from "@/lib/actions/job"
-import { buttonVariants } from "@/components/ui/button"
+import { LinkButton } from "@/components/admin/link-button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -28,7 +28,7 @@ export default async function JobsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">案件管理</h1>
-        <Link href="/admin/jobs/new" className={buttonVariants()}>新規作成</Link>
+        <LinkButton href="/admin/jobs/new">新規作成</LinkButton>
       </div>
 
       <div className="flex gap-4">

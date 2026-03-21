@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { getTalents } from "@/lib/actions/talent"
-import { buttonVariants } from "@/components/ui/button"
+import { LinkButton } from "@/components/admin/link-button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -27,7 +27,7 @@ export default async function TalentsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">タレント管理</h1>
-        <Link href="/admin/talents/new" className={buttonVariants()}>新規登録</Link>
+        <LinkButton href="/admin/talents/new">新規登録</LinkButton>
       </div>
 
       <SearchForm placeholder="名前・フリガナ・メールで検索" defaultValue={q} />

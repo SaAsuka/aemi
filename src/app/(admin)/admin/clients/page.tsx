@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { getClients } from "@/lib/actions/client"
-import { buttonVariants } from "@/components/ui/button"
+import { LinkButton } from "@/components/admin/link-button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -24,7 +24,7 @@ export default async function ClientsPage({
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">クライアント管理</h1>
-        <Link href="/admin/clients/new" className={buttonVariants()}>新規登録</Link>
+        <LinkButton href="/admin/clients/new">新規登録</LinkButton>
       </div>
 
       <SearchForm placeholder="会社名・担当者名で検索" defaultValue={q} />
