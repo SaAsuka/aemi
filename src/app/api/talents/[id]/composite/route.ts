@@ -23,21 +23,27 @@ export async function GET(
     return NextResponse.json({ error: "タレントが見つかりません" }, { status: 404 })
   }
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const buffer = await renderToBuffer(React.createElement(CompositePDF, { talent }) as any)
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const buffer = await renderToBuffer(React.createElement(CompositePDF, { talent }) as any)
 
-  const fileName = `composites/${talent.id}/${Date.now()}.pdf`
-  const blob = await put(fileName, buffer, { access: "public", contentType: "application/pdf" })
+    const fileName = `composites/${talent.id}/${Date.now()}.pdf`
+    const blob = await put(fileName, buffer, { access: "public", contentType: "application/pdf" })
 
-  await prisma.talent.update({
-    where: { id },
-    data: { resume: blob.url },
-  })
+    await prisma.talent.update({
+      where: { id },
+      data: { resume: blob.url },
+    })
 
-  return new NextResponse(new Uint8Array(buffer), {
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Disposition": `inline; filename="${encodeURIComponent(talent.name)}_composite.pdf"`,
-    },
-  })
+    return new NextResponse(new Uint8Array(buffer), {
+      headers: {
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `inline; filename="${encodeURIComponent(talent.name)}_composite.pdf"`,
+      },
+    })
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "不明なエラー"
+    console.error("PDF生成エラー:", e)
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }

@@ -15,6 +15,7 @@ import { TALENT_STATUS_LABELS } from "@/types"
 import { SearchForm } from "@/components/admin/search-form"
 import { TalentFilters } from "@/components/admin/talent-filters"
 import { JobLinkCopyButton } from "@/components/admin/job-link-copy-button"
+import { CompositePdfIconButton } from "@/components/admin/composite-pdf-button"
 
 type TalentSearchParams = {
   q?: string
@@ -79,13 +80,14 @@ export default async function TalentsPage({
                 <TableHead>名前</TableHead>
                 <TableHead className="hidden sm:table-cell">フリガナ</TableHead>
                 <TableHead>ステータス</TableHead>
+                <TableHead>コンポジ</TableHead>
                 <TableHead>案件リンク</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {talents.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
                     データがありません
                   </TableCell>
                 </TableRow>
@@ -107,6 +109,9 @@ export default async function TalentsPage({
                         status={talent.status}
                         label={TALENT_STATUS_LABELS[talent.status]}
                       />
+                    </TableCell>
+                    <TableCell>
+                      <CompositePdfIconButton talentId={talent.id} />
                     </TableCell>
                     <TableCell>
                       {talent.accessToken && (
