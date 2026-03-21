@@ -53,6 +53,7 @@ model Talent {
   id           String       @id @default(cuid())
   name         String
   nameKana     String
+  nameRomaji   String?
   email        String?
   phone        String?
   gender       Gender?
@@ -64,11 +65,25 @@ model Talent {
   shoeSize     Float?
   skills       String?
   hobbies      String?
+  qualifications String?
   career       String?      @db.Text
+  category     String?
+  birthplace   String?
+  address      String?
+  representativeWork String? @db.Text
   lineUserId   String?
   profileImage String?
   resume         String?
   nearestStation String?
+  instagramUrl   String?
+  xUrl           String?
+  tiktokUrl      String?
+  websiteUrl     String?
+  bankName       String?
+  bankBranch     String?
+  bankAccountType  String?
+  bankAccountNumber String?
+  bankAccountHolder String?
   accessToken    String?      @unique @default(cuid())
   status         TalentStatus @default(ACTIVE)
   note           String?
@@ -76,8 +91,35 @@ model Talent {
   updatedAt    DateTime     @updatedAt
 
   applications Application[]
+  photos       TalentPhoto[]
+  works        TalentWork[]
 
   @@map("talents")
+}
+
+model TalentPhoto {
+  id        String   @id @default(cuid())
+  talentId  String
+  talent    Talent   @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  url       String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([talentId])
+  @@map("talent_photos")
+}
+
+model TalentWork {
+  id        String   @id @default(cuid())
+  talentId  String
+  talent    Talent   @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  imageUrl  String
+  caption   String
+  sortOrder Int      @default(0)
+  createdAt DateTime @default(now())
+
+  @@index([talentId])
+  @@map("talent_works")
 }
 
 model Client {

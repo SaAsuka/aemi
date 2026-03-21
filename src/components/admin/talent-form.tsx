@@ -169,6 +169,57 @@ export function TalentForm({ talent }: { talent?: Talent }) {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="nameRomaji">ローマ字名</Label>
+          <Input
+            id="nameRomaji"
+            name="nameRomaji"
+            defaultValue={talent?.nameRomaji ?? ""}
+            placeholder="例: Taro Yamada"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="category">芸能カテゴリ</Label>
+          <Input
+            id="category"
+            name="category"
+            defaultValue={talent?.category ?? ""}
+            placeholder="例: 俳優、モデル、声優"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="qualifications">資格</Label>
+          <Input
+            id="qualifications"
+            name="qualifications"
+            defaultValue={talent?.qualifications ?? ""}
+            placeholder="例: 普通自動車免許、英検2級"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="birthplace">出身地</Label>
+          <Input
+            id="birthplace"
+            name="birthplace"
+            defaultValue={talent?.birthplace ?? ""}
+            placeholder="例: 東京都"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="address">現住所</Label>
+        <Input
+          id="address"
+          name="address"
+          defaultValue={talent?.address ?? ""}
+        />
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="career">経歴</Label>
         <Textarea
@@ -178,6 +229,57 @@ export function TalentForm({ talent }: { talent?: Talent }) {
           defaultValue={talent?.career ?? ""}
           placeholder="出演歴・受賞歴など"
         />
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="representativeWork">代表作</Label>
+        <Textarea
+          id="representativeWork"
+          name="representativeWork"
+          rows={3}
+          defaultValue={talent?.representativeWork ?? ""}
+          placeholder="代表的な出演作品"
+        />
+      </div>
+
+      <h3 className="text-sm font-semibold text-muted-foreground pt-2">SNS情報</h3>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="instagramUrl">Instagram URL</Label>
+          <Input
+            id="instagramUrl"
+            name="instagramUrl"
+            defaultValue={talent?.instagramUrl ?? ""}
+            placeholder="https://instagram.com/..."
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="xUrl">X (Twitter) URL</Label>
+          <Input
+            id="xUrl"
+            name="xUrl"
+            defaultValue={talent?.xUrl ?? ""}
+            placeholder="https://x.com/..."
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="tiktokUrl">TikTok URL</Label>
+          <Input
+            id="tiktokUrl"
+            name="tiktokUrl"
+            defaultValue={talent?.tiktokUrl ?? ""}
+            placeholder="https://tiktok.com/..."
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="websiteUrl">公式HP等</Label>
+          <Input
+            id="websiteUrl"
+            name="websiteUrl"
+            defaultValue={talent?.websiteUrl ?? ""}
+            placeholder="https://..."
+          />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
@@ -210,6 +312,54 @@ export function TalentForm({ talent }: { talent?: Talent }) {
               <SelectItem value="WITHDRAWN">退会</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+      </div>
+
+      <h3 className="text-sm font-semibold text-muted-foreground pt-2">振込先情報</h3>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
+        <div className="space-y-2">
+          <Label htmlFor="bankName">銀行名</Label>
+          <Input
+            id="bankName"
+            name="bankName"
+            defaultValue={talent?.bankName ?? ""}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="bankBranch">支店名</Label>
+          <Input
+            id="bankBranch"
+            name="bankBranch"
+            defaultValue={talent?.bankBranch ?? ""}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="bankAccountType">種別</Label>
+          <Select name="bankAccountType" defaultValue={talent?.bankAccountType ?? ""}>
+            <SelectTrigger>
+              <SelectValue placeholder="選択" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="普通">普通</SelectItem>
+              <SelectItem value="当座">当座</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="bankAccountNumber">口座番号</Label>
+          <Input
+            id="bankAccountNumber"
+            name="bankAccountNumber"
+            defaultValue={talent?.bankAccountNumber ?? ""}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="bankAccountHolder">口座名義</Label>
+          <Input
+            id="bankAccountHolder"
+            name="bankAccountHolder"
+            defaultValue={talent?.bankAccountHolder ?? ""}
+          />
         </div>
       </div>
 

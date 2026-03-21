@@ -13,6 +13,9 @@ import {
 import { TalentForm } from "@/components/admin/talent-form"
 import { DeleteButton } from "@/components/admin/delete-button"
 import { StatusBadge } from "@/components/admin/status-badge"
+import { CompositePdfButton } from "@/components/admin/composite-pdf-button"
+import { TalentPhotos } from "@/components/admin/talent-photos"
+import { TalentWorks } from "@/components/admin/talent-works"
 import { APPLICATION_STATUS_LABELS } from "@/types"
 import { formatDate, calcAge } from "@/lib/utils/date"
 
@@ -30,7 +33,10 @@ export default async function TalentDetailPage({
     <div className="max-w-4xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl sm:text-2xl font-bold">{talent.name}</h1>
-        <DeleteButton id={talent.id} type="talent" />
+        <div className="flex items-center gap-2">
+          <CompositePdfButton talentId={talent.id} resumeUrl={talent.resume} />
+          <DeleteButton id={talent.id} type="talent" />
+        </div>
       </div>
 
       <Card>
@@ -43,6 +49,12 @@ export default async function TalentDetailPage({
               <dt className="text-muted-foreground">フリガナ</dt>
               <dd className="font-medium">{talent.nameKana}</dd>
             </div>
+            {talent.nameRomaji && (
+              <div>
+                <dt className="text-muted-foreground">ローマ字</dt>
+                <dd className="font-medium">{talent.nameRomaji}</dd>
+              </div>
+            )}
             {talent.gender && (
               <div>
                 <dt className="text-muted-foreground">性別</dt>
@@ -75,6 +87,18 @@ export default async function TalentDetailPage({
                 <dd className="font-medium">{talent.shoeSize}cm</dd>
               </div>
             )}
+            {talent.category && (
+              <div>
+                <dt className="text-muted-foreground">カテゴリ</dt>
+                <dd className="font-medium">{talent.category}</dd>
+              </div>
+            )}
+            {talent.birthplace && (
+              <div>
+                <dt className="text-muted-foreground">出身地</dt>
+                <dd className="font-medium">{talent.birthplace}</dd>
+              </div>
+            )}
             {talent.skills && (
               <div className="col-span-2">
                 <dt className="text-muted-foreground">特技</dt>
@@ -87,6 +111,12 @@ export default async function TalentDetailPage({
                 <dd className="font-medium">{talent.hobbies}</dd>
               </div>
             )}
+            {talent.qualifications && (
+              <div className="col-span-2">
+                <dt className="text-muted-foreground">資格</dt>
+                <dd className="font-medium">{talent.qualifications}</dd>
+              </div>
+            )}
           </dl>
           {talent.career && (
             <div className="mt-4 text-sm">
@@ -94,6 +124,38 @@ export default async function TalentDetailPage({
               <p className="whitespace-pre-wrap">{talent.career}</p>
             </div>
           )}
+          {talent.representativeWork && (
+            <div className="mt-4 text-sm">
+              <p className="text-muted-foreground mb-1">代表作</p>
+              <p className="whitespace-pre-wrap">{talent.representativeWork}</p>
+            </div>
+          )}
+          {(talent.instagramUrl || talent.xUrl || talent.tiktokUrl || talent.websiteUrl) && (
+            <div className="mt-4 flex flex-wrap gap-3 text-sm">
+              {talent.instagramUrl && <a href={talent.instagramUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Instagram</a>}
+              {talent.xUrl && <a href={talent.xUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">X</a>}
+              {talent.tiktokUrl && <a href={talent.tiktokUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">TikTok</a>}
+              {talent.websiteUrl && <a href={talent.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">公式HP</a>}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>宣材写真（{talent.photos.length}枚）</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TalentPhotos talentId={talent.id} photos={talent.photos} />
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>過去出演写真（{talent.works.length}件）</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <TalentWorks talentId={talent.id} works={talent.works} />
         </CardContent>
       </Card>
 
