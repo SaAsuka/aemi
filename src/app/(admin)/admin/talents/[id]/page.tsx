@@ -2,7 +2,6 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { getTalent } from "@/lib/actions/talent"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import {
   Table,
   TableBody,
@@ -15,7 +14,7 @@ import { TalentForm } from "@/components/admin/talent-form"
 import { DeleteButton } from "@/components/admin/delete-button"
 import { StatusBadge } from "@/components/admin/status-badge"
 import { APPLICATION_STATUS_LABELS } from "@/types"
-import { formatDate } from "@/lib/utils/date"
+import { formatDate, calcAge } from "@/lib/utils/date"
 
 export default async function TalentDetailPage({
   params,
@@ -36,7 +35,71 @@ export default async function TalentDetailPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>基本情報</CardTitle>
+          <CardTitle>プロフィール</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-3 md:grid-cols-4">
+            <div>
+              <dt className="text-muted-foreground">フリガナ</dt>
+              <dd className="font-medium">{talent.nameKana}</dd>
+            </div>
+            {talent.gender && (
+              <div>
+                <dt className="text-muted-foreground">性別</dt>
+                <dd className="font-medium">{talent.gender === "MALE" ? "男性" : talent.gender === "FEMALE" ? "女性" : "その他"}</dd>
+              </div>
+            )}
+            {talent.birthDate && (
+              <div>
+                <dt className="text-muted-foreground">年齢</dt>
+                <dd className="font-medium">{calcAge(talent.birthDate)}歳</dd>
+              </div>
+            )}
+            {talent.height && (
+              <div>
+                <dt className="text-muted-foreground">身長</dt>
+                <dd className="font-medium">{talent.height}cm</dd>
+              </div>
+            )}
+            {(talent.bust || talent.waist || talent.hip) && (
+              <div>
+                <dt className="text-muted-foreground">B/W/H</dt>
+                <dd className="font-medium">
+                  {talent.bust ?? "−"}/{talent.waist ?? "−"}/{talent.hip ?? "−"}
+                </dd>
+              </div>
+            )}
+            {talent.shoeSize && (
+              <div>
+                <dt className="text-muted-foreground">靴サイズ</dt>
+                <dd className="font-medium">{talent.shoeSize}cm</dd>
+              </div>
+            )}
+            {talent.skills && (
+              <div className="col-span-2">
+                <dt className="text-muted-foreground">特技</dt>
+                <dd className="font-medium">{talent.skills}</dd>
+              </div>
+            )}
+            {talent.hobbies && (
+              <div className="col-span-2">
+                <dt className="text-muted-foreground">趣味</dt>
+                <dd className="font-medium">{talent.hobbies}</dd>
+              </div>
+            )}
+          </dl>
+          {talent.career && (
+            <div className="mt-4 text-sm">
+              <p className="text-muted-foreground mb-1">経歴</p>
+              <p className="whitespace-pre-wrap">{talent.career}</p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>基本情報 編集</CardTitle>
         </CardHeader>
         <CardContent>
           <TalentForm talent={talent} />
@@ -47,7 +110,7 @@ export default async function TalentDetailPage({
         <CardHeader>
           <CardTitle>応募履歴（{talent.applications.length}件）</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

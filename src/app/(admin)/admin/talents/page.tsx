@@ -36,22 +36,24 @@ export default async function TalentsPage({
         <CardHeader>
           <CardTitle>タレント一覧（{talents.length}件）</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>名前</TableHead>
-                <TableHead>フリガナ</TableHead>
+                <TableHead className="hidden sm:table-cell">フリガナ</TableHead>
                 <TableHead>性別</TableHead>
                 <TableHead>年齢</TableHead>
                 <TableHead>身長</TableHead>
+                <TableHead className="hidden md:table-cell">B/W/H</TableHead>
+                <TableHead className="hidden md:table-cell">靴</TableHead>
                 <TableHead>ステータス</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {talents.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground">
                     データがありません
                   </TableCell>
                 </TableRow>
@@ -66,7 +68,7 @@ export default async function TalentsPage({
                         {talent.name}
                       </Link>
                     </TableCell>
-                    <TableCell>{talent.nameKana}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{talent.nameKana}</TableCell>
                     <TableCell>
                       {talent.gender ? GENDER_LABELS[talent.gender] : "−"}
                     </TableCell>
@@ -75,6 +77,14 @@ export default async function TalentsPage({
                     </TableCell>
                     <TableCell>
                       {talent.height ? `${talent.height}cm` : "−"}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {talent.bust || talent.waist || talent.hip
+                        ? `${talent.bust ?? "−"}/${talent.waist ?? "−"}/${talent.hip ?? "−"}`
+                        : "−"}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {talent.shoeSize ? `${talent.shoeSize}cm` : "−"}
                     </TableCell>
                     <TableCell>
                       <StatusBadge

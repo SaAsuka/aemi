@@ -56,15 +56,15 @@ export default async function SchedulePage({
             {currentMonth} のスケジュール（{schedules.length}件）
           </CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>日付</TableHead>
-                <TableHead>時間</TableHead>
+                <TableHead className="hidden sm:table-cell">時間</TableHead>
                 <TableHead>タレント</TableHead>
-                <TableHead>案件</TableHead>
-                <TableHead>場所</TableHead>
+                <TableHead className="hidden sm:table-cell">案件</TableHead>
+                <TableHead className="hidden md:table-cell">場所</TableHead>
                 <TableHead>ステータス</TableHead>
                 <TableHead>操作</TableHead>
               </TableRow>
@@ -80,7 +80,7 @@ export default async function SchedulePage({
                 schedules.map((schedule) => (
                   <TableRow key={schedule.id}>
                     <TableCell>{formatDate(schedule.date)}</TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       {schedule.startTime && schedule.endTime
                         ? `${schedule.startTime}〜${schedule.endTime}`
                         : schedule.startTime ?? "−"}
@@ -93,7 +93,7 @@ export default async function SchedulePage({
                         {schedule.application.talent.name}
                       </Link>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       <Link
                         href={`/admin/jobs/${schedule.application.job.id}`}
                         className="hover:underline"
@@ -101,7 +101,7 @@ export default async function SchedulePage({
                         {schedule.application.job.title}
                       </Link>
                     </TableCell>
-                    <TableCell>{schedule.location ?? "−"}</TableCell>
+                    <TableCell className="hidden md:table-cell">{schedule.location ?? "−"}</TableCell>
                     <TableCell>
                       <StatusBadge
                         status={schedule.status}

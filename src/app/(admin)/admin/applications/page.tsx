@@ -14,7 +14,6 @@ import { APPLICATION_STATUS_LABELS } from "@/types"
 import { StatusFilter } from "@/components/admin/status-filter"
 import { formatDate } from "@/lib/utils/date"
 import { ApplicationStatusSelect } from "@/components/admin/application-status-select"
-import { Button } from "@/components/ui/button"
 import { NewApplicationDialog } from "@/components/admin/new-application-dialog"
 import { prisma } from "@/lib/db"
 
@@ -62,15 +61,15 @@ export default async function ApplicationsPage({
         <CardHeader>
           <CardTitle>応募一覧（{applications.length}件）</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>タレント</TableHead>
                 <TableHead>案件</TableHead>
-                <TableHead>クライアント</TableHead>
+                <TableHead className="hidden sm:table-cell">クライアント</TableHead>
                 <TableHead>ステータス</TableHead>
-                <TableHead>応募日</TableHead>
+                <TableHead className="hidden sm:table-cell">応募日</TableHead>
                 <TableHead>操作</TableHead>
               </TableRow>
             </TableHeader>
@@ -100,14 +99,14 @@ export default async function ApplicationsPage({
                         {app.job.title}
                       </Link>
                     </TableCell>
-                    <TableCell>{app.job.client.companyName}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{app.job.client.companyName}</TableCell>
                     <TableCell>
                       <StatusBadge
                         status={app.status}
                         label={APPLICATION_STATUS_LABELS[app.status]}
                       />
                     </TableCell>
-                    <TableCell>{formatDate(app.appliedAt)}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{formatDate(app.appliedAt)}</TableCell>
                     <TableCell>
                       <ApplicationStatusSelect
                         applicationId={app.id}

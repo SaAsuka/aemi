@@ -39,8 +39,8 @@ export function TalentForm({ talent }: { talent?: Talent }) {
   }, [state, talent, router])
 
   return (
-    <form action={action} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+    <form action={action} className="space-y-6">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="name">名前 *</Label>
           <Input id="name" name="name" defaultValue={talent?.name ?? ""} required />
@@ -59,7 +59,7 @@ export function TalentForm({ talent }: { talent?: Talent }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="email">メールアドレス</Label>
           <Input id="email" name="email" type="email" defaultValue={talent?.email ?? ""} />
@@ -70,7 +70,7 @@ export function TalentForm({ talent }: { talent?: Talent }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <div className="space-y-2">
           <Label htmlFor="gender">性別</Label>
           <Select name="gender" defaultValue={talent?.gender ?? ""}>
@@ -108,7 +108,79 @@ export function TalentForm({ talent }: { talent?: Talent }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+        <div className="space-y-2">
+          <Label htmlFor="bust">バスト (cm)</Label>
+          <Input
+            id="bust"
+            name="bust"
+            type="number"
+            defaultValue={talent?.bust ?? ""}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="waist">ウエスト (cm)</Label>
+          <Input
+            id="waist"
+            name="waist"
+            type="number"
+            defaultValue={talent?.waist ?? ""}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="hip">ヒップ (cm)</Label>
+          <Input
+            id="hip"
+            name="hip"
+            type="number"
+            defaultValue={talent?.hip ?? ""}
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="shoeSize">靴サイズ (cm)</Label>
+          <Input
+            id="shoeSize"
+            name="shoeSize"
+            type="number"
+            step="0.5"
+            defaultValue={talent?.shoeSize ?? ""}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="skills">特技</Label>
+          <Input
+            id="skills"
+            name="skills"
+            defaultValue={talent?.skills ?? ""}
+            placeholder="例: インドネシア語、殺陣"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="hobbies">趣味</Label>
+          <Input
+            id="hobbies"
+            name="hobbies"
+            defaultValue={talent?.hobbies ?? ""}
+            placeholder="例: 釣り、料理、ゴルフ"
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="career">経歴</Label>
+        <Textarea
+          id="career"
+          name="career"
+          rows={6}
+          defaultValue={talent?.career ?? ""}
+          placeholder="出演歴・受賞歴など"
+        />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="lineUserId">LINE ユーザーID</Label>
           <Input

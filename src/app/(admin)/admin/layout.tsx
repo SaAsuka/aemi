@@ -21,7 +21,7 @@ export default function AdminLayout({
             aemi 管理
           </Link>
         </header>
-        <main className="p-6">{children}</main>
+        <main className="p-3 sm:p-6">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   )

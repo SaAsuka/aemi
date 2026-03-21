@@ -51,6 +51,13 @@ model Talent {
   gender       Gender?
   birthDate    DateTime?
   height       Int?
+  bust         Int?
+  waist        Int?
+  hip          Int?
+  shoeSize     Float?
+  skills       String?
+  hobbies      String?
+  career       String?      @db.Text
   lineUserId   String?
   profileImage String?
   resume       String?

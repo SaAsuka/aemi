@@ -31,7 +31,7 @@ export default async function JobsPage({
         <LinkButton href="/admin/jobs/new">新規作成</LinkButton>
       </div>
 
-      <div className="flex gap-4">
+      <div className="flex flex-col gap-4 sm:flex-row">
         <SearchForm placeholder="案件名・クライアント名で検索" defaultValue={q} />
         <StatusFilter
           options={[
@@ -49,14 +49,14 @@ export default async function JobsPage({
         <CardHeader>
           <CardTitle>案件一覧（{jobs.length}件）</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>案件名</TableHead>
-                <TableHead>クライアント</TableHead>
+                <TableHead className="hidden sm:table-cell">クライアント</TableHead>
                 <TableHead>報酬</TableHead>
-                <TableHead>締切</TableHead>
+                <TableHead className="hidden sm:table-cell">締切</TableHead>
                 <TableHead>応募数</TableHead>
                 <TableHead>ステータス</TableHead>
               </TableRow>
@@ -79,11 +79,11 @@ export default async function JobsPage({
                         {job.title}
                       </Link>
                     </TableCell>
-                    <TableCell>{job.client.companyName}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{job.client.companyName}</TableCell>
                     <TableCell>
                       {job.fee ? `¥${job.fee.toLocaleString()}` : "−"}
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="hidden sm:table-cell">
                       {job.deadline ? formatDate(job.deadline) : "−"}
                     </TableCell>
                     <TableCell>{job._count.applications}</TableCell>

@@ -33,14 +33,14 @@ export default async function ClientsPage({
         <CardHeader>
           <CardTitle>クライアント一覧（{clients.length}件）</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>会社名</TableHead>
-                <TableHead>担当者</TableHead>
-                <TableHead>メール</TableHead>
-                <TableHead>電話番号</TableHead>
+                <TableHead className="hidden sm:table-cell">担当者</TableHead>
+                <TableHead className="hidden md:table-cell">メール</TableHead>
+                <TableHead className="hidden md:table-cell">電話番号</TableHead>
                 <TableHead>案件数</TableHead>
               </TableRow>
             </TableHeader>
@@ -62,9 +62,9 @@ export default async function ClientsPage({
                         {client.companyName}
                       </Link>
                     </TableCell>
-                    <TableCell>{client.contactName ?? "−"}</TableCell>
-                    <TableCell>{client.contactEmail ?? "−"}</TableCell>
-                    <TableCell>{client.contactPhone ?? "−"}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{client.contactName ?? "−"}</TableCell>
+                    <TableCell className="hidden md:table-cell">{client.contactEmail ?? "−"}</TableCell>
+                    <TableCell className="hidden md:table-cell">{client.contactPhone ?? "−"}</TableCell>
                     <TableCell>{client._count.jobs}</TableCell>
                   </TableRow>
                 ))
