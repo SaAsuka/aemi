@@ -27,8 +27,8 @@ export default async function ClientDetailPage({
 
   return (
     <div className="max-w-4xl space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{client.companyName}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-xl sm:text-2xl font-bold">{client.companyName}</h1>
         <DeleteButton id={client.id} type="client" />
       </div>
 
@@ -45,7 +45,7 @@ export default async function ClientDetailPage({
         <CardHeader>
           <CardTitle>案件一覧（{client.jobs.length}件）</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

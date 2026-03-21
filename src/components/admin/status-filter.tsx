@@ -35,7 +35,7 @@ export function StatusFilter({
 
   return (
     <Select defaultValue={defaultValue ?? "ALL"} onValueChange={handleChange}>
-      <SelectTrigger className={`w-40 ${isPending ? "opacity-50" : ""}`}>
+      <SelectTrigger className={`w-full sm:w-40 ${isPending ? "opacity-50" : ""}`}>
         <SelectValue />
       </SelectTrigger>
       <SelectContent>

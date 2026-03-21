@@ -25,8 +25,8 @@ export default async function TalentsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">タレント管理</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-xl sm:text-2xl font-bold">タレント管理</h1>
         <LinkButton href="/admin/talents/new">新規登録</LinkButton>
       </div>
 
@@ -67,6 +67,7 @@ export default async function TalentsPage({
                       >
                         {talent.name}
                       </Link>
+                      <p className="text-xs text-muted-foreground sm:hidden">{talent.nameKana}</p>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{talent.nameKana}</TableCell>
                     <TableCell>

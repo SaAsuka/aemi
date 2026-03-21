@@ -39,8 +39,8 @@ export default async function ApplicationsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">応募管理</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-xl sm:text-2xl font-bold">応募管理</h1>
         <NewApplicationDialog talents={talents} jobs={jobs} />
       </div>
 
@@ -90,6 +90,9 @@ export default async function ApplicationsPage({
                       >
                         {app.talent.name}
                       </Link>
+                      <p className="text-xs text-muted-foreground sm:hidden">
+                        {app.job.client.companyName} · {formatDate(app.appliedAt)}
+                      </p>
                     </TableCell>
                     <TableCell>
                       <Link

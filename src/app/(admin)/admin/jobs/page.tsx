@@ -26,8 +26,8 @@ export default async function JobsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">案件管理</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-xl sm:text-2xl font-bold">案件管理</h1>
         <LinkButton href="/admin/jobs/new">新規作成</LinkButton>
       </div>
 
@@ -78,6 +78,7 @@ export default async function JobsPage({
                       >
                         {job.title}
                       </Link>
+                      <p className="text-xs text-muted-foreground sm:hidden">{job.client.companyName}</p>
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{job.client.companyName}</TableCell>
                     <TableCell>

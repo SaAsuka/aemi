@@ -31,9 +31,9 @@ export default async function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">ダッシュボード</h1>
+      <h1 className="text-xl sm:text-2xl font-bold">ダッシュボード</h1>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <Link key={stat.label} href={stat.href}>
             <Card className="hover:shadow-md transition-shadow">
@@ -43,7 +43,7 @@ export default async function AdminDashboard() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-3xl font-bold">{stat.value}</p>
+                <p className="text-2xl sm:text-3xl font-bold">{stat.value}</p>
               </CardContent>
             </Card>
           </Link>
@@ -62,7 +62,7 @@ export default async function AdminDashboard() {
               {recentApplications.map((app) => (
                 <div
                   key={app.id}
-                  className="flex items-center justify-between border-b pb-3 last:border-0"
+                  className="flex flex-wrap items-start justify-between gap-1 border-b pb-3 last:border-0"
                 >
                   <div>
                     <p className="font-medium">{app.talent.name}</p>

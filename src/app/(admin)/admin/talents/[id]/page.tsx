@@ -28,8 +28,8 @@ export default async function TalentDetailPage({
 
   return (
     <div className="max-w-4xl space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{talent.name}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-xl sm:text-2xl font-bold">{talent.name}</h1>
         <DeleteButton id={talent.id} type="talent" />
       </div>
 
@@ -38,7 +38,7 @@ export default async function TalentDetailPage({
           <CardTitle>プロフィール</CardTitle>
         </CardHeader>
         <CardContent>
-          <dl className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm sm:grid-cols-3 md:grid-cols-4">
+          <dl className="grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
             <div>
               <dt className="text-muted-foreground">フリガナ</dt>
               <dd className="font-medium">{talent.nameKana}</dd>
@@ -115,7 +115,7 @@ export default async function TalentDetailPage({
             <TableHeader>
               <TableRow>
                 <TableHead>案件名</TableHead>
-                <TableHead>クライアント</TableHead>
+                <TableHead className="hidden sm:table-cell">クライアント</TableHead>
                 <TableHead>ステータス</TableHead>
                 <TableHead>応募日</TableHead>
               </TableRow>
@@ -137,8 +137,9 @@ export default async function TalentDetailPage({
                       >
                         {app.job.title}
                       </Link>
+                      <p className="text-xs text-muted-foreground sm:hidden">{app.job.client.companyName}</p>
                     </TableCell>
-                    <TableCell>{app.job.client.companyName}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{app.job.client.companyName}</TableCell>
                     <TableCell>
                       <StatusBadge
                         status={app.status}

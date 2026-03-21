@@ -46,7 +46,7 @@ export function JobForm({
 
   return (
     <form action={action} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="clientId">クライアント *</Label>
           <Select name="clientId" defaultValue={job?.clientId ?? ""}>
@@ -99,7 +99,7 @@ export function JobForm({
         />
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="location">場所</Label>
           <Input id="location" name="location" defaultValue={job?.location ?? ""} />
@@ -112,7 +112,7 @@ export function JobForm({
 
       <div className="border-t pt-4">
         <p className="text-sm font-medium mb-3">フィルタ条件</p>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="genderReq">性別</Label>
             <Select name="genderReq" defaultValue={job?.genderReq ?? ""}>
@@ -145,7 +145,7 @@ export function JobForm({
             />
           </div>
         </div>
-        <div className="grid grid-cols-2 gap-4 mt-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 mt-4">
           <div className="space-y-2">
             <Label htmlFor="heightMin">身長（下限 cm）</Label>
             <Input
@@ -169,7 +169,7 @@ export function JobForm({
 
       <div className="border-t pt-4">
         <p className="text-sm font-medium mb-3">スケジュール</p>
-        <div className="grid grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <div className="space-y-2">
             <Label htmlFor="startsAt">開始日</Label>
             <Input

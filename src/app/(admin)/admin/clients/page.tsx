@@ -22,8 +22,8 @@ export default async function ClientsPage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">クライアント管理</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-xl sm:text-2xl font-bold">クライアント管理</h1>
         <LinkButton href="/admin/clients/new">新規登録</LinkButton>
       </div>
 
@@ -61,6 +61,9 @@ export default async function ClientsPage({
                       >
                         {client.companyName}
                       </Link>
+                      {client.contactName && (
+                        <p className="text-xs text-muted-foreground sm:hidden">{client.contactName}</p>
+                      )}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">{client.contactName ?? "−"}</TableCell>
                     <TableCell className="hidden md:table-cell">{client.contactEmail ?? "−"}</TableCell>

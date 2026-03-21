@@ -43,8 +43,8 @@ export default async function SchedulePage({
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">スケジュール管理</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-xl sm:text-2xl font-bold">スケジュール管理</h1>
         <NewScheduleDialog applications={acceptedApplications} />
       </div>
 
@@ -79,7 +79,15 @@ export default async function SchedulePage({
               ) : (
                 schedules.map((schedule) => (
                   <TableRow key={schedule.id}>
-                    <TableCell>{formatDate(schedule.date)}</TableCell>
+                    <TableCell>
+                      {formatDate(schedule.date)}
+                      <p className="text-xs text-muted-foreground sm:hidden">
+                        {schedule.startTime && `${schedule.startTime}〜${schedule.endTime ?? ""}`}
+                      </p>
+                      <p className="text-xs text-muted-foreground sm:hidden">
+                        {schedule.application.job.title}
+                      </p>
+                    </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       {schedule.startTime && schedule.endTime
                         ? `${schedule.startTime}〜${schedule.endTime}`

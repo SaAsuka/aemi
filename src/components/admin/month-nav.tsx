@@ -16,7 +16,7 @@ export function MonthNav({ currentMonth }: { currentMonth: string }) {
   const [year, month] = currentMonth.split("-")
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-2 sm:gap-4">
       <Button variant="outline" size="sm" onClick={() => navigate(-1)}>
         前月
       </Button>

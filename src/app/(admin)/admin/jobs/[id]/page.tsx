@@ -36,8 +36,8 @@ export default async function JobDetailPage({
 
   return (
     <div className="max-w-4xl space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{job.title}</h1>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h1 className="text-xl sm:text-2xl font-bold">{job.title}</h1>
         <DeleteButton id={job.id} type="job" />
       </div>
 
@@ -56,7 +56,7 @@ export default async function JobDetailPage({
             <CardTitle>フィルタ条件</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-3 gap-4 text-sm">
+            <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-3">
               {job.genderReq && (
                 <div>
                   <span className="text-muted-foreground">性別: </span>
@@ -84,13 +84,13 @@ export default async function JobDetailPage({
         <CardHeader>
           <CardTitle>応募一覧（{job.applications.length}件）</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>タレント名</TableHead>
                 <TableHead>ステータス</TableHead>
-                <TableHead>応募日</TableHead>
+                <TableHead className="hidden sm:table-cell">応募日</TableHead>
                 <TableHead>操作</TableHead>
               </TableRow>
             </TableHeader>
@@ -118,7 +118,7 @@ export default async function JobDetailPage({
                         label={APPLICATION_STATUS_LABELS[app.status]}
                       />
                     </TableCell>
-                    <TableCell>{formatDate(app.appliedAt)}</TableCell>
+                    <TableCell className="hidden sm:table-cell">{formatDate(app.appliedAt)}</TableCell>
                     <TableCell>
                       <ApplicationStatusSelect
                         applicationId={app.id}
