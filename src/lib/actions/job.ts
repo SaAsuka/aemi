@@ -22,7 +22,7 @@ export async function getJobs(search?: string, status?: string) {
     where,
     orderBy: { createdAt: "desc" },
     include: {
-      client: true,
+      client: { select: { companyName: true } },
       _count: { select: { applications: true } },
     },
   })
@@ -34,7 +34,12 @@ export async function getJob(id: string) {
     include: {
       client: true,
       applications: {
-        include: { talent: true, schedule: true },
+        select: {
+          id: true,
+          status: true,
+          appliedAt: true,
+          talent: { select: { id: true, name: true } },
+        },
         orderBy: { appliedAt: "desc" },
       },
     },

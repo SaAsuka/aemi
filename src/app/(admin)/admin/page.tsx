@@ -14,9 +14,16 @@ export default async function AdminDashboard() {
   const recentApplications = await prisma.application.findMany({
     take: 5,
     orderBy: { appliedAt: "desc" },
-    include: {
-      talent: true,
-      job: { include: { client: true } },
+    select: {
+      id: true,
+      appliedAt: true,
+      talent: { select: { name: true } },
+      job: {
+        select: {
+          title: true,
+          client: { select: { companyName: true } },
+        },
+      },
     },
   })
 

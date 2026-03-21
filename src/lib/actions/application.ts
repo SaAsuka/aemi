@@ -17,10 +17,18 @@ export async function getApplications(status?: string, jobId?: string) {
   return prisma.application.findMany({
     where,
     orderBy: { appliedAt: "desc" },
-    include: {
-      talent: true,
-      job: { include: { client: true } },
-      schedule: true,
+    select: {
+      id: true,
+      status: true,
+      appliedAt: true,
+      talent: { select: { id: true, name: true } },
+      job: {
+        select: {
+          id: true,
+          title: true,
+          client: { select: { companyName: true } },
+        },
+      },
     },
   })
 }

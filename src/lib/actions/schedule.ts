@@ -16,11 +16,17 @@ export async function getSchedules(month?: string) {
   return prisma.schedule.findMany({
     where,
     orderBy: { date: "asc" },
-    include: {
+    select: {
+      id: true,
+      date: true,
+      startTime: true,
+      endTime: true,
+      location: true,
+      status: true,
       application: {
-        include: {
-          talent: true,
-          job: { include: { client: true } },
+        select: {
+          talent: { select: { id: true, name: true } },
+          job: { select: { id: true, title: true } },
         },
       },
     },

@@ -17,7 +17,14 @@ export async function getClients(search?: string) {
   return prisma.client.findMany({
     where,
     orderBy: { createdAt: "desc" },
-    include: { _count: { select: { jobs: true } } },
+    select: {
+      id: true,
+      companyName: true,
+      contactName: true,
+      contactEmail: true,
+      contactPhone: true,
+      _count: { select: { jobs: true } },
+    },
   })
 }
 
@@ -26,8 +33,13 @@ export async function getClient(id: string) {
     where: { id },
     include: {
       jobs: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          _count: { select: { applications: true } },
+        },
         orderBy: { createdAt: "desc" },
-        include: { _count: { select: { applications: true } } },
       },
     },
   })

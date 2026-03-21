@@ -18,6 +18,19 @@ export async function getTalents(search?: string) {
   return prisma.talent.findMany({
     where,
     orderBy: { createdAt: "desc" },
+    select: {
+      id: true,
+      name: true,
+      nameKana: true,
+      gender: true,
+      birthDate: true,
+      height: true,
+      bust: true,
+      waist: true,
+      hip: true,
+      shoeSize: true,
+      status: true,
+    },
   })
 }
 
@@ -26,7 +39,11 @@ export async function getTalent(id: string) {
     where: { id },
     include: {
       applications: {
-        include: { job: { include: { client: true } } },
+        include: {
+          job: {
+            select: { id: true, title: true, client: { select: { companyName: true } } },
+          },
+        },
         orderBy: { appliedAt: "desc" },
       },
     },
