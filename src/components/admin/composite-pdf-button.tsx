@@ -7,14 +7,18 @@ import { FileText, RefreshCw, ExternalLink, Loader2 } from "lucide-react"
 async function generatePdf(talentId: string) {
   const res = await fetch(`/api/talents/${talentId}/composite`)
   if (!res.ok) {
-    let detail = ""
+    let detail = `HTTP ${res.status}`
     try {
       const json = await res.json()
-      detail = json.error || JSON.stringify(json)
+      if (json.errors && Array.isArray(json.errors)) {
+        detail = json.errors.join("\n")
+      } else if (json.error) {
+        detail = json.error
+      }
     } catch {
-      detail = await res.text().catch(() => `HTTP ${res.status}`)
+      try { detail = await res.text() } catch { /* ignore */ }
     }
-    throw new Error(`PDF生成に失敗しました: ${detail}`)
+    throw new Error(`PDF生成に失敗しました:\n${detail}`)
   }
   return res.blob()
 }

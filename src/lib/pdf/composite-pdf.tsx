@@ -9,59 +9,56 @@ import {
   Font,
 } from "@react-pdf/renderer"
 
-const FONT_BASE = "https://github.com/notofonts/noto-cjk/raw/main/Sans/SubsetOTF/JP"
-
 Font.register({
   family: "NotoSansJP",
   fonts: [
-    { src: `${FONT_BASE}/NotoSansJP-Regular.otf`, fontWeight: 400 },
-    { src: `${FONT_BASE}/NotoSansJP-Bold.otf`, fontWeight: 700 },
+    { src: "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/SubsetOTF/JP/NotoSansJP-Regular.otf", fontWeight: 400 },
+    { src: "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/SubsetOTF/JP/NotoSansJP-Bold.otf", fontWeight: 700 },
   ],
 })
 
-const COLORS = {
+Font.registerHyphenationCallback(word => [word])
+
+const C = {
   primary: "#1a1a1a",
   secondary: "#666666",
   accent: "#c8a96e",
-  bg: "#ffffff",
-  lightGray: "#f5f5f5",
   border: "#e0e0e0",
 }
 
 const s = StyleSheet.create({
-  page: { fontFamily: "NotoSansJP", fontSize: 9, color: COLORS.primary, backgroundColor: COLORS.bg, paddingTop: 50, paddingBottom: 60, paddingHorizontal: 40 },
-  header: { position: "absolute", top: 0, left: 0, right: 0, height: 40, backgroundColor: COLORS.primary, justifyContent: "center", alignItems: "center" },
+  page: { fontFamily: "NotoSansJP", fontSize: 9, color: C.primary, backgroundColor: "#ffffff", paddingTop: 50, paddingBottom: 60, paddingHorizontal: 40 },
+  header: { position: "absolute", top: 0, left: 0, right: 0, height: 40, backgroundColor: C.primary, justifyContent: "center", alignItems: "center" },
   headerText: { color: "#ffffff", fontSize: 14, letterSpacing: 8, fontWeight: 700 },
-  footer: { position: "absolute", bottom: 0, left: 0, right: 0, height: 50, backgroundColor: COLORS.primary, flexDirection: "row", justifyContent: "center", alignItems: "center", paddingHorizontal: 40, gap: 16 },
-  footerText: { color: "#aaaaaa", fontSize: 6 },
-  footerBrand: { color: "#ffffff", fontSize: 8, fontWeight: 700, letterSpacing: 2 },
+  footer: { position: "absolute", bottom: 0, left: 0, right: 0, height: 50, backgroundColor: C.primary, flexDirection: "row", justifyContent: "center", alignItems: "center", paddingHorizontal: 40 },
+  footerText: { color: "#aaaaaa", fontSize: 6, marginHorizontal: 8 },
+  footerBrand: { color: "#ffffff", fontSize: 8, fontWeight: 700, letterSpacing: 2, marginHorizontal: 8 },
 
-  profileRow: { flexDirection: "row", gap: 20, marginTop: 8 },
-  profileLeft: { flex: 1 },
-  profileRight: { width: 220, gap: 8 },
+  profileRow: { flexDirection: "row", marginTop: 8 },
+  profileLeft: { flex: 1, paddingRight: 16 },
+  profileRight: { width: 220 },
   nameJa: { fontSize: 22, fontWeight: 700, marginBottom: 2 },
-  nameRomaji: { fontSize: 10, color: COLORS.secondary, letterSpacing: 2, marginBottom: 10 },
+  nameRomaji: { fontSize: 10, color: C.secondary, letterSpacing: 2, marginBottom: 10 },
 
-  infoGrid: { flexDirection: "row", flexWrap: "wrap", gap: 4, marginBottom: 10 },
-  infoItem: { width: "48%", flexDirection: "row", borderBottom: `0.5 solid ${COLORS.border}`, paddingVertical: 3 },
-  infoLabel: { width: 55, fontSize: 7, color: COLORS.secondary },
+  infoGrid: { marginBottom: 10 },
+  infoItem: { flexDirection: "row", borderBottomWidth: 0.5, borderBottomColor: C.border, borderBottomStyle: "solid", paddingVertical: 3, marginBottom: 2 },
+  infoLabel: { width: 55, fontSize: 7, color: C.secondary },
   infoValue: { flex: 1, fontSize: 8 },
 
-  sectionTitle: { fontSize: 9, fontWeight: 700, color: COLORS.accent, borderBottom: `1 solid ${COLORS.accent}`, paddingBottom: 2, marginTop: 10, marginBottom: 4 },
-  snsRow: { flexDirection: "row", flexWrap: "wrap", gap: 6, marginBottom: 6 },
-  snsItem: { fontSize: 7, color: COLORS.secondary },
+  sectionTitle: { fontSize: 9, fontWeight: 700, color: C.accent, borderBottomWidth: 1, borderBottomColor: C.accent, borderBottomStyle: "solid", paddingBottom: 2, marginTop: 10, marginBottom: 4 },
+  snsItem: { fontSize: 7, color: C.secondary, marginBottom: 2 },
   careerText: { fontSize: 7.5, lineHeight: 1.5 },
 
   photo: { width: "100%", objectFit: "cover" },
-  photoBust: { height: 160 },
+  photoBust: { height: 160, marginBottom: 8 },
   photoFull: { flex: 1 },
 
-  galleryGrid: { flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 8 },
-  galleryItem: { width: "47%" },
+  galleryGrid: { flexDirection: "row", flexWrap: "wrap", marginTop: 8 },
+  galleryItem: { width: "48%", marginRight: "2%", marginBottom: 12 },
   galleryPhoto: { width: "100%", height: 280, objectFit: "cover" },
 
-  workItem: { flexDirection: "row", gap: 12, marginTop: 12, paddingBottom: 12, borderBottom: `0.5 solid ${COLORS.border}` },
-  workPhoto: { width: 200, height: 150, objectFit: "cover" },
+  workItem: { flexDirection: "row", marginTop: 12, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: C.border, borderBottomStyle: "solid" },
+  workPhoto: { width: 200, height: 150, objectFit: "cover", marginRight: 12 },
   workCaption: { flex: 1, fontSize: 9, paddingTop: 4 },
 })
 
@@ -110,7 +107,7 @@ type TalentData = {
   works: { imageUrl: string; caption: string }[]
 }
 
-function formatBirthDate(d: Date | null | undefined): string {
+function fmtDate(d: Date | null | undefined): string {
   if (!d) return ""
   const dt = new Date(d)
   return `${dt.getFullYear()}年${dt.getMonth() + 1}月${dt.getDate()}日`
@@ -125,24 +122,24 @@ function calcAge(d: Date | null | undefined): string {
   return `${age}歳`
 }
 
-function sizeString(t: TalentData): string {
-  const parts: string[] = []
-  if (t.bust) parts.push(`B${t.bust}`)
-  if (t.waist) parts.push(`W${t.waist}`)
-  if (t.hip) parts.push(`H${t.hip}`)
-  if (t.shoeSize) parts.push(`靴${t.shoeSize}cm`)
-  return parts.join(" / ")
+function sizeStr(t: TalentData): string {
+  const p: string[] = []
+  if (t.bust) p.push(`B${t.bust}`)
+  if (t.waist) p.push(`W${t.waist}`)
+  if (t.hip) p.push(`H${t.hip}`)
+  if (t.shoeSize) p.push(`靴${t.shoeSize}cm`)
+  return p.join(" / ")
 }
 
 function ProfilePage({ talent }: { talent: TalentData }) {
-  const bustPhoto = talent.photos[0]?.url || talent.profileImage
-  const fullPhoto = talent.photos[1]?.url
+  const bustPhoto = talent.photos[0]?.url || talent.profileImage || null
+  const fullPhoto = talent.photos[1]?.url || null
 
   const infoItems = ([
-    ["生年月日", formatBirthDate(talent.birthDate)],
+    ["生年月日", fmtDate(talent.birthDate)],
     ["年齢", calcAge(talent.birthDate)],
     ["身長", talent.height ? `${talent.height}cm` : ""],
-    ["サイズ", sizeString(talent)],
+    ["サイズ", sizeStr(talent)],
     ["出身地", talent.birthplace || ""],
     ["特技", talent.skills || ""],
     ["趣味", talent.hobbies || ""],
@@ -162,8 +159,8 @@ function ProfilePage({ talent }: { talent: TalentData }) {
       <View style={s.profileRow}>
         <View style={s.profileLeft}>
           <Text style={s.nameJa}>{talent.name}</Text>
-          {talent.nameRomaji && <Text style={s.nameRomaji}>{talent.nameRomaji}</Text>}
-          {talent.category && <Text style={{ fontSize: 8, color: COLORS.secondary, marginBottom: 8 }}>{talent.category}</Text>}
+          {talent.nameRomaji ? <Text style={s.nameRomaji}>{talent.nameRomaji}</Text> : null}
+          {talent.category ? <Text style={{ fontSize: 8, color: C.secondary, marginBottom: 8 }}>{talent.category}</Text> : null}
 
           <View style={s.infoGrid}>
             {infoItems.map(([label, value]) => (
@@ -174,35 +171,33 @@ function ProfilePage({ talent }: { talent: TalentData }) {
             ))}
           </View>
 
-          {snsItems.length > 0 && (
-            <>
+          {snsItems.length > 0 ? (
+            <View>
               <Text style={s.sectionTitle}>SNS</Text>
-              <View style={s.snsRow}>
-                {snsItems.map(([label, url]) => (
-                  <Text style={s.snsItem} key={label}>{label}: {url}</Text>
-                ))}
-              </View>
-            </>
-          )}
+              {snsItems.map(([label, url]) => (
+                <Text style={s.snsItem} key={label}>{label}: {url}</Text>
+              ))}
+            </View>
+          ) : null}
 
-          {talent.career && (
-            <>
+          {talent.career ? (
+            <View>
               <Text style={s.sectionTitle}>CAREER</Text>
               <Text style={s.careerText}>{talent.career}</Text>
-            </>
-          )}
+            </View>
+          ) : null}
 
-          {talent.representativeWork && (
-            <>
+          {talent.representativeWork ? (
+            <View>
               <Text style={s.sectionTitle}>代表作</Text>
               <Text style={s.careerText}>{talent.representativeWork}</Text>
-            </>
-          )}
+            </View>
+          ) : null}
         </View>
 
         <View style={s.profileRight}>
-          {bustPhoto && <Image style={[s.photo, s.photoBust]} src={bustPhoto} />}
-          {fullPhoto && <Image style={[s.photo, s.photoFull]} src={fullPhoto} />}
+          {bustPhoto ? <Image style={[s.photo, s.photoBust]} src={bustPhoto} /> : null}
+          {fullPhoto ? <Image style={[s.photo, s.photoFull]} src={fullPhoto} /> : null}
         </View>
       </View>
       <PageFooter />

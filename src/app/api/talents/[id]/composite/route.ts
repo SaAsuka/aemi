@@ -5,28 +5,46 @@ import { prisma } from "@/lib/db"
 import { CompositePDF } from "@/lib/pdf/composite-pdf"
 import React from "react"
 
+export const maxDuration = 60
+
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
+  const errors: string[] = []
 
-  const talent = await prisma.talent.findUnique({
-    where: { id },
-    include: {
-      photos: { orderBy: { sortOrder: "asc" } },
-      works: { orderBy: { sortOrder: "asc" } },
-    },
-  })
+  let talent
+  try {
+    talent = await prisma.talent.findUnique({
+      where: { id },
+      include: {
+        photos: { orderBy: { sortOrder: "asc" } },
+        works: { orderBy: { sortOrder: "asc" } },
+      },
+    })
+  } catch (e) {
+    errors.push(`DB接続エラー: ${e instanceof Error ? e.message : String(e)}`)
+    return NextResponse.json({ errors }, { status: 500 })
+  }
 
   if (!talent) {
-    return NextResponse.json({ error: "タレントが見つかりません" }, { status: 404 })
+    return NextResponse.json({ errors: ["タレントが見つかりません"] }, { status: 404 })
+  }
+
+  let buffer: Buffer
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    buffer = await renderToBuffer(React.createElement(CompositePDF, { talent }) as any)
+  } catch (e) {
+    errors.push(`PDF描画エラー: ${e instanceof Error ? e.message : String(e)}`)
+    if (e instanceof Error && e.stack) {
+      errors.push(`スタック: ${e.stack.split("\n").slice(0, 3).join(" | ")}`)
+    }
+    return NextResponse.json({ errors }, { status: 500 })
   }
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const buffer = await renderToBuffer(React.createElement(CompositePDF, { talent }) as any)
-
     const fileName = `composites/${talent.id}/${Date.now()}.pdf`
     const blob = await put(fileName, buffer, { access: "public", contentType: "application/pdf" })
 
@@ -34,16 +52,15 @@ export async function GET(
       where: { id },
       data: { resume: blob.url },
     })
-
-    return new NextResponse(new Uint8Array(buffer), {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="${encodeURIComponent(talent.name)}_composite.pdf"`,
-      },
-    })
   } catch (e) {
-    const message = e instanceof Error ? e.message : "不明なエラー"
-    console.error("PDF生成エラー:", e)
-    return NextResponse.json({ error: message }, { status: 500 })
+    errors.push(`Blob保存/DB更新エラー: ${e instanceof Error ? e.message : String(e)}`)
+    return NextResponse.json({ errors }, { status: 500 })
   }
+
+  return new NextResponse(new Uint8Array(buffer), {
+    headers: {
+      "Content-Type": "application/pdf",
+      "Content-Disposition": `inline; filename="${encodeURIComponent(talent.name)}_composite.pdf"`,
+    },
+  })
 }
