@@ -16,7 +16,8 @@ import { SearchForm } from "@/components/admin/search-form"
 import { TalentFilters } from "@/components/admin/talent-filters"
 import { JobLinkCopyButton } from "@/components/admin/job-link-copy-button"
 import { CompositePdfIconButton } from "@/components/admin/composite-pdf-button"
-import { ExternalLink } from "lucide-react"
+import { ExternalLink, ChevronRight } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { RegisterLinkCopy } from "@/components/admin/register-link-copy"
 
 type TalentSearchParams = {
@@ -87,12 +88,13 @@ export default async function TalentsPage({
                 <TableHead>ステータス</TableHead>
                 <TableHead>コンポジ</TableHead>
                 <TableHead>案件リンク</TableHead>
+                <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {talents.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     データがありません
                   </TableCell>
                 </TableRow>
@@ -129,6 +131,13 @@ export default async function TalentsPage({
                       {talent.accessToken && (
                         <JobLinkCopyButton accessToken={talent.accessToken} />
                       )}
+                    </TableCell>
+                    <TableCell>
+                      <Link href={`/admin/talents/${talent.id}`}>
+                        <Button variant="ghost" size="sm">
+                          詳細 <ChevronRight className="h-4 w-4 ml-1" />
+                        </Button>
+                      </Link>
                     </TableCell>
                   </TableRow>
                 ))
