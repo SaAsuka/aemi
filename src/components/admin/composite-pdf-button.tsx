@@ -1,10 +1,12 @@
 "use client"
 
 import { useState } from "react"
+import { upload } from "@vercel/blob/client"
+import { saveResumeUrl } from "@/lib/actions/talent"
 import { Button } from "@/components/ui/button"
 import { FileText, RefreshCw, ExternalLink, Loader2 } from "lucide-react"
 
-async function generatePdf(talentId: string) {
+async function generateAndUpload(talentId: string) {
   const res = await fetch(`/api/talents/${talentId}/composite`)
   if (!res.ok) {
     let detail = `HTTP ${res.status}`
@@ -20,7 +22,14 @@ async function generatePdf(talentId: string) {
     }
     throw new Error(`PDF生成に失敗しました:\n${detail}`)
   }
-  return res.blob()
+  const pdfBlob = await res.blob()
+  const file = new File([pdfBlob], `${talentId}_composite.pdf`, { type: "application/pdf" })
+  const uploaded = await upload(file.name, file, {
+    access: "public",
+    handleUploadUrl: "/api/upload",
+  })
+  await saveResumeUrl(talentId, uploaded.url)
+  return uploaded.url
 }
 
 export function CompositePdfButton({ talentId, resumeUrl }: { talentId: string; resumeUrl?: string | null }) {
@@ -29,8 +38,7 @@ export function CompositePdfButton({ talentId, resumeUrl }: { talentId: string; 
   const generate = async () => {
     setGenerating(true)
     try {
-      const blob = await generatePdf(talentId)
-      const url = URL.createObjectURL(blob)
+      const url = await generateAndUpload(talentId)
       window.open(url, "_blank")
       window.location.reload()
     } catch (e) {
@@ -72,9 +80,9 @@ export function CompositePdfIconButton({ talentId }: { talentId: string }) {
     e.stopPropagation()
     setGenerating(true)
     try {
-      const blob = await generatePdf(talentId)
-      const url = URL.createObjectURL(blob)
+      const url = await generateAndUpload(talentId)
       window.open(url, "_blank")
+      window.location.reload()
     } catch (err) {
       alert(err instanceof Error ? err.message : "エラーが発生しました")
     } finally {

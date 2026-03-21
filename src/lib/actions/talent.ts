@@ -215,6 +215,12 @@ export async function getTalentByToken(token: string) {
   })
 }
 
+export async function saveResumeUrl(talentId: string, url: string) {
+  await prisma.talent.update({ where: { id: talentId }, data: { resume: url } })
+  revalidatePath(`/admin/talents/${talentId}`)
+  revalidatePath("/admin/talents")
+}
+
 export async function deleteTalent(id: string) {
   await prisma.talent.delete({ where: { id } })
   revalidatePath("/admin/talents")
