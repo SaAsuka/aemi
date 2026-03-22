@@ -101,7 +101,8 @@ export async function GET(
 
     const now = new Date()
     const yyyymm = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`
-    const fileName = `【${talent.name}】タレントプロフィール${yyyymm}`
+    const displayName = talent.stageName || talent.name
+    const fileName = `【${displayName}】タレントプロフィール${yyyymm}`
 
     let blobUrl: string | undefined
     let blobError: string | undefined

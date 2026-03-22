@@ -25,6 +25,7 @@ export async function updateMyProfile(formData: FormData) {
     data: {
       name: data.name,
       nameKana: data.nameKana,
+      stageName: data.stageName || null,
       nameRomaji: data.nameRomaji || null,
       email: data.email || null,
       phone: data.phone || null,

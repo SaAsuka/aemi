@@ -112,6 +112,7 @@ export async function createTalent(formData: FormData) {
     data: {
       name: data.name,
       nameKana: data.nameKana,
+      stageName: data.stageName || null,
       nameRomaji: data.nameRomaji || null,
       email: data.email || null,
       phone: data.phone || null,
@@ -167,6 +168,7 @@ export async function updateTalent(id: string, formData: FormData) {
     data: {
       name: data.name,
       nameKana: data.nameKana,
+      stageName: data.stageName || null,
       nameRomaji: data.nameRomaji || null,
       email: data.email || null,
       phone: data.phone || null,
@@ -211,7 +213,7 @@ export async function updateTalent(id: string, formData: FormData) {
 export async function getTalentByToken(token: string) {
   return prisma.talent.findUnique({
     where: { accessToken: token },
-    select: { id: true, name: true, status: true, gender: true, birthDate: true, height: true },
+    select: { id: true, name: true, stageName: true, status: true, gender: true, birthDate: true, height: true },
   })
 }
 

@@ -3,8 +3,9 @@ import { z } from "zod"
 const optionalString = z.string().optional().or(z.literal(""))
 
 export const talentSchema = z.object({
-  name: z.string().min(1, "名前は必須です"),
+  name: z.string().min(1, "本名は必須です"),
   nameKana: z.string().min(1, "フリガナは必須です"),
+  stageName: optionalString,
   nameRomaji: optionalString,
   email: z.string().email("メールアドレスの形式が不正です").optional().or(z.literal("")),
   phone: optionalString,

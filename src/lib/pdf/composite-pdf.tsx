@@ -87,6 +87,7 @@ function PageFooter() {
 type TalentData = {
   name: string
   nameKana: string
+  stageName?: string | null
   nameRomaji?: string | null
   birthDate?: Date | null
   height?: number | null
@@ -136,6 +137,7 @@ function sizeStr(t: TalentData): string {
 
 // 1ページ目: 左にプロフィール、右にバストアップ＋全身
 function ProfilePage({ talent }: { talent: TalentData }) {
+  const displayName = talent.stageName || talent.name
   const bustPhoto = talent.photos[0]?.url || talent.profileImage || null
   const fullPhoto = talent.photos[1]?.url || null
 
@@ -162,7 +164,7 @@ function ProfilePage({ talent }: { talent: TalentData }) {
       <PageHeader />
       <View style={s.profileRow}>
         <View style={s.profileLeft}>
-          <Text style={s.nameJa}>{talent.name}</Text>
+          <Text style={s.nameJa}>{displayName}</Text>
           {talent.nameRomaji ? <Text style={s.nameRomaji}>{talent.nameRomaji}</Text> : null}
           {talent.category ? <Text style={{ fontSize: 8, color: C.secondary, marginBottom: 8 }}>{talent.category}</Text> : null}
 
@@ -214,10 +216,11 @@ function PhotoGridPage({ photos }: { photos: { url: string }[] }) {
 
 // 3ページ目以降: 経歴・代表作・出演実績
 function CareerPage({ talent }: { talent: TalentData }) {
+  const displayName = talent.stageName || talent.name
   return (
     <Page size="A4" style={s.page}>
       <PageHeader />
-      <Text style={s.nameJa}>{talent.name}</Text>
+      <Text style={s.nameJa}>{displayName}</Text>
       {talent.nameRomaji ? <Text style={s.nameRomaji}>{talent.nameRomaji}</Text> : null}
 
       {talent.career ? (

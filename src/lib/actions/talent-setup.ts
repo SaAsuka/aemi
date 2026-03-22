@@ -25,6 +25,7 @@ export async function setupTalent(formData: FormData) {
     data: {
       name: data.name,
       nameKana: data.nameKana,
+      stageName: data.stageName || null,
       nameRomaji: data.nameRomaji || null,
       phone: data.phone || null,
       gender: data.gender || null,

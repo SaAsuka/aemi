@@ -25,7 +25,7 @@ export default async function TalentJobsPage({
 }) {
   const { t } = await searchParams
 
-  let talent: { id: string; name: string; status: string; gender: string | null; birthDate: Date | null; height: number | null }
+  let talent: { id: string; name: string; stageName?: string | null; status: string; gender: string | null; birthDate: Date | null; height: number | null }
 
   if (t) {
     const tokenTalent = await getTalentByToken(t)
@@ -35,6 +35,8 @@ export default async function TalentJobsPage({
     const sessionTalent = await requireTalent()
     talent = sessionTalent
   }
+
+  const displayName = talent.stageName || talent.name
 
   const jobs = await getOpenJobs()
   const talentAge = talent.birthDate ? calcAge(talent.birthDate) : null
@@ -91,10 +93,10 @@ export default async function TalentJobsPage({
 
   return (
     <>
-      {!t && <TalentNav talentName={talent.name} />}
+      {!t && <TalentNav talentName={displayName} />}
       <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">{talent.name}さんの案件一覧</h1>
+          <h1 className="text-xl font-bold">{displayName}さんの案件一覧</h1>
         </div>
         <TalentJobList jobs={jobsWithMatch} token={t || ""} matchCount={matchCount} />
       </div>

@@ -66,6 +66,7 @@ model Talent {
   id           String       @id @default(cuid())
   name         String
   nameKana     String
+  stageName    String?
   nameRomaji   String?
   email        String?
   phone        String?

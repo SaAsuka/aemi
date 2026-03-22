@@ -55,7 +55,7 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
     <form action={action} className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="name">名前 *</Label>
+          <Label htmlFor="name">本名 *</Label>
           <Input id="name" name="name" defaultValue={talent?.name ?? ""} required />
           {state?.error?.name && (
             <p className="text-sm text-destructive">{state.error.name[0]}</p>
@@ -68,6 +68,18 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
             name="nameKana"
             defaultValue={talent?.nameKana ?? ""}
             required
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="stageName">芸名</Label>
+          <Input
+            id="stageName"
+            name="stageName"
+            defaultValue={talent?.stageName ?? ""}
+            placeholder="コンポジPDFに表記される名前"
           />
         </div>
       </div>
