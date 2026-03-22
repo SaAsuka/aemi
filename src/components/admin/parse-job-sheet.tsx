@@ -7,25 +7,22 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { ParsedResultForm } from "@/components/admin/parsed-result-form"
 import { parseJobText } from "@/lib/actions/parse-job"
 import type { ParseResult } from "@/lib/validations/parsed-job"
 
 type ClientOption = { id: string; companyName: string }
-type TalentOption = { id: string; name: string; nameKana: string }
 
 export function ParseJobSheet({
   clientOptions,
-  talentOptions,
 }: {
   clientOptions: ClientOption[]
-  talentOptions: TalentOption[]
 }) {
   const [open, setOpen] = useState(false)
   const [text, setText] = useState("")
@@ -57,15 +54,15 @@ export function ParseJobSheet({
   }
 
   return (
-    <Sheet open={open} onOpenChange={handleClose}>
-      <SheetTrigger render={<Button variant="outline" />}>
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogTrigger render={<Button variant="outline" />}>
         <FileText className="h-4 w-4" />
         テキストから登録
-      </SheetTrigger>
-      <SheetContent className="overflow-y-auto sm:max-w-[70vw] p-6">
-        <SheetHeader>
-          <SheetTitle>テキストから案件登録</SheetTitle>
-        </SheetHeader>
+      </DialogTrigger>
+      <DialogContent className="overflow-y-auto max-h-[85vh] sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>テキストから案件登録</DialogTitle>
+        </DialogHeader>
 
         {!result ? (
           <div className="space-y-4 mt-4">
@@ -93,12 +90,11 @@ export function ParseJobSheet({
             <ParsedResultForm
               data={result}
               clientOptions={clientOptions}
-              talentOptions={talentOptions}
               onSuccess={() => handleClose(false)}
             />
           </div>
         )}
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }

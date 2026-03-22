@@ -2,8 +2,7 @@
 
 import { getGemini } from "@/lib/gemini"
 import { parsedJobSchema } from "@/lib/validations/parsed-job"
-import type { ParseResult, MatchedTalent, TalentCandidate } from "@/lib/validations/parsed-job"
-import { getActiveTalentOptions } from "@/lib/queries"
+import type { ParseResult } from "@/lib/validations/parsed-job"
 import { prisma } from "@/lib/db"
 
 const SYSTEM_PROMPT = `あなたはキャスティング案件のテキストを構造化するアシスタントです。
@@ -62,8 +61,6 @@ export async function parseJobText(text: string): Promise<
     }
 
     const job = parsed.data
-    const talents = await getActiveTalentOptions()
-    const matchedTalents = matchTalents(job.talents, talents)
 
     const existingJobId = await findExistingJob(job.title)
     const existingClientId = job.clientCompanyName
@@ -72,46 +69,12 @@ export async function parseJobText(text: string): Promise<
 
     return {
       success: true,
-      data: { job, matchedTalents, existingJobId, existingClientId },
+      data: { job, existingJobId, existingClientId },
     }
   } catch (e) {
     console.error("Gemini parse error:", e)
     return { success: false, error: "テキストの解析に失敗しました" }
   }
-}
-
-function matchTalents(
-  entries: { name: string; status: string; date?: string | null; startTime?: string | null; location?: string | null; note?: string | null }[],
-  talents: { id: string; name: string; nameKana: string }[]
-): MatchedTalent[] {
-  return entries.map((entry) => {
-    const exact = talents.find(
-      (t) => t.name === entry.name || t.nameKana === entry.name
-    )
-    if (exact) {
-      return {
-        ...entry,
-        status: entry.status as "ACCEPTED" | "REJECTED" | "PENDING",
-        matchedTalentId: exact.id,
-        candidates: [exact],
-      }
-    }
-
-    const partial: TalentCandidate[] = talents.filter(
-      (t) =>
-        t.name.includes(entry.name) ||
-        entry.name.includes(t.name) ||
-        t.nameKana.includes(entry.name) ||
-        entry.name.includes(t.nameKana)
-    )
-
-    return {
-      ...entry,
-      status: entry.status as "ACCEPTED" | "REJECTED" | "PENDING",
-      matchedTalentId: partial.length === 1 ? partial[0].id : null,
-      candidates: partial,
-    }
-  })
 }
 
 async function findExistingJob(title: string): Promise<string | null> {

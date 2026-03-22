@@ -24,20 +24,8 @@ export const parsedJobSchema = z.object({
 export type ParsedTalentEntry = z.infer<typeof parsedTalentEntrySchema>
 export type ParsedJob = z.infer<typeof parsedJobSchema>
 
-export type TalentCandidate = {
-  id: string
-  name: string
-  nameKana: string
-}
-
-export type MatchedTalent = ParsedTalentEntry & {
-  matchedTalentId: string | null
-  candidates: TalentCandidate[]
-}
-
 export type ParseResult = {
   job: ParsedJob
-  matchedTalents: MatchedTalent[]
   existingJobId: string | null
   existingClientId: string | null
 }

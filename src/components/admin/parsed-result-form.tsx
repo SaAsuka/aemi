@@ -22,27 +22,37 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { SearchableSelect } from "@/components/ui/searchable-select"
+import { Textarea } from "@/components/ui/textarea"
 import { applyParsedJob } from "@/lib/actions/apply-parsed-job"
-import type { ParseResult, MatchedTalent } from "@/lib/validations/parsed-job"
+import type { ParseResult, ParsedTalentEntry } from "@/lib/validations/parsed-job"
 
 type ClientOption = { id: string; companyName: string }
-type TalentOption = { id: string; name: string; nameKana: string }
 
-const STATUS_OPTIONS = [
-  { value: "ACCEPTED", label: "合格" },
-  { value: "REJECTED", label: "不合格" },
-  { value: "PENDING", label: "選考中" },
-]
+const STATUS_LABELS: Record<string, string> = {
+  ACCEPTED: "合格",
+  REJECTED: "不合格",
+  PENDING: "選考中",
+}
+
+function buildTalentNote(talents: ParsedTalentEntry[]): string {
+  if (talents.length === 0) return ""
+  const lines = talents.map((t) => {
+    const parts = [t.name, STATUS_LABELS[t.status] ?? t.status]
+    if (t.date) parts.push(t.date)
+    if (t.startTime) parts.push(t.startTime)
+    if (t.location) parts.push(t.location)
+    return parts.join(" / ")
+  })
+  return `【タレント】\n${lines.join("\n")}`
+}
 
 export function ParsedResultForm({
   data,
   clientOptions,
-  talentOptions,
   onSuccess,
 }: {
   data: ParseResult
   clientOptions: ClientOption[]
-  talentOptions: TalentOption[]
   onSuccess: () => void
 }) {
   const router = useRouter()
@@ -53,22 +63,17 @@ export function ParsedResultForm({
   const [title, setTitle] = useState(data.job.title)
   const [clientId, setClientId] = useState(data.existingClientId ?? "")
   const [location, setLocation] = useState(data.job.location ?? "")
-  const [talents, setTalents] = useState<MatchedTalent[]>(data.matchedTalents)
+  const [note, setNote] = useState(() => {
+    const jobNote = data.job.note ?? ""
+    const talentNote = buildTalentNote(data.job.talents)
+    return [jobNote, talentNote].filter(Boolean).join("\n\n")
+  })
   const [saving, setSaving] = useState(false)
-
-  const talentComboOptions = talentOptions.map((t) => ({
-    value: t.id,
-    label: `${t.name}（${t.nameKana}）`,
-  }))
 
   const clientComboOptions = clientOptions.map((c) => ({
     value: c.id,
     label: c.companyName,
   }))
-
-  const updateTalent = (index: number, patch: Partial<MatchedTalent>) => {
-    setTalents((prev) => prev.map((t, i) => (i === index ? { ...t, ...patch } : t)))
-  }
 
   const handleSubmit = async () => {
     if (!clientId) {
@@ -80,12 +85,6 @@ export function ParsedResultForm({
       return
     }
 
-    const validTalents = talents.filter((t) => t.matchedTalentId)
-    if (validTalents.length === 0) {
-      toast.error("タレントが1人もマッチングされていません")
-      return
-    }
-
     setSaving(true)
     const result = await applyParsedJob({
       mode,
@@ -93,14 +92,7 @@ export function ParsedResultForm({
       title,
       clientId,
       location: location || undefined,
-      talents: validTalents.map((t) => ({
-        talentId: t.matchedTalentId!,
-        status: t.status,
-        date: t.date ?? undefined,
-        startTime: t.startTime ?? undefined,
-        location: t.location ?? undefined,
-        note: t.note ?? undefined,
-      })),
+      note: note || undefined,
     })
     setSaving(false)
 
@@ -163,83 +155,46 @@ export function ParsedResultForm({
             日程情報: {data.job.dates}
           </div>
         )}
-      </div>
 
-      <div className="space-y-4">
-        <h3 className="font-semibold">タレント一覧（{talents.length}名）</h3>
-        <div className="overflow-x-auto">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="min-w-[100px]">パース名</TableHead>
-                <TableHead className="min-w-[200px]">マッチング</TableHead>
-                <TableHead className="min-w-[100px]">ステータス</TableHead>
-                <TableHead className="min-w-[120px]">日付</TableHead>
-                <TableHead className="min-w-[80px]">時間</TableHead>
-                <TableHead>場所</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {talents.map((talent, i) => (
-                <TableRow key={i} className={!talent.matchedTalentId ? "bg-yellow-50 dark:bg-yellow-950/20" : ""}>
-                  <TableCell className="text-sm">{talent.name}</TableCell>
-                  <TableCell>
-                    <SearchableSelect
-                      options={talentComboOptions}
-                      value={talent.matchedTalentId}
-                      onValueChange={(v) => updateTalent(i, { matchedTalentId: v })}
-                      placeholder="タレント選択..."
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Select
-                      value={talent.status}
-                      onValueChange={(v) =>
-                        updateTalent(i, { status: v as "ACCEPTED" | "REJECTED" | "PENDING" })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {STATUS_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="date"
-                      value={talent.date ?? ""}
-                      onChange={(e) => updateTalent(i, { date: e.target.value || undefined })}
-                      className="h-8 w-32"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      type="time"
-                      value={talent.startTime ?? ""}
-                      onChange={(e) => updateTalent(i, { startTime: e.target.value || undefined })}
-                      className="h-8 w-24"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    <Input
-                      value={talent.location ?? ""}
-                      onChange={(e) => updateTalent(i, { location: e.target.value || undefined })}
-                      className="h-8"
-                      placeholder="場所"
-                    />
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+        <div className="space-y-1">
+          <Label>備考（タレント情報含む）</Label>
+          <Textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={6}
+          />
         </div>
       </div>
+
+      {data.job.talents.length > 0 && (
+        <div className="space-y-4">
+          <h3 className="font-semibold">タレント一覧（{data.job.talents.length}名）</h3>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>名前</TableHead>
+                  <TableHead>ステータス</TableHead>
+                  <TableHead>日付</TableHead>
+                  <TableHead>時間</TableHead>
+                  <TableHead>場所</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.job.talents.map((talent, i) => (
+                  <TableRow key={i}>
+                    <TableCell className="font-medium">{talent.name}</TableCell>
+                    <TableCell>{STATUS_LABELS[talent.status] ?? talent.status}</TableCell>
+                    <TableCell>{talent.date ?? "−"}</TableCell>
+                    <TableCell>{talent.startTime ?? "−"}</TableCell>
+                    <TableCell>{talent.location ?? "−"}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </div>
+      )}
 
       <div className="flex justify-end gap-2">
         <Button variant="outline" onClick={onSuccess}>
