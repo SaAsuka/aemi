@@ -4,9 +4,8 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { FileText, RefreshCw, ExternalLink, Loader2 } from "lucide-react"
-import { saveResumeUrl } from "@/lib/actions/talent"
 
-async function generatePdf(talentId: string): Promise<string | null> {
+async function generatePdf(talentId: string): Promise<void> {
   console.log(`[CompositePDF] fetch開始 talentId=${talentId}`)
   const t0 = performance.now()
 
@@ -30,10 +29,7 @@ async function generatePdf(talentId: string): Promise<string | null> {
     throw new Error(`PDF生成に失敗しました (${elapsed}ms):\n${detail}`)
   }
 
-  const blobUrl = res.headers.get("X-Blob-Url")
-  console.log(`[CompositePDF] サーバー処理時間=${res.headers.get("X-Composite-Time") ?? "不明"} blobUrl=${blobUrl ?? "なし"}`)
-
-  return blobUrl
+  console.log(`[CompositePDF] サーバー処理時間=${res.headers.get("X-Composite-Time") ?? "不明"}`)
 }
 
 export function CompositePdfButton({ talentId, resumeUrl }: { talentId: string; resumeUrl?: string | null }) {
@@ -43,10 +39,7 @@ export function CompositePdfButton({ talentId, resumeUrl }: { talentId: string; 
   const generate = async () => {
     setGenerating(true)
     try {
-      const blobUrl = await generatePdf(talentId)
-      if (blobUrl) {
-        await saveResumeUrl(talentId, blobUrl)
-      }
+      await generatePdf(talentId)
       router.refresh()
     } catch (e) {
       alert(e instanceof Error ? e.message : "エラーが発生しました")
@@ -88,10 +81,7 @@ export function CompositePdfIconButton({ talentId }: { talentId: string }) {
     e.stopPropagation()
     setGenerating(true)
     try {
-      const blobUrl = await generatePdf(talentId)
-      if (blobUrl) {
-        await saveResumeUrl(talentId, blobUrl)
-      }
+      await generatePdf(talentId)
       router.refresh()
     } catch (err) {
       alert(err instanceof Error ? err.message : "エラーが発生しました")
