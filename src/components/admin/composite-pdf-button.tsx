@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { FileText, RefreshCw, ExternalLink, Loader2 } from "lucide-react"
 import { blobProxyUrl } from "@/lib/utils/blob"
+import { saveResumeUrl } from "@/lib/actions/talent"
 
-async function generatePdf(talentId: string): Promise<void> {
+async function generatePdf(talentId: string): Promise<string | null> {
   console.log(`[CompositePDF] fetch開始 talentId=${talentId}`)
   const t0 = performance.now()
 
@@ -37,16 +38,27 @@ async function generatePdf(talentId: string): Promise<void> {
     console.warn(`[CompositePDF] Blob保存失敗: ${blobError}`)
     throw new Error(`PDF生成は成功しましたが保存に失敗しました:\n${blobError}`)
   }
+
+  return res.headers.get("X-Blob-Url")
 }
 
-export function CompositePdfButton({ talentId, resumeUrl }: { talentId: string; resumeUrl?: string | null }) {
+export function CompositePdfButton({ talentId, resumeUrl, photoCount }: { talentId: string; resumeUrl?: string | null; photoCount: number }) {
   const [generating, setGenerating] = useState(false)
   const router = useRouter()
 
   const generate = async () => {
+    if (photoCount !== 6) {
+      alert(photoCount < 6
+        ? `宣材写真が${photoCount}枚しか登録されていません。コンポジ生成には6枚必要です。`
+        : `宣材写真が${photoCount}枚登録されています。6枚にしてください（${photoCount - 6}枚超過）。`)
+      return
+    }
     setGenerating(true)
     try {
-      await generatePdf(talentId)
+      const blobUrl = await generatePdf(talentId)
+      if (blobUrl) {
+        await saveResumeUrl(talentId, blobUrl)
+      }
       router.refresh()
     } catch (e) {
       alert(e instanceof Error ? e.message : "エラーが発生しました")
@@ -79,16 +91,25 @@ export function CompositePdfButton({ talentId, resumeUrl }: { talentId: string; 
   )
 }
 
-export function CompositePdfIconButton({ talentId }: { talentId: string }) {
+export function CompositePdfIconButton({ talentId, photoCount }: { talentId: string; photoCount: number }) {
   const [generating, setGenerating] = useState(false)
   const router = useRouter()
 
   const generate = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
+    if (photoCount !== 6) {
+      alert(photoCount < 6
+        ? `宣材写真が${photoCount}枚しか登録されていません。コンポジ生成には6枚必要です。`
+        : `宣材写真が${photoCount}枚登録されています。6枚にしてください（${photoCount - 6}枚超過）。`)
+      return
+    }
     setGenerating(true)
     try {
-      await generatePdf(talentId)
+      const blobUrl = await generatePdf(talentId)
+      if (blobUrl) {
+        await saveResumeUrl(talentId, blobUrl)
+      }
       router.refresh()
     } catch (err) {
       alert(err instanceof Error ? err.message : "エラーが発生しました")

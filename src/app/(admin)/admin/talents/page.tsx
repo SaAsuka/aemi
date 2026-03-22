@@ -122,7 +122,7 @@ export default async function TalentsPage({
                       />
                     </TableCell>
                     <TableCell>
-                      <CompositePdfIconButton talentId={talent.id} />
+                      <CompositePdfIconButton talentId={talent.id} photoCount={talent._count.photos} />
                     </TableCell>
                     <TableCell>
                       {talent.resume ? (

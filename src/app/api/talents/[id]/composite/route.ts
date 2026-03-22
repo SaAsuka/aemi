@@ -47,6 +47,14 @@ export async function GET(
     return NextResponse.json({ errors: ["タレントが見つかりません"] }, { status: 404 })
   }
 
+  const photoCount = talent.photos.length
+  if (photoCount !== 6) {
+    const msg = photoCount < 6
+      ? `宣材写真が${photoCount}枚しか登録されていません。コンポジ生成には6枚必要です。`
+      : `宣材写真が${photoCount}枚登録されています。コンポジ生成には6枚必要です（現在${photoCount - 6}枚超過）。`
+    return NextResponse.json({ errors: [msg] }, { status: 400 })
+  }
+
   async function toDataUri(url: string): Promise<string> {
     try {
       if (url.includes("blob.vercel-storage.com")) {
