@@ -5,19 +5,19 @@ const parsedStatusEnum = z.enum(["ACCEPTED", "REJECTED", "PENDING"])
 export const parsedTalentEntrySchema = z.object({
   name: z.string(),
   status: parsedStatusEnum,
-  date: z.string().optional(),
-  startTime: z.string().optional(),
-  location: z.string().optional(),
-  note: z.string().optional(),
+  date: z.string().nullable().optional(),
+  startTime: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
+  note: z.string().nullable().optional(),
 })
 
 export const parsedJobSchema = z.object({
-  title: z.string(),
-  clientCompanyName: z.string().optional(),
-  clientContactName: z.string().optional(),
-  location: z.string().optional(),
-  dates: z.string().optional(),
-  note: z.string().optional(),
+  title: z.string().nullable().optional().transform((v) => v ?? ""),
+  clientCompanyName: z.string().nullable().optional(),
+  clientContactName: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
+  dates: z.string().nullable().optional(),
+  note: z.string().nullable().optional(),
   talents: z.array(parsedTalentEntrySchema),
 })
 

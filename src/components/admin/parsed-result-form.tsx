@@ -96,10 +96,10 @@ export function ParsedResultForm({
       talents: validTalents.map((t) => ({
         talentId: t.matchedTalentId!,
         status: t.status,
-        date: t.date,
-        startTime: t.startTime,
-        location: t.location,
-        note: t.note,
+        date: t.date ?? undefined,
+        startTime: t.startTime ?? undefined,
+        location: t.location ?? undefined,
+        note: t.note ?? undefined,
       })),
     })
     setSaving(false)

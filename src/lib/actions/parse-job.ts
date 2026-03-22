@@ -81,7 +81,7 @@ export async function parseJobText(text: string): Promise<
 }
 
 function matchTalents(
-  entries: { name: string; status: string; date?: string; startTime?: string; location?: string; note?: string }[],
+  entries: { name: string; status: string; date?: string | null; startTime?: string | null; location?: string | null; note?: string | null }[],
   talents: { id: string; name: string; nameKana: string }[]
 ): MatchedTalent[] {
   return entries.map((entry) => {
