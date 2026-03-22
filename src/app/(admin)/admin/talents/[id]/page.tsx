@@ -185,7 +185,6 @@ export default async function TalentDetailPage({
             <TableHeader>
               <TableRow>
                 <TableHead>案件名</TableHead>
-                <TableHead className="hidden sm:table-cell">クライアント</TableHead>
                 <TableHead>ステータス</TableHead>
                 <TableHead>応募日</TableHead>
               </TableRow>
@@ -193,7 +192,7 @@ export default async function TalentDetailPage({
             <TableBody>
               {talent.applications.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={4} className="text-center text-muted-foreground">
+                  <TableCell colSpan={3} className="text-center text-muted-foreground">
                     応募履歴がありません
                   </TableCell>
                 </TableRow>
@@ -207,9 +206,7 @@ export default async function TalentDetailPage({
                       >
                         {app.job.title}
                       </Link>
-                      <p className="text-xs text-muted-foreground sm:hidden">{app.job.client.companyName}</p>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">{app.job.client.companyName}</TableCell>
                     <TableCell>
                       <StatusBadge
                         status={app.status}

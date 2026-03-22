@@ -17,7 +17,6 @@ type Application = {
   job: {
     id: string
     title: string
-    client: { companyName: string }
   }
 }
 
@@ -36,14 +35,11 @@ export function TalentApplicationHistory({ applications }: { applications: Appli
               <Link href={`/jobs/${app.job.id}`} className="text-sm font-medium hover:underline">
                 {app.job.title}
               </Link>
-              <p className="text-xs text-muted-foreground">{app.job.client.companyName}</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <Badge variant={s.variant}>{s.label}</Badge>
-              <span className="text-xs text-muted-foreground">
+              <p className="text-xs text-muted-foreground">
                 {new Date(app.appliedAt).toLocaleDateString("ja-JP")}
-              </span>
+              </p>
             </div>
+            <Badge variant={s.variant}>{s.label}</Badge>
           </div>
         )
       })}

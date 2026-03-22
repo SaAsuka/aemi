@@ -76,9 +76,7 @@ export async function getTalent(id: string) {
     include: {
       applications: {
         include: {
-          job: {
-            select: { id: true, title: true, client: { select: { companyName: true } } },
-          },
+          job: { select: { id: true, title: true } },
         },
         orderBy: { appliedAt: "desc" },
       },
@@ -224,7 +222,20 @@ export async function saveResumeUrl(talentId: string, url: string) {
 }
 
 export async function deleteTalent(id: string) {
-  await prisma.talent.delete({ where: { id } })
+  await prisma.$transaction(async (tx) => {
+    const appIds = (
+      await tx.application.findMany({ where: { talentId: id }, select: { id: true } })
+    ).map((a) => a.id)
+
+    if (appIds.length > 0) {
+      await tx.schedule.deleteMany({ where: { applicationId: { in: appIds } } })
+      await tx.applicationSubmission.deleteMany({ where: { applicationId: { in: appIds } } })
+      await tx.application.deleteMany({ where: { talentId: id } })
+    }
+
+    await tx.talent.delete({ where: { id } })
+  })
+
   revalidatePath("/admin/talents")
   updateTag("talents")
   return { success: true }
