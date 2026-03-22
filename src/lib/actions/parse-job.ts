@@ -1,6 +1,6 @@
 "use server"
 
-import { gemini } from "@/lib/gemini"
+import { getGemini } from "@/lib/gemini"
 import { parsedJobSchema } from "@/lib/validations/parsed-job"
 import type { ParseResult, MatchedTalent, TalentCandidate } from "@/lib/validations/parsed-job"
 import { getActiveTalentOptions } from "@/lib/queries"
@@ -47,7 +47,7 @@ export async function parseJobText(text: string): Promise<
   }
 
   try {
-    const response = await gemini.models.generateContent({
+    const response = await getGemini().models.generateContent({
       model: "gemini-2.0-flash",
       contents: `${SYSTEM_PROMPT}\n\n---\n\n${text}`,
       config: {

@@ -1,11 +1,10 @@
 import { GoogleGenAI } from "@google/genai"
 
-const globalForGemini = globalThis as unknown as {
-  gemini: GoogleGenAI | undefined
+let _gemini: GoogleGenAI | null = null
+
+export function getGemini(): GoogleGenAI {
+  if (!_gemini) {
+    _gemini = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY ?? "" })
+  }
+  return _gemini
 }
-
-export const gemini =
-  globalForGemini.gemini ??
-  new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY ?? "" })
-
-globalForGemini.gemini = gemini
