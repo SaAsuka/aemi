@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
         "Content-Length": String(buffer.length),
         "X-Content-Type-Options": "nosniff",
         ETag: result.blob.etag,
-        "Cache-Control": "private, max-age=31536000, immutable",
+        "Cache-Control": "private, no-cache",
       },
     })
   } catch (e) {
