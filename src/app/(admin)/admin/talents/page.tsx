@@ -19,6 +19,7 @@ import { CompositePdfIconButton } from "@/components/admin/composite-pdf-button"
 import { ExternalLink, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { RegisterLinkCopy } from "@/components/admin/register-link-copy"
+import { InviteTalentButton } from "@/components/admin/invite-talent-button"
 
 type TalentSearchParams = {
   q?: string
@@ -66,6 +67,7 @@ export default async function TalentsPage({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl sm:text-2xl font-bold">タレント管理</h1>
         <div className="flex items-center gap-2">
+          <InviteTalentButton />
           <RegisterLinkCopy />
           <LinkButton href="/admin/talents/new">新規登録</LinkButton>
         </div>

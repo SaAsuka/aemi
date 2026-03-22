@@ -20,7 +20,6 @@ import { APPLICATION_STATUS_LABELS } from "@/types"
 import { formatDate, calcAge } from "@/lib/utils/date"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
-import { InviteTalentButton } from "@/components/admin/invite-talent-button"
 
 export default async function TalentDetailPage({
   params,
@@ -45,7 +44,6 @@ export default async function TalentDetailPage({
         </div>
         <div className="flex items-center gap-2">
           <TalentEditSheet talent={talent} />
-          <InviteTalentButton email={talent.email} />
           <CompositePdfButton talentId={talent.id} resumeUrl={talent.resume} />
           <DeleteButton id={talent.id} type="talent" />
         </div>
