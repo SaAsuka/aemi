@@ -36,6 +36,9 @@ export function TalentForm({ talent }: { talent?: Talent }) {
     if (state?.success && !talent) {
       router.push("/admin/talents")
     }
+    if (state?.success && talent?.resume) {
+      fetch(`/api/talents/${talent.id}/composite`).catch(() => {})
+    }
   }, [state, talent, router])
 
   return (

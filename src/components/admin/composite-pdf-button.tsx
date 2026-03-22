@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { FileText, RefreshCw, ExternalLink, Loader2 } from "lucide-react"
 import { saveResumeUrl } from "@/lib/actions/talent"
 
-async function generatePdf(talentId: string): Promise<{ viewUrl: string; blobUrl: string | null }> {
+async function generatePdf(talentId: string): Promise<string | null> {
   console.log(`[CompositePDF] fetch開始 talentId=${talentId}`)
   const t0 = performance.now()
 
@@ -33,10 +33,7 @@ async function generatePdf(talentId: string): Promise<{ viewUrl: string; blobUrl
   const blobUrl = res.headers.get("X-Blob-Url")
   console.log(`[CompositePDF] サーバー処理時間=${res.headers.get("X-Composite-Time") ?? "不明"} blobUrl=${blobUrl ?? "なし"}`)
 
-  if (blobUrl) return { viewUrl: blobUrl, blobUrl }
-
-  const pdfBlob = await res.blob()
-  return { viewUrl: URL.createObjectURL(pdfBlob), blobUrl: null }
+  return blobUrl
 }
 
 export function CompositePdfButton({ talentId, resumeUrl }: { talentId: string; resumeUrl?: string | null }) {
@@ -46,8 +43,7 @@ export function CompositePdfButton({ talentId, resumeUrl }: { talentId: string; 
   const generate = async () => {
     setGenerating(true)
     try {
-      const { viewUrl, blobUrl } = await generatePdf(talentId)
-      window.open(viewUrl, "_blank")
+      const blobUrl = await generatePdf(talentId)
       if (blobUrl) {
         await saveResumeUrl(talentId, blobUrl)
       }
@@ -92,8 +88,7 @@ export function CompositePdfIconButton({ talentId }: { talentId: string }) {
     e.stopPropagation()
     setGenerating(true)
     try {
-      const { viewUrl, blobUrl } = await generatePdf(talentId)
-      window.open(viewUrl, "_blank")
+      const blobUrl = await generatePdf(talentId)
       if (blobUrl) {
         await saveResumeUrl(talentId, blobUrl)
       }

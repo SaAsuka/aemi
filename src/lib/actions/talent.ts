@@ -186,7 +186,6 @@ export async function updateTalent(id: string, formData: FormData) {
       representativeWork: data.representativeWork || null,
       lineUserId: data.lineUserId || null,
       profileImage: data.profileImage || null,
-      resume: data.resume || null,
       nearestStation: data.nearestStation || null,
       instagramUrl: data.instagramUrl || null,
       xUrl: data.xUrl || null,
