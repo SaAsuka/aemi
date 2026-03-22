@@ -74,7 +74,7 @@ export function JobForm({
     setUploading(cat)
     try {
       const blob = await upload(file.name, file, {
-        access: "public",
+        access: "private",
         handleUploadUrl: "/api/upload",
       })
       setRefFiles((prev) => ({ ...prev, [cat]: blob.url }))

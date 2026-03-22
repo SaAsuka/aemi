@@ -19,7 +19,7 @@ export function TalentPhotos({ talentId, photos: initialPhotos }: { talentId: st
     try {
       for (const file of Array.from(files)) {
         const blob = await upload(file.name, file, {
-          access: "public",
+          access: "private",
           handleUploadUrl: "/api/upload",
         })
         await addTalentPhoto(talentId, blob.url)

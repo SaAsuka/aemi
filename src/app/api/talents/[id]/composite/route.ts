@@ -59,7 +59,7 @@ export async function GET(
     try {
       stage = "BLOB_UPLOAD"
       const blob = await put(`${id}_composite.pdf`, Buffer.from(buffer), {
-        access: "public",
+        access: "private",
         contentType: "application/pdf",
       })
       blobUrl = blob.url

@@ -81,7 +81,7 @@ export function TalentRegisterForm() {
       const photoUrls: string[] = []
       for (const photo of photos) {
         const blob = await upload(photo!.file.name, photo!.file, {
-          access: "public",
+          access: "private",
           handleUploadUrl: "/api/upload",
         })
         photoUrls.push(blob.url)

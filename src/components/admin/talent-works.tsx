@@ -24,7 +24,7 @@ export function TalentWorks({ talentId, works: initialWorks }: { talentId: strin
     setUploading(true)
     try {
       const blob = await upload(file.name, file, {
-        access: "public",
+        access: "private",
         handleUploadUrl: "/api/upload",
       })
       await addTalentWork(talentId, blob.url, caption.trim())

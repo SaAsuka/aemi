@@ -63,7 +63,7 @@ export function JobApplicationForm({
     updateSubmission(cat, { uploading: true })
     try {
       const blob = await upload(file.name, file, {
-        access: "public",
+        access: "private",
         handleUploadUrl: "/api/upload",
       })
       updateSubmission(cat, { fileUrl: blob.url, fileName: file.name, uploading: false })
