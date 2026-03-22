@@ -13,6 +13,7 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
+  SidebarTrigger,
 } from "@/components/ui/sidebar"
 
 const navItems = [
@@ -29,9 +30,12 @@ export function AdminSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="border-b p-4">
-        <Link href="/admin" className="font-bold text-xl">
-          VOZEL
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link href="/admin" className="font-bold text-xl">
+            VOZEL
+          </Link>
+          <SidebarTrigger />
+        </div>
         <p className="text-xs text-muted-foreground">案件管理システム</p>
       </SidebarHeader>
       <SidebarContent>
