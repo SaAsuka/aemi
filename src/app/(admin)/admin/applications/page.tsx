@@ -11,8 +11,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { StatusBadge } from "@/components/admin/status-badge"
-import { APPLICATION_STATUS_LABELS } from "@/types"
 import { StatusFilter } from "@/components/admin/status-filter"
 import { formatDate } from "@/lib/utils/date"
 import { ApplicationStatusSelect } from "@/components/admin/application-status-select"
@@ -69,16 +67,15 @@ export default async function ApplicationsPage({
               <TableRow>
                 <TableHead>タレント</TableHead>
                 <TableHead>案件</TableHead>
-                <TableHead>ステータス</TableHead>
                 <TableHead className="hidden sm:table-cell">提出物</TableHead>
                 <TableHead className="hidden sm:table-cell">応募日</TableHead>
-                <TableHead>操作</TableHead>
+                <TableHead>ステータス</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {applications.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={5} className="text-center text-muted-foreground">
                     データがありません
                   </TableCell>
                 </TableRow>
@@ -103,12 +100,6 @@ export default async function ApplicationsPage({
                       >
                         {app.job.title}
                       </Link>
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge
-                        status={app.status}
-                        label={APPLICATION_STATUS_LABELS[app.status]}
-                      />
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       <SubmissionLinks submissions={app.submissions} />
