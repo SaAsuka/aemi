@@ -76,7 +76,8 @@ export async function getTalent(id: string) {
     include: {
       applications: {
         include: {
-          job: { select: { id: true, title: true } },
+          job: { select: { id: true, title: true, location: true, startsAt: true } },
+          schedule: { select: { date: true, startTime: true, endTime: true, location: true, status: true } },
         },
         orderBy: { appliedAt: "desc" },
       },
