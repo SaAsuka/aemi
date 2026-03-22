@@ -14,54 +14,79 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { X, ImagePlus, Loader2 } from "lucide-react"
+import { X, ImagePlus, Loader2, RefreshCw } from "lucide-react"
 
 type ActionResult = { success?: boolean; error?: Record<string, string[]> } | null
+type PhotoSlot = { file: File; preview: string } | null
+
+const PHOTO_SLOTS = [
+  { label: "バストアップ", description: "上半身の写真" },
+  { label: "全身", description: "全身の写真" },
+  { label: "コンポジ用①" },
+  { label: "コンポジ用②" },
+  { label: "コンポジ用③" },
+  { label: "コンポジ用④" },
+] as const
 
 export function TalentRegisterForm() {
-  const [photos, setPhotos] = useState<{ file: File; preview: string }[]>([])
+  const [photos, setPhotos] = useState<PhotoSlot[]>([null, null, null, null, null, null])
   const [uploading, setUploading] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [state, setState] = useState<ActionResult>(null)
   const [isPending, setIsPending] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const activeSlotRef = useRef<number>(0)
 
-  const addPhotos = (files: FileList | null) => {
-    if (!files) return
-    const newPhotos = Array.from(files).map(file => ({
-      file,
-      preview: URL.createObjectURL(file),
-    }))
-    setPhotos(prev => [...prev, ...newPhotos])
+  const openFilePicker = (slotIndex: number) => {
+    activeSlotRef.current = slotIndex
+    fileInputRef.current?.click()
   }
 
-  const removePhoto = (index: number) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const slotIndex = activeSlotRef.current
     setPhotos(prev => {
-      URL.revokeObjectURL(prev[index].preview)
-      return prev.filter((_, i) => i !== index)
+      const next = [...prev]
+      if (next[slotIndex]) URL.revokeObjectURL(next[slotIndex]!.preview)
+      next[slotIndex] = { file, preview: URL.createObjectURL(file) }
+      return next
+    })
+    e.target.value = ""
+  }
+
+  const removePhoto = (slotIndex: number) => {
+    setPhotos(prev => {
+      const next = [...prev]
+      if (next[slotIndex]) URL.revokeObjectURL(next[slotIndex]!.preview)
+      next[slotIndex] = null
+      return next
     })
   }
 
+  const allSlotsFilled = photos.every(p => p !== null)
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (!allSlotsFilled) {
+      setSubmitError("写真を6枚すべて設定してください")
+      return
+    }
     setIsPending(true)
     setSubmitError(null)
 
     try {
-      // 写真をVercel Blobにアップロード
+      setUploading(true)
       const photoUrls: string[] = []
-      if (photos.length > 0) {
-        setUploading(true)
-        for (const photo of photos) {
-          const blob = await upload(photo.file.name, photo.file, {
-            access: "public",
-            handleUploadUrl: "/api/upload",
-          })
-          photoUrls.push(blob.url)
-        }
-        setUploading(false)
+      for (const photo of photos) {
+        const blob = await upload(photo!.file.name, photo!.file, {
+          access: "public",
+          handleUploadUrl: "/api/upload",
+        })
+        photoUrls.push(blob.url)
       }
+      setUploading(false)
 
       // フォームデータ送信
       const formData = new FormData(formRef.current!)
@@ -262,42 +287,57 @@ export function TalentRegisterForm() {
         </div>
       </div>
 
-      <h3 className="text-sm font-semibold text-muted-foreground pt-2">宣材写真</h3>
-      <p className="text-xs text-muted-foreground">バストアップ・全身写真など、宣材写真をアップロードしてください。</p>
-      <div className="flex flex-wrap gap-3">
-        {photos.map((photo, i) => (
-          <div key={i} className="relative w-24 h-24">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={photo.preview} alt={`写真${i + 1}`} className="w-24 h-24 object-cover rounded border" />
-            <button type="button" onClick={() => removePhoto(i)} className="absolute -top-2 -right-2 bg-destructive text-destructive-foreground rounded-full p-0.5">
-              <X className="h-3 w-3" />
-            </button>
+      <h3 className="text-sm font-semibold text-muted-foreground pt-2">宣材写真 *</h3>
+      <p className="text-xs text-muted-foreground">6枚すべて必須です。コンポジPDFに使用されます。</p>
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        {PHOTO_SLOTS.map((slot, i) => (
+          <div key={i} className="space-y-1">
+            <p className="text-xs font-medium">
+              {slot.label} <span className="text-destructive">*</span>
+            </p>
+            {"description" in slot && (
+              <p className="text-[10px] text-muted-foreground">{slot.description}</p>
+            )}
+            {photos[i] ? (
+              <div className="relative aspect-[3/4] rounded border overflow-hidden group">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={photos[i]!.preview} alt={slot.label} className="w-full h-full object-cover" />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <button type="button" onClick={() => openFilePicker(i)} className="bg-white text-black rounded-full p-1.5" title="変更">
+                    <RefreshCw className="h-3.5 w-3.5" />
+                  </button>
+                  <button type="button" onClick={() => removePhoto(i)} className="bg-destructive text-destructive-foreground rounded-full p-1.5" title="削除">
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => openFilePicker(i)}
+                className="w-full aspect-[3/4] border-2 border-dashed rounded flex flex-col items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
+              >
+                <ImagePlus className="h-6 w-6" />
+                <span className="text-xs mt-1">選択</span>
+              </button>
+            )}
           </div>
         ))}
-        <button
-          type="button"
-          onClick={() => fileInputRef.current?.click()}
-          className="w-24 h-24 border-2 border-dashed rounded flex flex-col items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
-        >
-          <ImagePlus className="h-6 w-6" />
-          <span className="text-xs mt-1">追加</span>
-        </button>
-        <input
-          ref={fileInputRef}
-          type="file"
-          accept="image/*"
-          multiple
-          className="hidden"
-          onChange={e => { addPhotos(e.target.files); e.target.value = "" }}
-        />
       </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
 
       {submitError && <p className="text-sm text-destructive">{submitError}</p>}
 
-      <Button type="submit" disabled={isPending} className="w-full">
+      <Button type="submit" disabled={isPending || !allSlotsFilled} className="w-full">
         {uploading ? (
           <><Loader2 className="h-4 w-4 animate-spin mr-2" />写真アップロード中...</>
-        ) : isPending ? "送信中..." : "登録する"}
+        ) : isPending ? "送信中..." : !allSlotsFilled ? "写真を6枚すべて設定してください" : "登録する"}
       </Button>
     </form>
   )
