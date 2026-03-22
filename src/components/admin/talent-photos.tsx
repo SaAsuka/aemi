@@ -13,10 +13,13 @@ export function TalentPhotos({ talentId, photos: initialPhotos }: { talentId: st
   const [uploading, setUploading] = useState(false)
   const [dragIdx, setDragIdx] = useState<number | null>(null)
 
+  const [error, setError] = useState<string | null>(null)
+
   const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files?.length) return
     setUploading(true)
+    setError(null)
     try {
       for (const file of Array.from(files)) {
         const blob = await upload(file.name, file, {
@@ -26,6 +29,10 @@ export function TalentPhotos({ talentId, photos: initialPhotos }: { talentId: st
         await addTalentPhoto(talentId, blob.url)
       }
       window.location.reload()
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "アップロードに失敗しました"
+      setError(msg)
+      console.error("写真アップロードエラー:", err)
     } finally {
       setUploading(false)
     }
@@ -66,6 +73,9 @@ export function TalentPhotos({ talentId, photos: initialPhotos }: { talentId: st
         />
         <p className="text-xs text-muted-foreground">先頭2枚がプロフィール1ページ目、残りはギャラリーページに表示</p>
       </div>
+      {error && (
+        <p className="text-sm text-red-500">{error}</p>
+      )}
 
       {photos.length > 0 && (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
