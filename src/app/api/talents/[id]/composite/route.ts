@@ -61,6 +61,7 @@ export async function GET(
       const buf = Buffer.concat(chunks)
       return `data:${result.blob.contentType};base64,${buf.toString("base64")}`
     } catch {
+      console.error(`[COMPOSITE] toDataUri failed: ${url}`)
       return url
     }
   }

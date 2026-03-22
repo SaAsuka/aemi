@@ -22,6 +22,7 @@ export async function POST(request: Request): Promise<NextResponse> {
             "application/pdf",
           ],
           maximumSizeInBytes: 100 * 1024 * 1024,
+          addRandomSuffix: false,
         }
       },
       onUploadCompleted: async () => {},
