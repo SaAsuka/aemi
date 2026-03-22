@@ -48,7 +48,7 @@ export async function parseJobText(text: string): Promise<
 
   try {
     const response = await getGemini().models.generateContent({
-      model: "gemini-2.0-flash",
+      model: "gemini-2.5-flash",
       contents: `${SYSTEM_PROMPT}\n\n---\n\n${text}`,
       config: {
         responseMimeType: "application/json",
