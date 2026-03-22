@@ -1,4 +1,5 @@
-import { notFound } from "next/navigation"
+import { redirect } from "next/navigation"
+import { requireTalent, isSubscriptionActive } from "@/lib/auth"
 import { getTalentByToken } from "@/lib/actions/talent"
 import { getOpenJobs } from "@/lib/actions/job"
 import { calcAge } from "@/lib/utils/date"
@@ -22,13 +23,20 @@ export default async function TalentJobsPage({
   searchParams: Promise<{ t?: string }>
 }) {
   const { t } = await searchParams
-  if (!t) notFound()
 
-  const talent = await getTalentByToken(t)
-  if (!talent || talent.status !== "ACTIVE") notFound()
+  let talent: { id: string; name: string; status: string; gender: string | null; birthDate: Date | null; height: number | null }
+
+  if (t) {
+    const tokenTalent = await getTalentByToken(t)
+    if (!tokenTalent || tokenTalent.status !== "ACTIVE") redirect("/auth/login")
+    talent = tokenTalent
+  } else {
+    const sessionTalent = await requireTalent()
+    if (!isSubscriptionActive(sessionTalent)) redirect("/subscribe")
+    talent = sessionTalent
+  }
 
   const jobs = await getOpenJobs()
-
   const talentAge = talent.birthDate ? calcAge(talent.birthDate) : null
 
   const jobsWithMatch: JobWithMatch[] = jobs.map((job) => {
@@ -83,8 +91,15 @@ export default async function TalentJobsPage({
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
-      <h1 className="text-xl font-bold">{talent.name}さんの案件一覧</h1>
-      <TalentJobList jobs={jobsWithMatch} token={t} matchCount={matchCount} />
+      <div className="flex items-center justify-between">
+        <h1 className="text-xl font-bold">{talent.name}さんの案件一覧</h1>
+        {!t && (
+          <a href="/auth/logout" className="text-sm text-muted-foreground hover:underline">
+            ログアウト
+          </a>
+        )}
+      </div>
+      <TalentJobList jobs={jobsWithMatch} token={t || ""} matchCount={matchCount} />
     </div>
   )
 }

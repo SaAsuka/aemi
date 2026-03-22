@@ -42,6 +42,19 @@ enum ScheduleStatus {
   CANCELLED
 }
 
+enum SubscriptionStatus {
+  NONE
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  UNPAID
+}
+
+enum AuthTokenType {
+  INVITE
+  MAGIC_LINK
+}
+
 enum SubmissionCategory {
   ACTING_VIDEO
   VOICE_SAMPLE
@@ -84,11 +97,16 @@ model Talent {
   bankAccountType  String?
   bankAccountNumber String?
   bankAccountHolder String?
-  accessToken    String?      @unique @default(cuid())
-  status         TalentStatus @default(ACTIVE)
-  note           String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  accessToken          String?            @unique @default(cuid())
+  emailVerified        Boolean            @default(false)
+  stripeCustomerId     String?            @unique
+  subscriptionStatus   SubscriptionStatus @default(NONE)
+  subscriptionId       String?            @unique
+  currentPeriodEnd     DateTime?
+  status               TalentStatus       @default(ACTIVE)
+  note                 String?
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
 
   applications Application[]
   photos       TalentPhoto[]
@@ -220,6 +238,20 @@ model JobRequirement {
   @@unique([jobId, category])
   @@index([jobId])
   @@map("job_requirements")
+}
+
+model AuthToken {
+  id        String        @id @default(cuid())
+  token     String        @unique
+  email     String
+  type      AuthTokenType
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime      @default(now())
+
+  @@index([token])
+  @@index([email])
+  @@map("auth_tokens")
 }
 
 model ApplicationSubmission {

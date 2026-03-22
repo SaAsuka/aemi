@@ -61,10 +61,13 @@ export function AdminSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
-      <SidebarFooter className="border-t p-4">
-        <Link href="/" className="text-sm text-muted-foreground hover:underline">
+      <SidebarFooter className="border-t p-4 space-y-2">
+        <Link href="/" className="text-sm text-muted-foreground hover:underline block">
           LP を表示
         </Link>
+        <a href="/auth/logout" className="text-sm text-muted-foreground hover:underline block">
+          ログアウト
+        </a>
       </SidebarFooter>
     </Sidebar>
   )

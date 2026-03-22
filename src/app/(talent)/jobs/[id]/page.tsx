@@ -1,5 +1,6 @@
-import { notFound } from "next/navigation"
+import { redirect } from "next/navigation"
 import Link from "next/link"
+import { requireTalent, isSubscriptionActive } from "@/lib/auth"
 import { getTalentByToken } from "@/lib/actions/talent"
 import { getOpenJob } from "@/lib/actions/job"
 import { formatDate } from "@/lib/utils/date"
@@ -14,18 +15,28 @@ export default async function TalentJobDetailPage({
   searchParams: Promise<{ t?: string }>
 }) {
   const [{ id }, { t }] = await Promise.all([params, searchParams])
-  if (!t) notFound()
 
-  const talent = await getTalentByToken(t)
-  if (!talent || talent.status !== "ACTIVE") notFound()
+  let talent: { id: string; name: string; status: string }
+
+  if (t) {
+    const tokenTalent = await getTalentByToken(t)
+    if (!tokenTalent || tokenTalent.status !== "ACTIVE") redirect("/auth/login")
+    talent = tokenTalent
+  } else {
+    const sessionTalent = await requireTalent()
+    if (!isSubscriptionActive(sessionTalent)) redirect("/subscribe")
+    talent = sessionTalent
+  }
 
   const job = await getOpenJob(id)
-  if (!job) notFound()
+  if (!job) redirect("/jobs")
+
+  const backHref = t ? `/jobs?t=${t}` : "/jobs"
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
-      <Link href={`/jobs?t=${t}`} className="text-sm text-muted-foreground hover:underline">
-        ← 案件一覧に戻る
+      <Link href={backHref} className="text-sm text-muted-foreground hover:underline">
+        &larr; 案件一覧に戻る
       </Link>
 
       <div>
@@ -41,7 +52,7 @@ export default async function TalentJobDetailPage({
         )}
         {job.fee != null && (
           <div>
-            <span className="text-muted-foreground">報酬: </span>¥{job.fee.toLocaleString()}
+            <span className="text-muted-foreground">報酬: </span>&yen;{job.fee.toLocaleString()}
           </div>
         )}
         {(job.startsAt || job.endsAt) && (

@@ -1,0 +1,45 @@
+import { cookies } from "next/headers"
+import { redirect } from "next/navigation"
+import { getIronSession } from "iron-session"
+import { sessionOptions, type SessionData } from "./session"
+import { prisma } from "./db"
+
+export async function getSession() {
+  const cookieStore = await cookies()
+  return getIronSession<SessionData>(cookieStore, sessionOptions)
+}
+
+export async function requireAdmin() {
+  const session = await getSession()
+  if (session.role !== "admin") redirect("/admin/login")
+  return session
+}
+
+export async function requireTalent() {
+  const session = await getSession()
+  if (!session.talentId || session.role !== "talent") redirect("/auth/login")
+
+  const talent = await prisma.talent.findUnique({
+    where: { id: session.talentId },
+    select: {
+      id: true,
+      name: true,
+      status: true,
+      gender: true,
+      birthDate: true,
+      height: true,
+      email: true,
+      subscriptionStatus: true,
+      currentPeriodEnd: true,
+    },
+  })
+
+  if (!talent || talent.status !== "ACTIVE") redirect("/auth/login")
+  return talent
+}
+
+export function isSubscriptionActive(talent: { subscriptionStatus: string; currentPeriodEnd: Date | null }) {
+  if (talent.subscriptionStatus === "ACTIVE") return true
+  if (talent.subscriptionStatus === "CANCELED" && talent.currentPeriodEnd && talent.currentPeriodEnd > new Date()) return true
+  return false
+}

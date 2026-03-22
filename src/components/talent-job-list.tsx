@@ -4,7 +4,7 @@ import { useState, useMemo } from "react"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { GENDER_LABELS } from "@/types"
-import type { JobWithMatch } from "@/app/(marketing)/jobs/page"
+import type { JobWithMatch } from "@/app/(talent)/jobs/page"
 
 type FilterType = "all" | "match" | "unmatch"
 type SortType = "newest" | "deadline" | "fee"
