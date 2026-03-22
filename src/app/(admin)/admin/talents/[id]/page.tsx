@@ -27,7 +27,14 @@ export default async function TalentDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const talent = await getTalent(id)
+
+  let talent
+  try {
+    talent = await getTalent(id)
+  } catch (e) {
+    console.error(`[TalentDetail] getTalent failed id=${id}`, e instanceof Error ? e.message : e)
+    throw e
+  }
 
   if (!talent) notFound()
 
