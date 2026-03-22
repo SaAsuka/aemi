@@ -64,7 +64,8 @@ export async function getOpenJobs() {
     orderBy: { createdAt: "desc" },
     select: {
       id: true, title: true, location: true, fee: true,
-      genderReq: true, startsAt: true, endsAt: true, deadline: true,
+      genderReq: true, ageMin: true, ageMax: true, heightMin: true, heightMax: true,
+      startsAt: true, endsAt: true, deadline: true, createdAt: true, capacity: true,
       client: { select: { companyName: true } },
     },
   })
