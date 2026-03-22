@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { TalentForm } from "@/components/admin/talent-form"
+import { TalentEditSheet } from "@/components/admin/talent-edit-sheet"
 import { DeleteButton } from "@/components/admin/delete-button"
 import { StatusBadge } from "@/components/admin/status-badge"
 import { CompositePdfButton } from "@/components/admin/composite-pdf-button"
@@ -44,6 +44,7 @@ export default async function TalentDetailPage({
           <h1 className="text-xl sm:text-2xl font-bold">{talent.name}</h1>
         </div>
         <div className="flex items-center gap-2">
+          <TalentEditSheet talent={talent} />
           <InviteTalentButton email={talent.email} />
           <CompositePdfButton talentId={talent.id} resumeUrl={talent.resume} />
           <DeleteButton id={talent.id} type="talent" />
@@ -167,15 +168,6 @@ export default async function TalentDetailPage({
         </CardHeader>
         <CardContent>
           <TalentWorks talentId={talent.id} works={talent.works} />
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>基本情報 編集</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <TalentForm talent={talent} />
         </CardContent>
       </Card>
 

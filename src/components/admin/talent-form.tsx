@@ -28,7 +28,7 @@ function talentAction(talent?: Talent) {
   }
 }
 
-export function TalentForm({ talent }: { talent?: Talent }) {
+export function TalentForm({ talent, onSuccess }: { talent?: Talent; onSuccess?: () => void }) {
   const [state, action, isPending] = useActionState(talentAction(talent), null)
   const router = useRouter()
 
@@ -39,7 +39,10 @@ export function TalentForm({ talent }: { talent?: Talent }) {
     if (state?.success && talent?.resume) {
       fetch(`/api/talents/${talent.id}/composite`).catch(() => {})
     }
-  }, [state, talent, router])
+    if (state?.success) {
+      onSuccess?.()
+    }
+  }, [state, talent, router, onSuccess])
 
   return (
     <form action={action} className="space-y-6">
