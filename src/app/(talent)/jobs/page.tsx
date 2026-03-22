@@ -25,7 +25,7 @@ export default async function TalentJobsPage({
 }) {
   const { t } = await searchParams
 
-  let talent: { id: string; name: string; stageName?: string | null; status: string; gender: string | null; birthDate: Date | null; height: number | null }
+  let talent: { id: string; name: string; status: string; gender: string | null; birthDate: Date | null; height: number | null }
 
   if (t) {
     const tokenTalent = await getTalentByToken(t)
@@ -36,7 +36,7 @@ export default async function TalentJobsPage({
     talent = sessionTalent
   }
 
-  const displayName = talent.stageName || talent.name
+  const displayName = talent.name
 
   const jobs = await getOpenJobs()
   const talentAge = talent.birthDate ? calcAge(talent.birthDate) : null

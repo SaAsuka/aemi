@@ -213,7 +213,7 @@ export async function updateTalent(id: string, formData: FormData) {
 export async function getTalentByToken(token: string) {
   return prisma.talent.findUnique({
     where: { accessToken: token },
-    select: { id: true, name: true, stageName: true, status: true, gender: true, birthDate: true, height: true },
+    select: { id: true, name: true, status: true, gender: true, birthDate: true, height: true },
   })
 }
 

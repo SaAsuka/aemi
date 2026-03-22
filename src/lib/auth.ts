@@ -25,7 +25,6 @@ export async function requireTalentRaw() {
       id: true,
       name: true,
       nameKana: true,
-      stageName: true,
       status: true,
       gender: true,
       birthDate: true,

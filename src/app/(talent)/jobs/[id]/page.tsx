@@ -17,7 +17,7 @@ export default async function TalentJobDetailPage({
 }) {
   const [{ id }, { t }] = await Promise.all([params, searchParams])
 
-  let talent: { id: string; name: string; stageName?: string | null; status: string }
+  let talent: { id: string; name: string; status: string }
 
   if (t) {
     const tokenTalent = await getTalentByToken(t)
@@ -28,7 +28,7 @@ export default async function TalentJobDetailPage({
     talent = sessionTalent
   }
 
-  const displayName = talent.stageName || talent.name
+  const displayName = talent.name
   const job = await getOpenJob(id)
   if (!job) redirect("/jobs")
 
