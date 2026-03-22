@@ -5,6 +5,7 @@ import { upload } from "@vercel/blob/client"
 import { Button } from "@/components/ui/button"
 import { Trash2, GripVertical, Plus, Loader2 } from "lucide-react"
 import { addTalentPhoto, deleteTalentPhoto, reorderTalentPhotos } from "@/lib/actions/talent-photo"
+import { blobProxyUrl } from "@/lib/utils/blob"
 import type { TalentPhoto } from "@/generated/prisma/client"
 
 export function TalentPhotos({ talentId, photos: initialPhotos }: { talentId: string; photos: TalentPhoto[] }) {
@@ -77,7 +78,7 @@ export function TalentPhotos({ talentId, photos: initialPhotos }: { talentId: st
               onDrop={() => handleDrop(idx)}
               className={`relative group border rounded-lg overflow-hidden ${dragIdx === idx ? "opacity-50" : ""}`}
             >
-              <img src={photo.url} alt={`宣材写真 ${idx + 1}`} className="w-full aspect-[3/4] object-cover" />
+              <img src={blobProxyUrl(photo.url)} alt={`宣材写真 ${idx + 1}`} className="w-full aspect-[3/4] object-cover" />
               <div className="absolute top-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
                 {idx === 0 ? "バストアップ" : idx === 1 ? "全身" : `#${idx + 1}`}
               </div>

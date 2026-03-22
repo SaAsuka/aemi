@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
 import { renderToBuffer, Font } from "@react-pdf/renderer"
-import { put } from "@vercel/blob"
+import { put, get } from "@vercel/blob"
 import { prisma } from "@/lib/db"
 import { CompositePDF } from "@/lib/pdf/composite-pdf"
 import React from "react"
@@ -45,6 +45,34 @@ export async function GET(
 
   if (!talent) {
     return NextResponse.json({ errors: ["タレントが見つかりません"] }, { status: 404 })
+  }
+
+  async function toDataUri(url: string): Promise<string> {
+    try {
+      const result = await get(url, { access: "private" })
+      if (!result || result.statusCode !== 200) return url
+      const chunks: Uint8Array[] = []
+      const reader = result.stream!.getReader()
+      for (;;) {
+        const { done, value } = await reader.read()
+        if (done) break
+        chunks.push(value)
+      }
+      const buf = Buffer.concat(chunks)
+      return `data:${result.blob.contentType};base64,${buf.toString("base64")}`
+    } catch {
+      return url
+    }
+  }
+
+  for (const photo of talent.photos) {
+    photo.url = await toDataUri(photo.url)
+  }
+  for (const work of talent.works) {
+    work.imageUrl = await toDataUri(work.imageUrl)
+  }
+  if (talent.profileImage) {
+    talent.profileImage = await toDataUri(talent.profileImage)
   }
 
   try {

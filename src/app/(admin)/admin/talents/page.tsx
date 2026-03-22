@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { blobProxyUrl } from "@/lib/utils/blob"
 import { getTalents } from "@/lib/actions/talent"
 import { LinkButton } from "@/components/admin/link-button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -125,7 +126,7 @@ export default async function TalentsPage({
                     </TableCell>
                     <TableCell>
                       {talent.resume ? (
-                        <a href={talent.resume} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                        <a href={blobProxyUrl(talent.resume)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
                           <ExternalLink className="h-3.5 w-3.5" />
                           表示
                         </a>

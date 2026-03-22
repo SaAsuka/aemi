@@ -4,6 +4,7 @@ import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { FileText, RefreshCw, ExternalLink, Loader2 } from "lucide-react"
+import { blobProxyUrl } from "@/lib/utils/blob"
 
 async function generatePdf(talentId: string): Promise<void> {
   console.log(`[CompositePDF] fetch開始 talentId=${talentId}`)
@@ -67,7 +68,7 @@ export function CompositePdfButton({ talentId, resumeUrl }: { talentId: string; 
         {generating ? "生成中..." : resumeUrl ? "PDF再生成" : "コンポジPDF生成"}
       </Button>
       {resumeUrl && (
-        <a href={resumeUrl} target="_blank" rel="noopener noreferrer">
+        <a href={blobProxyUrl(resumeUrl)} target="_blank" rel="noopener noreferrer">
           <Button variant="ghost" size="sm">
             <ExternalLink className="h-4 w-4 mr-1" />
             PDFを表示

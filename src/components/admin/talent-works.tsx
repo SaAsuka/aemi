@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Trash2, GripVertical, Plus, Loader2 } from "lucide-react"
 import { addTalentWork, deleteTalentWork, updateTalentWork, reorderTalentWorks } from "@/lib/actions/talent-work"
+import { blobProxyUrl } from "@/lib/utils/blob"
 import type { TalentWork } from "@/generated/prisma/client"
 
 export function TalentWorks({ talentId, works: initialWorks }: { talentId: string; works: TalentWork[] }) {
@@ -94,7 +95,7 @@ export function TalentWorks({ talentId, works: initialWorks }: { talentId: strin
               <button type="button" className="cursor-grab mt-2 text-muted-foreground">
                 <GripVertical className="h-4 w-4" />
               </button>
-              <img src={work.imageUrl} alt={work.caption} className="w-24 h-24 object-cover rounded" />
+              <img src={blobProxyUrl(work.imageUrl)} alt={work.caption} className="w-24 h-24 object-cover rounded" />
               <div className="flex-1 space-y-1">
                 <Input
                   defaultValue={work.caption}
