@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { Job } from "@/generated/prisma/client"
-import { SUBMISSION_CATEGORY_LABELS } from "@/types"
+import { SUBMISSION_CATEGORY_LABELS, JOB_STATUS_LABELS, GENDER_LABELS } from "@/types"
 
 type ActionResult = { success?: boolean; error?: Record<string, string[]> } | null
 
@@ -95,7 +95,7 @@ export function JobForm({
         <Label htmlFor="status">ステータス</Label>
         <Select name="status" defaultValue={job?.status ?? "DRAFT"}>
           <SelectTrigger>
-            <SelectValue />
+            <SelectValue>{(v) => JOB_STATUS_LABELS[v] ?? v}</SelectValue>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="DRAFT" label="下書き">下書き</SelectItem>
@@ -142,7 +142,7 @@ export function JobForm({
             <Label htmlFor="genderReq">性別</Label>
             <Select name="genderReq" defaultValue={job?.genderReq ?? ""}>
               <SelectTrigger>
-                <SelectValue placeholder="指定なし" />
+                <SelectValue placeholder="指定なし">{(v) => v ? GENDER_LABELS[v] ?? v : "指定なし"}</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="MALE" label="男性">男性</SelectItem>

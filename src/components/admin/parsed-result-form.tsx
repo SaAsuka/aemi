@@ -132,7 +132,7 @@ export function ParsedResultForm({
           <Label>モード</Label>
           <Select value={mode} onValueChange={(v) => setMode(v as "create" | "existing")}>
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue>{(v) => v === "create" ? "新規作成" : "既存案件に紐付け"}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="create">新規作成</SelectItem>
@@ -183,7 +183,7 @@ export function ParsedResultForm({
             <Label>性別条件</Label>
             <Select value={genderReq} onValueChange={(v) => setGenderReq(v ?? "NONE")}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue>{(v) => GENDER_OPTIONS.find((o) => o.value === v)?.label ?? v}</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {GENDER_OPTIONS.map((opt) => (

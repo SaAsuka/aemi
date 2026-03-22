@@ -36,7 +36,7 @@ export function ScheduleStatusSelect({
   return (
     <Select defaultValue={currentStatus} onValueChange={handleChange}>
       <SelectTrigger className={`w-32 ${isPending ? "opacity-50" : ""}`}>
-        <SelectValue />
+        <SelectValue>{(v) => statuses.find((s) => s.value === v)?.label ?? v}</SelectValue>
       </SelectTrigger>
       <SelectContent>
         {statuses.map((s) => (

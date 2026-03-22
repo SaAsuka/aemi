@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import type { Talent } from "@/generated/prisma/client"
+import { GENDER_LABELS, TALENT_STATUS_LABELS } from "@/types"
 
 type ActionResult = { success?: boolean; error?: Record<string, string[]> } | null
 
@@ -100,7 +101,7 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
           <Label htmlFor="gender">性別</Label>
           <Select name="gender" defaultValue={talent?.gender ?? ""}>
             <SelectTrigger>
-              <SelectValue placeholder="選択" />
+              <SelectValue placeholder="選択">{(v) => v ? GENDER_LABELS[v] ?? v : "選択"}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="MALE" label="男性">男性</SelectItem>
@@ -332,7 +333,7 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
             <Label htmlFor="status">ステータス</Label>
             <Select name="status" defaultValue={talent?.status ?? "ACTIVE"}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue>{(v) => TALENT_STATUS_LABELS[v] ?? v}</SelectValue>
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="ACTIVE" label="アクティブ">アクティブ</SelectItem>
@@ -366,7 +367,7 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
           <Label htmlFor="bankAccountType">種別</Label>
           <Select name="bankAccountType" defaultValue={talent?.bankAccountType ?? ""}>
             <SelectTrigger>
-              <SelectValue placeholder="選択" />
+              <SelectValue placeholder="選択">{(v) => v || "選択"}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="普通" label="普通">普通</SelectItem>

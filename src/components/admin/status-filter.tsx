@@ -36,7 +36,7 @@ export function StatusFilter({
   return (
     <Select defaultValue={defaultValue ?? "ALL"} onValueChange={handleChange}>
       <SelectTrigger className={`w-full sm:w-40 ${isPending ? "opacity-50" : ""}`}>
-        <SelectValue />
+        <SelectValue>{(v) => options.find((o) => o.value === v)?.label ?? v}</SelectValue>
       </SelectTrigger>
       <SelectContent>
         {options.map((opt) => (

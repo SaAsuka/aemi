@@ -153,7 +153,7 @@ export function TalentRegisterForm() {
           <Label htmlFor="gender">性別</Label>
           <Select name="gender">
             <SelectTrigger>
-              <SelectValue placeholder="選択" />
+              <SelectValue placeholder="選択">{(v) => v ? ({ MALE: "男性", FEMALE: "女性", OTHER: "その他" } as Record<string, string>)[v] ?? v : "選択"}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="MALE" label="男性">男性</SelectItem>
@@ -269,7 +269,7 @@ export function TalentRegisterForm() {
           <Label htmlFor="bankAccountType">種別</Label>
           <Select name="bankAccountType">
             <SelectTrigger>
-              <SelectValue placeholder="選択" />
+              <SelectValue placeholder="選択">{(v) => v || "選択"}</SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="普通" label="普通">普通</SelectItem>

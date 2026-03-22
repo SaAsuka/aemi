@@ -81,7 +81,7 @@ export function ApplicationStatusSelect({
     <>
       <Select defaultValue={currentStatus} onValueChange={handleChange}>
         <SelectTrigger className={`w-36 ${isPending ? "opacity-50" : ""}`}>
-          <SelectValue />
+          <SelectValue>{(v) => statuses.find((s) => s.value === v)?.label ?? v}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           {statuses.map((s) => (
