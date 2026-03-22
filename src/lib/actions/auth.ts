@@ -99,11 +99,7 @@ export async function verifyToken(token: string) {
     session.role = "talent"
     await session.save()
 
-    const isActive =
-      talent.subscriptionStatus === "ACTIVE" ||
-      (talent.subscriptionStatus === "CANCELED" && talent.currentPeriodEnd && talent.currentPeriodEnd > new Date())
-
-    return { redirect: isActive ? "/jobs" : "/subscribe" }
+    return { redirect: "/jobs" }
   }
 
   return { error: "不明なトークンタイプ" }

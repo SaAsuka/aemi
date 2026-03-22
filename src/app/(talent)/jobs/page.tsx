@@ -32,7 +32,6 @@ export default async function TalentJobsPage({
     talent = tokenTalent
   } else {
     const sessionTalent = await requireTalent()
-    if (!isSubscriptionActive(sessionTalent)) redirect("/subscribe")
     talent = sessionTalent
   }
 
