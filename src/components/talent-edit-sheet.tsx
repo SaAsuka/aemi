@@ -3,12 +3,12 @@
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
 import { TalentForm } from "@/components/admin/talent-form"
 import { updateMyProfile } from "@/lib/actions/talent-mypage"
 import { Pencil } from "lucide-react"
@@ -22,24 +22,22 @@ export function TalentEditSheet({ talent }: { talent: Talent }) {
   }
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger render={<Button variant="outline" size="sm" />}>
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger render={<Button variant="outline" size="sm" />}>
         <Pencil className="h-4 w-4 mr-1" />
         プロフィール編集
-      </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:max-w-xl overflow-y-auto">
-        <SheetHeader>
-          <SheetTitle>プロフィール編集</SheetTitle>
-        </SheetHeader>
-        <div className="px-4 pb-4">
-          <TalentForm
-            talent={talent}
-            mode="talent"
-            customAction={handleAction}
-            onSuccess={() => setOpen(false)}
-          />
-        </div>
-      </SheetContent>
-    </Sheet>
+      </DialogTrigger>
+      <DialogContent className="sm:max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>プロフィール編集</DialogTitle>
+        </DialogHeader>
+        <TalentForm
+          talent={talent}
+          mode="talent"
+          customAction={handleAction}
+          onSuccess={() => setOpen(false)}
+        />
+      </DialogContent>
+    </Dialog>
   )
 }
