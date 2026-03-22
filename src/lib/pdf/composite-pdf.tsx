@@ -56,9 +56,9 @@ const s = StyleSheet.create({
   photoBust: { height: 300, marginBottom: 8 },
   photoFull: { height: 400 },
 
-  galleryGrid: { flexDirection: "row", flexWrap: "wrap", marginTop: 8 },
-  galleryItem: { width: "48%", marginRight: "2%", marginBottom: 12 },
-  galleryPhoto: { width: "100%", height: 330, objectFit: "contain" },
+  photoGrid: { flexDirection: "row", flexWrap: "wrap", marginTop: 8 },
+  photoGridItem: { width: "48%", marginRight: "2%", marginBottom: 12 },
+  photoGridImage: { width: "100%", height: 330, objectFit: "contain" },
 
   workItem: { flexDirection: "row", marginTop: 12, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: C.border, borderBottomStyle: "solid" },
   workPhoto: { width: 200, height: 150, objectFit: "contain", marginRight: 12 },
@@ -134,6 +134,7 @@ function sizeStr(t: TalentData): string {
   return p.join(" / ")
 }
 
+// 1ページ目: 左にプロフィール、右にバストアップ＋全身
 function ProfilePage({ talent }: { talent: TalentData }) {
   const bustPhoto = talent.photos[0]?.url || talent.profileImage || null
   const fullPhoto = talent.photos[1]?.url || null
@@ -182,20 +183,6 @@ function ProfilePage({ talent }: { talent: TalentData }) {
               ))}
             </View>
           ) : null}
-
-          {talent.career ? (
-            <View>
-              <Text style={s.sectionTitle}>CAREER</Text>
-              <Text style={s.careerText}>{talent.career}</Text>
-            </View>
-          ) : null}
-
-          {talent.representativeWork ? (
-            <View>
-              <Text style={s.sectionTitle}>代表作</Text>
-              <Text style={s.careerText}>{talent.representativeWork}</Text>
-            </View>
-          ) : null}
         </View>
 
         <View style={s.profileRight}>
@@ -208,14 +195,15 @@ function ProfilePage({ talent }: { talent: TalentData }) {
   )
 }
 
-function GalleryPage({ photos }: { photos: { url: string }[] }) {
+// 2ページ目: 写真4枚グリッド
+function PhotoGridPage({ photos }: { photos: { url: string }[] }) {
   return (
     <Page size="A4" style={s.page}>
       <PageHeader />
-      <View style={s.galleryGrid}>
+      <View style={s.photoGrid}>
         {photos.map((p, i) => (
-          <View style={s.galleryItem} key={i}>
-            <Image style={s.galleryPhoto} src={p.url} />
+          <View style={s.photoGridItem} key={i}>
+            <Image style={s.photoGridImage} src={p.url} />
           </View>
         ))}
       </View>
@@ -224,41 +212,54 @@ function GalleryPage({ photos }: { photos: { url: string }[] }) {
   )
 }
 
-function WorksPage({ works }: { works: { imageUrl: string; caption: string }[] }) {
+// 3ページ目以降: 経歴・代表作・出演実績
+function CareerPage({ talent }: { talent: TalentData }) {
   return (
     <Page size="A4" style={s.page}>
       <PageHeader />
-      {works.map((w, i) => (
-        <View style={s.workItem} key={i}>
-          <Image style={s.workPhoto} src={w.imageUrl} />
-          <Text style={s.workCaption}>{w.caption}</Text>
+      <Text style={s.nameJa}>{talent.name}</Text>
+      {talent.nameRomaji ? <Text style={s.nameRomaji}>{talent.nameRomaji}</Text> : null}
+
+      {talent.career ? (
+        <View>
+          <Text style={s.sectionTitle}>CAREER</Text>
+          <Text style={s.careerText}>{talent.career}</Text>
         </View>
-      ))}
+      ) : null}
+
+      {talent.representativeWork ? (
+        <View>
+          <Text style={s.sectionTitle}>代表作</Text>
+          <Text style={s.careerText}>{talent.representativeWork}</Text>
+        </View>
+      ) : null}
+
+      {talent.works.length > 0 ? (
+        <View>
+          <Text style={s.sectionTitle}>出演実績</Text>
+          {talent.works.map((w, i) => (
+            <View style={s.workItem} key={i}>
+              <Image style={s.workPhoto} src={w.imageUrl} />
+              <Text style={s.workCaption}>{w.caption}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
+
       <PageFooter />
     </Page>
   )
 }
 
-function chunk<T>(arr: T[], size: number): T[][] {
-  const result: T[][] = []
-  for (let i = 0; i < arr.length; i += size) result.push(arr.slice(i, i + size))
-  return result
-}
-
 export function CompositePDF({ talent }: { talent: TalentData }) {
-  const galleryPhotos = talent.photos.slice(2)
-  const galleryPages = chunk(galleryPhotos, 4)
-  const worksPages = chunk(talent.works, 3)
+  const gridPhotos = talent.photos.slice(2, 6)
+  const hasCareer = talent.career || talent.representativeWork || talent.works.length > 0
 
   return (
     <Document>
       <ProfilePage talent={talent} />
-      {galleryPages.map((photos, i) => (
-        <GalleryPage key={`gallery-${i}`} photos={photos} />
-      ))}
-      {worksPages.map((works, i) => (
-        <WorksPage key={`works-${i}`} works={works} />
-      ))}
+      {gridPhotos.length > 0 && <PhotoGridPage photos={gridPhotos} />}
+      {hasCareer && <CareerPage talent={talent} />}
     </Document>
   )
 }
