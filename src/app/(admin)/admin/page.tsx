@@ -4,20 +4,20 @@ import { prisma } from "@/lib/db"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 async function DashboardStats() {
-  const [talentCount, clientCount, jobCount, applicationCount, openJobs] =
+  const [talentCount, jobCount, applicationCount, openJobs, scheduleCount] =
     await Promise.all([
       prisma.talent.count(),
-      prisma.client.count(),
       prisma.job.count(),
       prisma.application.count(),
       prisma.job.count({ where: { status: "OPEN" } }),
+      prisma.schedule.count(),
     ])
 
   const stats = [
     { label: "タレント", value: talentCount, href: "/admin/talents" },
-    { label: "クライアント", value: clientCount, href: "/admin/clients" },
     { label: "案件（募集中）", value: `${openJobs} / ${jobCount}`, href: "/admin/jobs" },
     { label: "応募", value: applicationCount, href: "/admin/applications" },
+    { label: "スケジュール", value: scheduleCount, href: "/admin/schedule" },
   ]
 
   return (
@@ -48,12 +48,7 @@ async function RecentApplications() {
       id: true,
       appliedAt: true,
       talent: { select: { name: true } },
-      job: {
-        select: {
-          title: true,
-          client: { select: { companyName: true } },
-        },
-      },
+      job: { select: { title: true } },
     },
   })
 
@@ -75,7 +70,7 @@ async function RecentApplications() {
                 <div>
                   <p className="font-medium">{app.talent.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {app.job.title} ({app.job.client.companyName})
+                    {app.job.title}
                   </p>
                 </div>
                 <span className="text-xs text-muted-foreground">

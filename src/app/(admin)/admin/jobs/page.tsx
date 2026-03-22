@@ -36,7 +36,7 @@ export default async function JobsPage({
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row">
-        <SearchForm placeholder="案件名・クライアント名で検索" defaultValue={q} />
+        <SearchForm placeholder="案件名で検索" defaultValue={q} />
         <StatusFilter
           options={[
             { value: "ALL", label: "すべて" },
@@ -58,7 +58,6 @@ export default async function JobsPage({
             <TableHeader>
               <TableRow>
                 <TableHead>案件名</TableHead>
-                <TableHead className="hidden sm:table-cell">クライアント</TableHead>
                 <TableHead>報酬</TableHead>
                 <TableHead className="hidden sm:table-cell">締切</TableHead>
                 <TableHead>応募数</TableHead>
@@ -69,7 +68,7 @@ export default async function JobsPage({
             <TableBody>
               {jobs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
                     データがありません
                   </TableCell>
                 </TableRow>
@@ -83,9 +82,7 @@ export default async function JobsPage({
                       >
                         {job.title}
                       </Link>
-                      <p className="text-xs text-muted-foreground sm:hidden">{job.client.companyName}</p>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">{job.client.companyName}</TableCell>
                     <TableCell>
                       {job.fee ? `¥${job.fee.toLocaleString()}` : "−"}
                     </TableCell>

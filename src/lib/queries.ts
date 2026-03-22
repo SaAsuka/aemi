@@ -28,18 +28,6 @@ export const getOpenJobOptions = cache(
   )
 )
 
-export const getClientOptions = cache(
-  unstable_cache(
-    () =>
-      prisma.client.findMany({
-        orderBy: { companyName: "asc" },
-        select: { id: true, companyName: true },
-      }),
-    ["client-options"],
-    { revalidate: 60, tags: ["clients"] }
-  )
-)
-
 export async function getDefaultClientId(): Promise<string> {
   const existing = await prisma.client.findFirst({
     where: { companyName: { contains: "avex", mode: "insensitive" } },

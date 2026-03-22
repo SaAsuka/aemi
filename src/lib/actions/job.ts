@@ -9,10 +9,7 @@ export async function getJobs(search?: string, status?: string) {
   const where: Record<string, unknown> = {}
 
   if (search) {
-    where.OR = [
-      { title: { contains: search, mode: "insensitive" } },
-      { client: { companyName: { contains: search, mode: "insensitive" } } },
-    ]
+    where.title = { contains: search, mode: "insensitive" }
   }
 
   if (status && status !== "ALL") {
@@ -23,7 +20,6 @@ export async function getJobs(search?: string, status?: string) {
     where,
     orderBy: { createdAt: "desc" },
     include: {
-      client: { select: { companyName: true } },
       _count: { select: { applications: true } },
     },
   })

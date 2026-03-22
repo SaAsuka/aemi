@@ -23,9 +23,11 @@ async function ScheduleDialogData() {
       status: "ACCEPTED",
       schedule: null,
     },
-    include: {
-      talent: true,
-      job: true,
+    select: {
+      id: true,
+      status: true,
+      talent: { select: { id: true, name: true } },
+      job: { select: { id: true, title: true } },
     },
     orderBy: { appliedAt: "desc" },
   })

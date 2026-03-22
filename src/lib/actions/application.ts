@@ -28,13 +28,7 @@ export async function getApplications(status?: string, jobId?: string) {
           nearestStation: true, resume: true,
         },
       },
-      job: {
-        select: {
-          id: true,
-          title: true,
-          client: { select: { companyName: true } },
-        },
-      },
+      job: { select: { id: true, title: true } },
       submissions: {
         select: {
           id: true, category: true, fileUrl: true, externalUrl: true, fileName: true,

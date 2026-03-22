@@ -69,7 +69,6 @@ export default async function ApplicationsPage({
               <TableRow>
                 <TableHead>タレント</TableHead>
                 <TableHead>案件</TableHead>
-                <TableHead className="hidden sm:table-cell">クライアント</TableHead>
                 <TableHead>ステータス</TableHead>
                 <TableHead className="hidden sm:table-cell">提出物</TableHead>
                 <TableHead className="hidden sm:table-cell">応募日</TableHead>
@@ -79,7 +78,7 @@ export default async function ApplicationsPage({
             <TableBody>
               {applications.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
                     データがありません
                   </TableCell>
                 </TableRow>
@@ -94,7 +93,7 @@ export default async function ApplicationsPage({
                         {app.talent.name}
                       </Link>
                       <p className="text-xs text-muted-foreground sm:hidden">
-                        {app.job.client.companyName} · {formatDate(app.appliedAt)}
+                        {formatDate(app.appliedAt)}
                       </p>
                     </TableCell>
                     <TableCell>
@@ -105,7 +104,6 @@ export default async function ApplicationsPage({
                         {app.job.title}
                       </Link>
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">{app.job.client.companyName}</TableCell>
                     <TableCell>
                       <StatusBadge
                         status={app.status}
