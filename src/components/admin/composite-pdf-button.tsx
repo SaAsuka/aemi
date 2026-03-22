@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { FileText, RefreshCw, ExternalLink, Loader2 } from "lucide-react"
 
@@ -39,13 +40,14 @@ async function generatePdf(talentId: string): Promise<string> {
 
 export function CompositePdfButton({ talentId, resumeUrl }: { talentId: string; resumeUrl?: string | null }) {
   const [generating, setGenerating] = useState(false)
+  const router = useRouter()
 
   const generate = async () => {
     setGenerating(true)
     try {
       const url = await generatePdf(talentId)
       window.open(url, "_blank")
-      window.location.reload()
+      router.refresh()
     } catch (e) {
       alert(e instanceof Error ? e.message : "エラーが発生しました")
     } finally {
@@ -79,6 +81,7 @@ export function CompositePdfButton({ talentId, resumeUrl }: { talentId: string; 
 
 export function CompositePdfIconButton({ talentId }: { talentId: string }) {
   const [generating, setGenerating] = useState(false)
+  const router = useRouter()
 
   const generate = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -87,7 +90,7 @@ export function CompositePdfIconButton({ talentId }: { talentId: string }) {
     try {
       const url = await generatePdf(talentId)
       window.open(url, "_blank")
-      window.location.reload()
+      router.refresh()
     } catch (err) {
       alert(err instanceof Error ? err.message : "エラーが発生しました")
     } finally {

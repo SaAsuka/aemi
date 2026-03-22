@@ -52,16 +52,16 @@ const s = StyleSheet.create({
   snsItem: { fontSize: 7, color: C.secondary, marginBottom: 2 },
   careerText: { fontSize: 7.5, lineHeight: 1.5 },
 
-  photo: { width: "100%", objectFit: "cover" },
-  photoBust: { height: 160, marginBottom: 8 },
-  photoFull: { flex: 1 },
+  photo: { width: "100%", objectFit: "contain" },
+  photoBust: { height: 300, marginBottom: 8 },
+  photoFull: { height: 400 },
 
   galleryGrid: { flexDirection: "row", flexWrap: "wrap", marginTop: 8 },
   galleryItem: { width: "48%", marginRight: "2%", marginBottom: 12 },
-  galleryPhoto: { width: "100%", height: 280, objectFit: "cover" },
+  galleryPhoto: { width: "100%", height: 330, objectFit: "contain" },
 
   workItem: { flexDirection: "row", marginTop: 12, paddingBottom: 12, borderBottomWidth: 0.5, borderBottomColor: C.border, borderBottomStyle: "solid" },
-  workPhoto: { width: 200, height: 150, objectFit: "cover", marginRight: 12 },
+  workPhoto: { width: 200, height: 150, objectFit: "contain", marginRight: 12 },
   workCaption: { flex: 1, fontSize: 9, paddingTop: 4 },
 })
 

@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server"
+import { revalidatePath } from "next/cache"
 import { renderToBuffer, Font } from "@react-pdf/renderer"
 import { put } from "@vercel/blob"
 import { prisma } from "@/lib/db"
@@ -64,6 +65,8 @@ export async function GET(
       console.log(`[COMPOSITE] BLOB_DONE +${Date.now() - t0}ms url=${blobUrl}`)
 
       await prisma.talent.update({ where: { id }, data: { resume: blobUrl } })
+      revalidatePath("/admin/talents")
+      revalidatePath(`/admin/talents/${id}`)
       console.log(`[COMPOSITE] DB_SAVE_DONE +${Date.now() - t0}ms`)
     } catch (e) {
       console.warn(`[COMPOSITE] BLOB_UPLOAD失敗（PDFは返却可能）: ${e instanceof Error ? e.message : String(e)}`)
