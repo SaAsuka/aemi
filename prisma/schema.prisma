@@ -52,7 +52,7 @@ enum SubscriptionStatus {
 
 enum AuthTokenType {
   INVITE
-  MAGIC_LINK
+  PASSWORD_RESET
 }
 
 enum SubmissionCategory {
@@ -102,6 +102,7 @@ model Talent {
   bankAccountType  String?
   bankAccountNumber String?
   bankAccountHolder String?
+  passwordHash         String?
   accessToken          String?            @unique @default(cuid())
   emailVerified        Boolean            @default(false)
   stripeCustomerId     String?            @unique

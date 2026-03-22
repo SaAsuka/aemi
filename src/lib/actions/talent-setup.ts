@@ -1,9 +1,10 @@
 "use server"
 
+import bcrypt from "bcryptjs"
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/db"
 import { getSession } from "@/lib/auth"
-import { talentSchema } from "@/lib/validations/talent"
+import { setupSchema } from "@/lib/validations/talent"
 
 export async function setupTalent(formData: FormData) {
   const session = await getSession()
@@ -12,13 +13,14 @@ export async function setupTalent(formData: FormData) {
   }
 
   const raw = Object.fromEntries(formData)
-  const parsed = talentSchema.safeParse(raw)
+  const parsed = setupSchema.safeParse(raw)
 
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors }
   }
 
   const data = parsed.data
+  const passwordHash = await bcrypt.hash(data.password, 10)
 
   await prisma.talent.update({
     where: { id: session.talentId },
@@ -57,6 +59,7 @@ export async function setupTalent(formData: FormData) {
       bankAccountType: data.bankAccountType || null,
       bankAccountNumber: data.bankAccountNumber || null,
       bankAccountHolder: data.bankAccountHolder || null,
+      passwordHash,
     },
   })
 

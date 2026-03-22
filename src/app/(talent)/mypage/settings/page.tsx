@@ -7,7 +7,8 @@ import { TalentPhotos } from "@/components/admin/talent-photos"
 import { TalentWorks } from "@/components/admin/talent-works"
 import { CompositePdfButton } from "@/components/admin/composite-pdf-button"
 import { updateMyProfile } from "@/lib/actions/talent-mypage"
-import { Camera, Film, FileText } from "lucide-react"
+import { ChangePasswordForm } from "@/components/change-password-form"
+import { Camera, Film, FileText, Lock } from "lucide-react"
 
 export default async function SettingsPage() {
   const session = await requireTalent()
@@ -25,6 +26,14 @@ export default async function SettingsPage() {
         <section className="space-y-4">
           <h2 className="text-lg font-semibold">プロフィール編集</h2>
           <TalentForm talent={talent} mode="talent" customAction={updateMyProfile} />
+        </section>
+
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Lock className="h-5 w-5 text-primary" />
+            <h2 className="text-lg font-semibold">パスワード変更</h2>
+          </div>
+          <ChangePasswordForm />
         </section>
 
         <section className="space-y-4">

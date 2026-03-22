@@ -18,7 +18,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Loader2, Trash2, GripVertical, Camera, User, Ruler, Share2, CreditCard } from "lucide-react"
+import { Plus, Loader2, Trash2, GripVertical, Camera, User, Ruler, Share2, CreditCard, Lock } from "lucide-react"
 import type { TalentPhoto } from "@/generated/prisma/client"
 
 type ActionResult = { success?: boolean; redirect?: string; error?: Record<string, string[]> } | null
@@ -405,6 +405,33 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
               <Input id="bankAccountHolder" name="bankAccountHolder" required />
               {state?.error?.bankAccountHolder && (
                 <p className="text-sm text-destructive">{state.error.bankAccountHolder[0]}</p>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* パスワード設定 */}
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <Lock className="h-5 w-5 text-primary" />
+            <h2 className="text-base font-semibold">パスワード設定 *</h2>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            ログインに使用するパスワードを設定してください（8文字以上）
+          </p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="password">パスワード *</Label>
+              <Input id="password" name="password" type="password" required minLength={8} />
+              {state?.error?.password && (
+                <p className="text-sm text-destructive">{state.error.password[0]}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="passwordConfirm">パスワード確認 *</Label>
+              <Input id="passwordConfirm" name="passwordConfirm" type="password" required minLength={8} />
+              {state?.error?.passwordConfirm && (
+                <p className="text-sm text-destructive">{state.error.passwordConfirm[0]}</p>
               )}
             </div>
           </div>

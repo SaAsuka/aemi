@@ -51,4 +51,34 @@ export const talentSchema = talentBaseSchema.extend({
   bankAccountHolder: z.string().min(1, "口座名義は必須です"),
 })
 
+export const setupSchema = talentSchema.extend({
+  password: z.string().min(8, "パスワードは8文字以上で入力してください"),
+  passwordConfirm: z.string(),
+}).refine((data) => data.password === data.passwordConfirm, {
+  message: "パスワードが一致しません",
+  path: ["passwordConfirm"],
+})
+
+export const passwordLoginSchema = z.object({
+  email: z.string().email("メールアドレスの形式が不正です"),
+  password: z.string().min(1, "パスワードを入力してください"),
+})
+
+export const resetPasswordSchema = z.object({
+  password: z.string().min(8, "パスワードは8文字以上で入力してください"),
+  passwordConfirm: z.string(),
+}).refine((data) => data.password === data.passwordConfirm, {
+  message: "パスワードが一致しません",
+  path: ["passwordConfirm"],
+})
+
+export const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1, "現在のパスワードを入力してください"),
+  newPassword: z.string().min(8, "新しいパスワードは8文字以上で入力してください"),
+  newPasswordConfirm: z.string(),
+}).refine((data) => data.newPassword === data.newPasswordConfirm, {
+  message: "パスワードが一致しません",
+  path: ["newPasswordConfirm"],
+})
+
 export type TalentFormData = z.infer<typeof talentBaseSchema>
