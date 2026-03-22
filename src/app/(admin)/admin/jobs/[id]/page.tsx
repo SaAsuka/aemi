@@ -1,5 +1,6 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
+import { ArrowLeft } from "lucide-react"
 import { getJob } from "@/lib/actions/job"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -32,7 +33,12 @@ export default async function JobDetailPage({
   return (
     <div className="max-w-4xl space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl sm:text-2xl font-bold">{job.title}</h1>
+        <div className="flex items-center gap-3">
+          <Link href="/admin/jobs" className="text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="h-5 w-5" />
+          </Link>
+          <h1 className="text-xl sm:text-2xl font-bold">{job.title}</h1>
+        </div>
         <DeleteButton id={job.id} type="job" />
       </div>
 
