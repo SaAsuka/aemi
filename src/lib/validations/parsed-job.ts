@@ -1,6 +1,7 @@
 import { z } from "zod"
 
 const parsedStatusEnum = z.enum(["ACCEPTED", "REJECTED", "PENDING"])
+const genderEnum = z.enum(["MALE", "FEMALE", "OTHER"]).nullable().optional()
 
 export const parsedTalentEntrySchema = z.object({
   name: z.string(),
@@ -15,7 +16,18 @@ export const parsedJobSchema = z.object({
   title: z.string().nullable().optional().transform((v) => v ?? ""),
   clientCompanyName: z.string().nullable().optional(),
   clientContactName: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
+  fee: z.number().nullable().optional(),
+  genderReq: genderEnum,
+  ageMin: z.number().nullable().optional(),
+  ageMax: z.number().nullable().optional(),
+  heightMin: z.number().nullable().optional(),
+  heightMax: z.number().nullable().optional(),
+  startsAt: z.string().nullable().optional(),
+  endsAt: z.string().nullable().optional(),
+  deadline: z.string().nullable().optional(),
+  capacity: z.number().nullable().optional(),
   dates: z.string().nullable().optional(),
   note: z.string().nullable().optional(),
   talents: z.array(parsedTalentEntrySchema),

@@ -34,6 +34,13 @@ const STATUS_LABELS: Record<string, string> = {
   PENDING: "選考中",
 }
 
+const GENDER_OPTIONS = [
+  { value: "NONE", label: "指定なし" },
+  { value: "MALE", label: "男性" },
+  { value: "FEMALE", label: "女性" },
+  { value: "OTHER", label: "その他" },
+] as const
+
 function buildTalentNote(talents: ParsedTalentEntry[]): string {
   if (talents.length === 0) return ""
   const lines = talents.map((t) => {
@@ -44,6 +51,11 @@ function buildTalentNote(talents: ParsedTalentEntry[]): string {
     return parts.join(" / ")
   })
   return `【タレント】\n${lines.join("\n")}`
+}
+
+function toDatetimeLocal(v: string | null | undefined): string {
+  if (!v) return ""
+  return v.slice(0, 16)
 }
 
 export function ParsedResultForm({
@@ -62,7 +74,18 @@ export function ParsedResultForm({
   const [existingJobId, setExistingJobId] = useState(data.existingJobId ?? "")
   const [title, setTitle] = useState(data.job.title)
   const [clientId, setClientId] = useState(data.existingClientId ?? "")
+  const [description, setDescription] = useState(data.job.description ?? "")
   const [location, setLocation] = useState(data.job.location ?? "")
+  const [fee, setFee] = useState(data.job.fee?.toString() ?? "")
+  const [genderReq, setGenderReq] = useState<string>(data.job.genderReq ?? "NONE")
+  const [ageMin, setAgeMin] = useState(data.job.ageMin?.toString() ?? "")
+  const [ageMax, setAgeMax] = useState(data.job.ageMax?.toString() ?? "")
+  const [heightMin, setHeightMin] = useState(data.job.heightMin?.toString() ?? "")
+  const [heightMax, setHeightMax] = useState(data.job.heightMax?.toString() ?? "")
+  const [startsAt, setStartsAt] = useState(toDatetimeLocal(data.job.startsAt))
+  const [endsAt, setEndsAt] = useState(toDatetimeLocal(data.job.endsAt))
+  const [deadline, setDeadline] = useState(toDatetimeLocal(data.job.deadline))
+  const [capacity, setCapacity] = useState(data.job.capacity?.toString() ?? "")
   const [note, setNote] = useState(() => {
     const jobNote = data.job.note ?? ""
     const talentNote = buildTalentNote(data.job.talents)
@@ -91,7 +114,18 @@ export function ParsedResultForm({
       existingJobId: mode === "existing" ? existingJobId : undefined,
       title,
       clientId,
+      description: description || undefined,
       location: location || undefined,
+      fee: fee ? parseInt(fee, 10) : undefined,
+      genderReq: genderReq !== "NONE" ? genderReq as "MALE" | "FEMALE" | "OTHER" : undefined,
+      ageMin: ageMin ? parseInt(ageMin, 10) : undefined,
+      ageMax: ageMax ? parseInt(ageMax, 10) : undefined,
+      heightMin: heightMin ? parseInt(heightMin, 10) : undefined,
+      heightMax: heightMax ? parseInt(heightMax, 10) : undefined,
+      startsAt: startsAt || undefined,
+      endsAt: endsAt || undefined,
+      deadline: deadline || undefined,
+      capacity: capacity ? parseInt(capacity, 10) : undefined,
       note: note || undefined,
     })
     setSaving(false)
@@ -146,13 +180,83 @@ export function ParsedResultForm({
         </div>
 
         <div className="space-y-1">
+          <Label>案件説明</Label>
+          <Textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            rows={3}
+          />
+        </div>
+
+        <div className="space-y-1">
           <Label>場所</Label>
           <Input value={location} onChange={(e) => setLocation(e.target.value)} />
         </div>
 
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label>報酬（円）</Label>
+            <Input type="number" value={fee} onChange={(e) => setFee(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>募集人数</Label>
+            <Input type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-1">
+            <Label>性別条件</Label>
+            <Select value={genderReq} onValueChange={(v) => setGenderReq(v ?? "NONE")}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {GENDER_OPTIONS.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-1">
+            <Label>年齢（下限）</Label>
+            <Input type="number" value={ageMin} onChange={(e) => setAgeMin(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>年齢（上限）</Label>
+            <Input type="number" value={ageMax} onChange={(e) => setAgeMax(e.target.value)} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-1">
+            <Label>身長（下限cm）</Label>
+            <Input type="number" value={heightMin} onChange={(e) => setHeightMin(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>身長（上限cm）</Label>
+            <Input type="number" value={heightMax} onChange={(e) => setHeightMax(e.target.value)} />
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <div className="space-y-1">
+            <Label>開始日時</Label>
+            <Input type="datetime-local" value={startsAt} onChange={(e) => setStartsAt(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>終了日時</Label>
+            <Input type="datetime-local" value={endsAt} onChange={(e) => setEndsAt(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label>応募締切</Label>
+            <Input type="datetime-local" value={deadline} onChange={(e) => setDeadline(e.target.value)} />
+          </div>
+        </div>
+
         {data.job.dates && (
           <div className="text-sm text-muted-foreground">
-            日程情報: {data.job.dates}
+            日程情報（原文）: {data.job.dates}
           </div>
         )}
 

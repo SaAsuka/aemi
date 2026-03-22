@@ -3,12 +3,25 @@
 import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
 
+type Gender = "MALE" | "FEMALE" | "OTHER"
+
 type ApplyInput = {
   mode: "create" | "existing"
   existingJobId?: string
   title: string
   clientId: string
+  description?: string
   location?: string
+  fee?: number
+  genderReq?: Gender
+  ageMin?: number
+  ageMax?: number
+  heightMin?: number
+  heightMax?: number
+  startsAt?: string
+  endsAt?: string
+  deadline?: string
+  capacity?: number
   note?: string
 }
 
@@ -16,20 +29,33 @@ export async function applyParsedJob(input: ApplyInput): Promise<
   { success: true } | { success: false; error: string }
 > {
   try {
+    const data = {
+      title: input.title,
+      clientId: input.clientId,
+      description: input.description || null,
+      location: input.location || null,
+      fee: input.fee ?? null,
+      genderReq: input.genderReq || null,
+      ageMin: input.ageMin ?? null,
+      ageMax: input.ageMax ?? null,
+      heightMin: input.heightMin ?? null,
+      heightMax: input.heightMax ?? null,
+      startsAt: input.startsAt ? new Date(input.startsAt) : null,
+      endsAt: input.endsAt ? new Date(input.endsAt) : null,
+      deadline: input.deadline ? new Date(input.deadline) : null,
+      capacity: input.capacity ?? null,
+      note: input.note || null,
+    }
+
     if (input.mode === "existing" && input.existingJobId) {
       await prisma.job.update({
         where: { id: input.existingJobId },
-        data: {
-          note: input.note || null,
-        },
+        data,
       })
     } else {
       await prisma.job.create({
         data: {
-          title: input.title,
-          clientId: input.clientId,
-          location: input.location || null,
-          note: input.note || null,
+          ...data,
           status: "OPEN",
         },
       })
