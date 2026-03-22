@@ -14,33 +14,33 @@ export function TalentNav({ talentName }: { talentName: string }) {
   ]
 
   return (
-    <nav className="border-b bg-background">
-      <div className="mx-auto max-w-2xl px-4 flex items-center justify-between h-14">
-        <div className="flex items-center gap-6">
-          <span className="font-semibold text-sm">{talentName}</span>
-          <div className="flex items-center gap-4">
+    <nav className="border-b bg-background sticky top-0 z-40">
+      <div className="mx-auto max-w-2xl px-3 sm:px-4 flex items-center justify-between h-12 sm:h-14">
+        <div className="flex items-center gap-1 sm:gap-6 min-w-0">
+          <span className="font-semibold text-sm hidden sm:block truncate max-w-[120px]">{talentName}</span>
+          <div className="flex items-center gap-1 sm:gap-4">
             {links.map(({ href, label, icon: Icon }) => (
               <Link
                 key={href}
                 href={href}
-                className={`flex items-center gap-1.5 text-sm transition-colors ${
+                className={`flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm px-2 sm:px-0 py-1 rounded-md transition-colors ${
                   (href === "/mypage" ? pathname === href : pathname === href || pathname.startsWith(href + "/"))
                     ? "text-foreground font-medium"
                     : "text-muted-foreground hover:text-foreground"
                 }`}
               >
-                <Icon className="h-4 w-4" />
-                {label}
+                <Icon className="h-4 w-4 shrink-0" />
+                <span>{label}</span>
               </Link>
             ))}
           </div>
         </div>
         <a
           href="/auth/logout"
-          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0"
         >
           <LogOut className="h-4 w-4" />
-          ログアウト
+          <span className="hidden sm:inline">ログアウト</span>
         </a>
       </div>
     </nav>
