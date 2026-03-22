@@ -1,6 +1,7 @@
-export function blobProxyUrl(url: string): string {
+export function blobProxyUrl(url: string, cacheBust = false): string {
   if (url.includes("blob.vercel-storage.com")) {
-    return `/api/blob?url=${encodeURIComponent(url)}`
+    const base = `/api/blob?url=${encodeURIComponent(url)}`
+    return cacheBust ? `${base}&t=${Date.now()}` : base
   }
-  return url
+  return cacheBust ? `${url}${url.includes("?") ? "&" : "?"}t=${Date.now()}` : url
 }

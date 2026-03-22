@@ -44,6 +44,7 @@ async function generatePdf(talentId: string): Promise<string | null> {
 
 export function CompositePdfButton({ talentId, resumeUrl, photoCount }: { talentId: string; resumeUrl?: string | null; photoCount: number }) {
   const [generating, setGenerating] = useState(false)
+  const [pdfLink, setPdfLink] = useState(() => resumeUrl ? blobProxyUrl(resumeUrl, true) : null)
   const router = useRouter()
 
   const generate = async () => {
@@ -58,6 +59,7 @@ export function CompositePdfButton({ talentId, resumeUrl, photoCount }: { talent
       const blobUrl = await generatePdf(talentId)
       if (blobUrl) {
         await saveResumeUrl(talentId, blobUrl)
+        setPdfLink(blobProxyUrl(blobUrl, true))
       }
       router.refresh()
     } catch (e) {
@@ -66,6 +68,8 @@ export function CompositePdfButton({ talentId, resumeUrl, photoCount }: { talent
       setGenerating(false)
     }
   }
+
+  const displayUrl = pdfLink ?? (resumeUrl ? blobProxyUrl(resumeUrl, true) : null)
 
   return (
     <div className="flex items-center gap-2">
@@ -79,8 +83,8 @@ export function CompositePdfButton({ talentId, resumeUrl, photoCount }: { talent
         )}
         {generating ? "生成中..." : resumeUrl ? "PDF再生成" : "コンポジPDF生成"}
       </Button>
-      {resumeUrl && (
-        <a href={blobProxyUrl(resumeUrl)} target="_blank" rel="noopener noreferrer">
+      {displayUrl && (
+        <a href={displayUrl} target="_blank" rel="noopener noreferrer">
           <Button variant="ghost" size="sm">
             <ExternalLink className="h-4 w-4 mr-1" />
             PDFを表示

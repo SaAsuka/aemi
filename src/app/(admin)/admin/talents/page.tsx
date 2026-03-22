@@ -126,7 +126,7 @@ export default async function TalentsPage({
                     </TableCell>
                     <TableCell>
                       {talent.resume ? (
-                        <a href={blobProxyUrl(talent.resume)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                        <a href={blobProxyUrl(talent.resume, true)} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
                           <ExternalLink className="h-3.5 w-3.5" />
                           表示
                         </a>
