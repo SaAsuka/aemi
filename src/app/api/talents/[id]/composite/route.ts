@@ -99,6 +99,10 @@ export async function GET(
     const buffer = await renderToBuffer(React.createElement(CompositePDF, { talent }) as any)
     console.log(`[COMPOSITE] RENDER_DONE +${Date.now() - t0}ms size=${buffer.byteLength} bytes`)
 
+    const now = new Date()
+    const yyyymm = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`
+    const fileName = `【${talent.name}】タレントプロフィール${yyyymm}`
+
     let blobUrl: string | undefined
     let blobError: string | undefined
     try {
@@ -106,7 +110,7 @@ export async function GET(
       if (talent.resume) {
         try { await del(talent.resume) } catch {}
       }
-      const blob = await put(`${id}_composite.pdf`, Buffer.from(buffer), {
+      const blob = await put(`${fileName}.pdf`, Buffer.from(buffer), {
         access: "private",
         contentType: "application/pdf",
         addRandomSuffix: false,
@@ -127,7 +131,7 @@ export async function GET(
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",
-        "Content-Disposition": `inline; filename="${encodeURIComponent(talent.name)}_composite.pdf"`,
+        "Content-Disposition": `inline; filename="${encodeURIComponent(fileName)}.pdf"`,
         "X-Composite-Time": `${Date.now() - t0}ms`,
         "X-Composite-Size": `${buffer.byteLength}`,
         ...(blobUrl ? { "X-Blob-Url": blobUrl } : {}),
