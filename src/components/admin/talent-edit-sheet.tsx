@@ -26,7 +26,7 @@ export function TalentEditSheet({ talent }: { talent: Talent }) {
         <Pencil className="h-4 w-4" />
         編集
       </SheetTrigger>
-      <SheetContent className="overflow-y-auto sm:max-w-2xl p-6">
+      <SheetContent className="overflow-y-auto sm:max-w-[50vw] p-6">
         <SheetHeader>
           <SheetTitle>基本情報 編集</SheetTitle>
         </SheetHeader>
