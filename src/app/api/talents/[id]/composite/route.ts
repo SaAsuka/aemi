@@ -49,17 +49,25 @@ export async function GET(
 
   async function toDataUri(url: string): Promise<string> {
     try {
-      const result = await get(url, { access: "private" })
-      if (!result || result.statusCode !== 200) return url
-      const chunks: Uint8Array[] = []
-      const reader = result.stream!.getReader()
-      for (;;) {
-        const { done, value } = await reader.read()
-        if (done) break
-        chunks.push(value)
+      if (url.includes("blob.vercel-storage.com")) {
+        const result = await get(url, { access: "private" })
+        if (!result || result.statusCode !== 200) return url
+        const chunks: Uint8Array[] = []
+        const reader = result.stream!.getReader()
+        for (;;) {
+          const { done, value } = await reader.read()
+          if (done) break
+          chunks.push(value)
+        }
+        const buf = Buffer.concat(chunks)
+        return `data:${result.blob.contentType};base64,${buf.toString("base64")}`
+      } else {
+        const res = await fetch(url)
+        if (!res.ok) return url
+        const buf = Buffer.from(await res.arrayBuffer())
+        const ct = res.headers.get("content-type") || "image/jpeg"
+        return `data:${ct};base64,${buf.toString("base64")}`
       }
-      const buf = Buffer.concat(chunks)
-      return `data:${result.blob.contentType};base64,${buf.toString("base64")}`
     } catch {
       console.error(`[COMPOSITE] toDataUri failed: ${url}`)
       return url
