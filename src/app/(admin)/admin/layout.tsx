@@ -4,14 +4,12 @@ import Link from "next/link"
 import { AdminSidebar } from "@/components/admin/sidebar"
 import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar"
 import { Separator } from "@/components/ui/separator"
-import { requireAdmin } from "@/lib/auth"
 
-export default async function AdminLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
-  await requireAdmin()
   return (
     <SidebarProvider>
       <AdminSidebar />
