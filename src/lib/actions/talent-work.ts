@@ -12,16 +12,19 @@ export async function addTalentWork(talentId: string, imageUrl: string, caption:
     data: { talentId, imageUrl, caption, sortOrder: (maxOrder._max.sortOrder ?? -1) + 1 },
   })
   revalidatePath(`/admin/talents/${talentId}`)
+  revalidatePath("/mypage")
 }
 
 export async function updateTalentWork(id: string, talentId: string, caption: string) {
   await prisma.talentWork.update({ where: { id }, data: { caption } })
   revalidatePath(`/admin/talents/${talentId}`)
+  revalidatePath("/mypage")
 }
 
 export async function deleteTalentWork(id: string, talentId: string) {
   await prisma.talentWork.delete({ where: { id } })
   revalidatePath(`/admin/talents/${talentId}`)
+  revalidatePath("/mypage")
 }
 
 export async function reorderTalentWorks(talentId: string, orderedIds: string[]) {
@@ -31,4 +34,5 @@ export async function reorderTalentWorks(talentId: string, orderedIds: string[])
     )
   )
   revalidatePath(`/admin/talents/${talentId}`)
+  revalidatePath("/mypage")
 }
