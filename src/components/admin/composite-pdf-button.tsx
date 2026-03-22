@@ -14,7 +14,13 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 async function generatePdf(talentId: string): Promise<string> {
+  console.log(`[CompositePDF] fetch開始 talentId=${talentId}`)
+  const t0 = performance.now()
+
   const res = await fetch(`/api/talents/${talentId}/composite`)
+  const elapsed = Math.round(performance.now() - t0)
+  console.log(`[CompositePDF] fetch完了 status=${res.status} +${elapsed}ms`)
+
   if (!res.ok) {
     let detail = `HTTP ${res.status}`
     try {
@@ -27,21 +33,30 @@ async function generatePdf(talentId: string): Promise<string> {
     } catch {
       try { detail = await res.text() } catch { /* ignore */ }
     }
-    throw new Error(`PDF生成に失敗しました:\n${detail}`)
+    console.error(`[CompositePDF] APIエラー: ${detail}`)
+    throw new Error(`PDF生成に失敗しました (${elapsed}ms):\n${detail}`)
   }
+
+  const serverTime = res.headers.get("X-Composite-Time")
+  const serverSize = res.headers.get("X-Composite-Size")
+  console.log(`[CompositePDF] サーバー処理時間=${serverTime ?? "不明"} サイズ=${serverSize ?? "不明"}`)
+
   const pdfBlob = await res.blob()
+  console.log(`[CompositePDF] Blob取得完了 size=${pdfBlob.size} type=${pdfBlob.type}`)
   const pdfUrl = URL.createObjectURL(pdfBlob)
 
-  // Blobアップロード（10秒タイムアウト、失敗してもPDFは表示する）
   try {
     const file = new File([pdfBlob], `${talentId}_composite.pdf`, { type: "application/pdf" })
+    console.log(`[CompositePDF] Blobアップロード開始`)
     const uploaded = await withTimeout(
       upload(file.name, file, { access: "public", handleUploadUrl: "/api/upload" }),
       10000,
     )
+    console.log(`[CompositePDF] Blobアップロード完了 url=${uploaded.url}`)
     await saveResumeUrl(talentId, uploaded.url)
     return uploaded.url
-  } catch {
+  } catch (e) {
+    console.warn(`[CompositePDF] Blobアップロード失敗（PDFは表示可能）: ${e instanceof Error ? e.message : String(e)}`)
     return pdfUrl
   }
 }

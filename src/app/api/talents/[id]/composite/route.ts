@@ -20,9 +20,14 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
+  const t0 = Date.now()
+  let stage = "INIT"
+
+  console.log(`[COMPOSITE] START id=${id}`)
 
   let talent
   try {
+    stage = "DB"
     talent = await prisma.talent.findUnique({
       where: { id },
       include: {
@@ -30,8 +35,10 @@ export async function GET(
         works: { orderBy: { sortOrder: "asc" } },
       },
     })
+    console.log(`[COMPOSITE] DB_DONE +${Date.now() - t0}ms photos=${talent?.photos?.length ?? 0} works=${talent?.works?.length ?? 0}`)
   } catch (e) {
-    return NextResponse.json({ errors: [`DB接続エラー: ${e instanceof Error ? e.message : String(e)}`] }, { status: 500 })
+    console.error(`[COMPOSITE] ERROR stage=${stage} +${Date.now() - t0}ms error=${e instanceof Error ? e.message : String(e)}`)
+    return NextResponse.json({ errors: [`DB接続エラー: ${e instanceof Error ? e.message : String(e)}`, `stage=${stage}`] }, { status: 500 })
   }
 
   if (!talent) {
@@ -39,17 +46,23 @@ export async function GET(
   }
 
   try {
+    stage = "RENDER"
+    console.log(`[COMPOSITE] RENDER_START +${Date.now() - t0}ms (フォントDL含む)`)
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const buffer = await renderToBuffer(React.createElement(CompositePDF, { talent }) as any)
+    console.log(`[COMPOSITE] RENDER_DONE +${Date.now() - t0}ms size=${buffer.byteLength} bytes`)
 
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename="${encodeURIComponent(talent.name)}_composite.pdf"`,
+        "X-Composite-Time": `${Date.now() - t0}ms`,
+        "X-Composite-Size": `${buffer.byteLength}`,
       },
     })
   } catch (e) {
-    const errors = [`PDF生成エラー: ${e instanceof Error ? e.message : String(e)}`]
+    console.error(`[COMPOSITE] ERROR stage=${stage} +${Date.now() - t0}ms error=${e instanceof Error ? e.message : String(e)}`)
+    const errors = [`PDF生成エラー (stage=${stage}, +${Date.now() - t0}ms): ${e instanceof Error ? e.message : String(e)}`]
     if (e instanceof Error && e.stack) {
       errors.push(`スタック: ${e.stack.split("\n").slice(0, 3).join(" | ")}`)
     }
