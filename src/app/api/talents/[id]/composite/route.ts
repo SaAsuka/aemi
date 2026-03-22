@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { renderToBuffer, Font } from "@react-pdf/renderer"
+import { put } from "@vercel/blob"
 import { prisma } from "@/lib/db"
 import { CompositePDF } from "@/lib/pdf/composite-pdf"
 import React from "react"
@@ -52,12 +53,29 @@ export async function GET(
     const buffer = await renderToBuffer(React.createElement(CompositePDF, { talent }) as any)
     console.log(`[COMPOSITE] RENDER_DONE +${Date.now() - t0}ms size=${buffer.byteLength} bytes`)
 
+    let blobUrl: string | undefined
+    try {
+      stage = "BLOB_UPLOAD"
+      const blob = await put(`${id}_composite.pdf`, Buffer.from(buffer), {
+        access: "public",
+        contentType: "application/pdf",
+      })
+      blobUrl = blob.url
+      console.log(`[COMPOSITE] BLOB_DONE +${Date.now() - t0}ms url=${blobUrl}`)
+
+      await prisma.talent.update({ where: { id }, data: { resume: blobUrl } })
+      console.log(`[COMPOSITE] DB_SAVE_DONE +${Date.now() - t0}ms`)
+    } catch (e) {
+      console.warn(`[COMPOSITE] BLOB_UPLOAD失敗（PDFは返却可能）: ${e instanceof Error ? e.message : String(e)}`)
+    }
+
     return new NextResponse(new Uint8Array(buffer), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `inline; filename="${encodeURIComponent(talent.name)}_composite.pdf"`,
         "X-Composite-Time": `${Date.now() - t0}ms`,
         "X-Composite-Size": `${buffer.byteLength}`,
+        ...(blobUrl ? { "X-Blob-Url": blobUrl } : {}),
       },
     })
   } catch (e) {

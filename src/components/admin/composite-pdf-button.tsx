@@ -1,17 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { upload } from "@vercel/blob/client"
-import { saveResumeUrl } from "@/lib/actions/talent"
 import { Button } from "@/components/ui/button"
 import { FileText, RefreshCw, ExternalLink, Loader2 } from "lucide-react"
-
-function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), ms)),
-  ])
-}
 
 async function generatePdf(talentId: string): Promise<string> {
   console.log(`[CompositePDF] fetch開始 talentId=${talentId}`)
@@ -37,28 +28,13 @@ async function generatePdf(talentId: string): Promise<string> {
     throw new Error(`PDF生成に失敗しました (${elapsed}ms):\n${detail}`)
   }
 
-  const serverTime = res.headers.get("X-Composite-Time")
-  const serverSize = res.headers.get("X-Composite-Size")
-  console.log(`[CompositePDF] サーバー処理時間=${serverTime ?? "不明"} サイズ=${serverSize ?? "不明"}`)
+  const blobUrl = res.headers.get("X-Blob-Url")
+  console.log(`[CompositePDF] サーバー処理時間=${res.headers.get("X-Composite-Time") ?? "不明"} blobUrl=${blobUrl ?? "なし"}`)
+
+  if (blobUrl) return blobUrl
 
   const pdfBlob = await res.blob()
-  console.log(`[CompositePDF] Blob取得完了 size=${pdfBlob.size} type=${pdfBlob.type}`)
-  const pdfUrl = URL.createObjectURL(pdfBlob)
-
-  try {
-    const file = new File([pdfBlob], `${talentId}_composite.pdf`, { type: "application/pdf" })
-    console.log(`[CompositePDF] Blobアップロード開始`)
-    const uploaded = await withTimeout(
-      upload(file.name, file, { access: "public", handleUploadUrl: "/api/upload" }),
-      10000,
-    )
-    console.log(`[CompositePDF] Blobアップロード完了 url=${uploaded.url}`)
-    await saveResumeUrl(talentId, uploaded.url)
-    return uploaded.url
-  } catch (e) {
-    console.warn(`[CompositePDF] Blobアップロード失敗（PDFは表示可能）: ${e instanceof Error ? e.message : String(e)}`)
-    return pdfUrl
-  }
+  return URL.createObjectURL(pdfBlob)
 }
 
 export function CompositePdfButton({ talentId, resumeUrl }: { talentId: string; resumeUrl?: string | null }) {
