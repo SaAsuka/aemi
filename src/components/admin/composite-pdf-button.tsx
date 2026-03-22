@@ -30,6 +30,12 @@ async function generatePdf(talentId: string): Promise<void> {
   }
 
   console.log(`[CompositePDF] サーバー処理時間=${res.headers.get("X-Composite-Time") ?? "不明"}`)
+
+  const blobError = res.headers.get("X-Blob-Error")
+  if (blobError) {
+    console.warn(`[CompositePDF] Blob保存失敗: ${blobError}`)
+    throw new Error(`PDF生成は成功しましたが保存に失敗しました:\n${blobError}`)
+  }
 }
 
 export function CompositePdfButton({ talentId, resumeUrl }: { talentId: string; resumeUrl?: string | null }) {
