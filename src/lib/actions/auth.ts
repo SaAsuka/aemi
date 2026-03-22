@@ -83,18 +83,7 @@ export async function verifyToken(token: string) {
     session.role = "talent"
     await session.save()
 
-    if (talent.subscriptionStatus === "ACTIVE") {
-      return { redirect: "/jobs" }
-    }
-
-    const checkout = await createCheckoutSession(talent.id, authToken.email, talent.stripeCustomerId)
-    if (checkout.customerId && checkout.customerId !== talent.stripeCustomerId) {
-      await prisma.talent.update({
-        where: { id: talent.id },
-        data: { stripeCustomerId: checkout.customerId },
-      })
-    }
-    return { redirect: checkout.url }
+    return { redirect: "/jobs" }
   }
 
   if (authToken.type === "MAGIC_LINK") {
