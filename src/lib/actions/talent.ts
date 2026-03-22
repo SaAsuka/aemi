@@ -211,10 +211,29 @@ export async function updateTalent(id: string, formData: FormData) {
     },
   })
 
-  revalidatePath("/admin/talents")
-  revalidatePath(`/admin/talents/${id}`)
   updateTag("talents")
   return { success: true }
+}
+
+export async function getTalentApplications(talentId: string) {
+  return prisma.application.findMany({
+    where: { talentId },
+    include: {
+      job: { select: { id: true, title: true, location: true, startsAt: true } },
+      schedule: { select: { date: true, startTime: true, endTime: true, location: true, status: true } },
+    },
+    orderBy: { appliedAt: "desc" },
+  })
+}
+
+export async function getTalentForSettings(talentId: string) {
+  return prisma.talent.findUnique({
+    where: { id: talentId },
+    include: {
+      photos: { orderBy: { sortOrder: "asc" } },
+      works: { orderBy: { sortOrder: "asc" } },
+    },
+  })
 }
 
 export async function getTalentByToken(token: string) {
@@ -238,7 +257,6 @@ export async function deleteTalent(id: string) {
 
     if (appIds.length > 0) {
       await tx.schedule.deleteMany({ where: { applicationId: { in: appIds } } })
-      await tx.applicationSubmission.deleteMany({ where: { applicationId: { in: appIds } } })
       await tx.application.deleteMany({ where: { talentId: id } })
     }
 

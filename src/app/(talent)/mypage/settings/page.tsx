@@ -1,5 +1,5 @@
 import { requireTalent } from "@/lib/auth"
-import { getTalent } from "@/lib/actions/talent"
+import { getTalentForSettings } from "@/lib/actions/talent"
 import { redirect } from "next/navigation"
 import { TalentNav } from "@/components/talent-nav"
 import { TalentForm } from "@/components/admin/talent-form"
@@ -12,10 +12,10 @@ import { Camera, Film, FileText, Lock } from "lucide-react"
 
 export default async function SettingsPage() {
   const session = await requireTalent()
-  const talent = await getTalent(session.id)
+  const talent = await getTalentForSettings(session.id)
   if (!talent) redirect("/auth/login")
 
-  const displayName = talent.stageName || talent.name
+  const displayName = talent.stageName || session.name
 
   return (
     <>

@@ -1,14 +1,12 @@
 import { requireTalent } from "@/lib/auth"
-import { getTalent } from "@/lib/actions/talent"
-import { redirect } from "next/navigation"
+import { getTalentApplications } from "@/lib/actions/talent"
 import { TalentNav } from "@/components/talent-nav"
 import { TalentApplicationHistory } from "@/components/talent-application-history"
 import { Briefcase } from "lucide-react"
 
 export default async function MyPage() {
-  const session = await requireTalent()
-  const talent = await getTalent(session.id)
-  if (!talent) redirect("/auth/login")
+  const talent = await requireTalent()
+  const applications = await getTalentApplications(talent.id)
 
   const displayName = talent.stageName || talent.name
 
@@ -28,7 +26,7 @@ export default async function MyPage() {
             <Briefcase className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-semibold">応募状況</h2>
           </div>
-          <TalentApplicationHistory applications={talent.applications} />
+          <TalentApplicationHistory applications={applications} />
         </section>
       </div>
     </>
