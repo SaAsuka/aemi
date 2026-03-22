@@ -63,10 +63,14 @@ enum SubmissionCategory {
 }
 
 model Talent {
-  id           String       @id @default(cuid())
-  name         String
-  nameKana     String
-  stageName    String?
+  id             String       @id @default(cuid())
+  lastName       String       @default("")
+  firstName      String       @default("")
+  lastNameKana   String       @default("")
+  firstNameKana  String       @default("")
+  name           String
+  nameKana       String
+  stageName      String?
   nameRomaji   String?
   email        String?
   phone        String?

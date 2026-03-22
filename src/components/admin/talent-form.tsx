@@ -38,6 +38,7 @@ function talentAction(talent?: Talent, customAction?: (formData: FormData) => Pr
 export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: TalentFormProps) {
   const [state, action, isPending] = useActionState(talentAction(talent, customAction), null)
   const isAdmin = mode === "admin"
+  const isTalent = mode === "talent"
   const router = useRouter()
 
   useEffect(() => {
@@ -52,24 +53,41 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
     }
   }, [state, talent, router, onSuccess])
 
+  const bankRequired = isTalent
+
   return (
     <form action={action} className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="name">本名 *</Label>
-          <Input id="name" name="name" defaultValue={talent?.name ?? ""} required />
-          {state?.error?.name && (
-            <p className="text-sm text-destructive">{state.error.name[0]}</p>
+          <Label htmlFor="lastName">姓 *</Label>
+          <Input id="lastName" name="lastName" defaultValue={talent?.lastName ?? ""} required />
+          {state?.error?.lastName && (
+            <p className="text-sm text-destructive">{state.error.lastName[0]}</p>
           )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="nameKana">フリガナ *</Label>
-          <Input
-            id="nameKana"
-            name="nameKana"
-            defaultValue={talent?.nameKana ?? ""}
-            required
-          />
+          <Label htmlFor="firstName">名 *</Label>
+          <Input id="firstName" name="firstName" defaultValue={talent?.firstName ?? ""} required />
+          {state?.error?.firstName && (
+            <p className="text-sm text-destructive">{state.error.firstName[0]}</p>
+          )}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="lastNameKana">セイ *</Label>
+          <Input id="lastNameKana" name="lastNameKana" defaultValue={talent?.lastNameKana ?? ""} required />
+          {state?.error?.lastNameKana && (
+            <p className="text-sm text-destructive">{state.error.lastNameKana[0]}</p>
+          )}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="firstNameKana">メイ *</Label>
+          <Input id="firstNameKana" name="firstNameKana" defaultValue={talent?.firstNameKana ?? ""} required />
+          {state?.error?.firstNameKana && (
+            <p className="text-sm text-destructive">{state.error.firstNameKana[0]}</p>
+          )}
         </div>
       </div>
 
@@ -345,26 +363,36 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
         )}
       </div>
 
-      <h3 className="text-sm font-semibold text-muted-foreground pt-2">振込先情報</h3>
+      <h3 className="text-sm font-semibold text-muted-foreground pt-2">
+        振込先情報{bankRequired && " *"}
+      </h3>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
         <div className="space-y-2">
-          <Label htmlFor="bankName">銀行名</Label>
+          <Label htmlFor="bankName">銀行名{bankRequired && " *"}</Label>
           <Input
             id="bankName"
             name="bankName"
             defaultValue={talent?.bankName ?? ""}
+            required={bankRequired}
           />
+          {state?.error?.bankName && (
+            <p className="text-sm text-destructive">{state.error.bankName[0]}</p>
+          )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="bankBranch">支店名</Label>
+          <Label htmlFor="bankBranch">支店名{bankRequired && " *"}</Label>
           <Input
             id="bankBranch"
             name="bankBranch"
             defaultValue={talent?.bankBranch ?? ""}
+            required={bankRequired}
           />
+          {state?.error?.bankBranch && (
+            <p className="text-sm text-destructive">{state.error.bankBranch[0]}</p>
+          )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="bankAccountType">種別</Label>
+          <Label htmlFor="bankAccountType">種別{bankRequired && " *"}</Label>
           <Select name="bankAccountType" defaultValue={talent?.bankAccountType ?? ""}>
             <SelectTrigger>
               <SelectValue placeholder="選択">{(v) => v || "選択"}</SelectValue>
@@ -374,22 +402,33 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
               <SelectItem value="当座" label="当座">当座</SelectItem>
             </SelectContent>
           </Select>
+          {state?.error?.bankAccountType && (
+            <p className="text-sm text-destructive">{state.error.bankAccountType[0]}</p>
+          )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="bankAccountNumber">口座番号</Label>
+          <Label htmlFor="bankAccountNumber">口座番号{bankRequired && " *"}</Label>
           <Input
             id="bankAccountNumber"
             name="bankAccountNumber"
             defaultValue={talent?.bankAccountNumber ?? ""}
+            required={bankRequired}
           />
+          {state?.error?.bankAccountNumber && (
+            <p className="text-sm text-destructive">{state.error.bankAccountNumber[0]}</p>
+          )}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="bankAccountHolder">口座名義</Label>
+          <Label htmlFor="bankAccountHolder">口座名義{bankRequired && " *"}</Label>
           <Input
             id="bankAccountHolder"
             name="bankAccountHolder"
             defaultValue={talent?.bankAccountHolder ?? ""}
+            required={bankRequired}
           />
+          {state?.error?.bankAccountHolder && (
+            <p className="text-sm text-destructive">{state.error.bankAccountHolder[0]}</p>
+          )}
         </div>
       </div>
 

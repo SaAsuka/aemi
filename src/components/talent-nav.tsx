@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { User, Briefcase, LogOut } from "lucide-react"
+import { User, Briefcase, Settings, LogOut } from "lucide-react"
 
 export function TalentNav({ talentName }: { talentName: string }) {
   const pathname = usePathname()
@@ -10,6 +10,7 @@ export function TalentNav({ talentName }: { talentName: string }) {
   const links = [
     { href: "/mypage", label: "マイページ", icon: User },
     { href: "/jobs", label: "案件一覧", icon: Briefcase },
+    { href: "/mypage/settings", label: "設定", icon: Settings },
   ]
 
   return (
@@ -23,7 +24,7 @@ export function TalentNav({ talentName }: { talentName: string }) {
                 key={href}
                 href={href}
                 className={`flex items-center gap-1.5 text-sm transition-colors ${
-                  pathname === href || pathname.startsWith(href + "/")
+                  (href === "/mypage" ? pathname === href : pathname === href || pathname.startsWith(href + "/"))
                     ? "text-foreground font-medium"
                     : "text-muted-foreground hover:text-foreground"
                 }`}

@@ -1,11 +1,11 @@
 "use server"
 
 import { prisma } from "@/lib/db"
-import { talentSchema } from "@/lib/validations/talent"
+import { talentBaseSchema } from "@/lib/validations/talent"
 
 export async function registerTalent(formData: FormData) {
   const raw = Object.fromEntries(formData)
-  const parsed = talentSchema.safeParse(raw)
+  const parsed = talentBaseSchema.safeParse(raw)
 
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors }
@@ -21,8 +21,12 @@ export async function registerTalent(formData: FormData) {
 
   const talent = await prisma.talent.create({
     data: {
-      name: data.name,
-      nameKana: data.nameKana,
+      lastName: data.lastName,
+      firstName: data.firstName,
+      lastNameKana: data.lastNameKana,
+      firstNameKana: data.firstNameKana,
+      name: data.lastName + " " + data.firstName,
+      nameKana: data.lastNameKana + " " + data.firstNameKana,
       nameRomaji: data.nameRomaji || null,
       email: data.email || null,
       phone: data.phone || null,

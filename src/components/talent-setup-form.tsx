@@ -179,17 +179,34 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             <div className="space-y-2">
-              <Label htmlFor="name">本名 *</Label>
-              <Input id="name" name="name" required />
-              {state?.error?.name && (
-                <p className="text-sm text-destructive">{state.error.name[0]}</p>
+              <Label htmlFor="lastName">姓 *</Label>
+              <Input id="lastName" name="lastName" required />
+              {state?.error?.lastName && (
+                <p className="text-sm text-destructive">{state.error.lastName[0]}</p>
               )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="nameKana">フリガナ *</Label>
-              <Input id="nameKana" name="nameKana" required />
-              {state?.error?.nameKana && (
-                <p className="text-sm text-destructive">{state.error.nameKana[0]}</p>
+              <Label htmlFor="firstName">名 *</Label>
+              <Input id="firstName" name="firstName" required />
+              {state?.error?.firstName && (
+                <p className="text-sm text-destructive">{state.error.firstName[0]}</p>
+              )}
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="lastNameKana">セイ *</Label>
+              <Input id="lastNameKana" name="lastNameKana" required />
+              {state?.error?.lastNameKana && (
+                <p className="text-sm text-destructive">{state.error.lastNameKana[0]}</p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="firstNameKana">メイ *</Label>
+              <Input id="firstNameKana" name="firstNameKana" required />
+              {state?.error?.firstNameKana && (
+                <p className="text-sm text-destructive">{state.error.firstNameKana[0]}</p>
               )}
             </div>
           </div>
@@ -344,19 +361,25 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
         <section className="space-y-4">
           <div className="flex items-center gap-2">
             <CreditCard className="h-5 w-5 text-primary" />
-            <h2 className="text-base font-semibold">振込先情報（任意）</h2>
+            <h2 className="text-base font-semibold">振込先情報 *</h2>
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
             <div className="space-y-2">
-              <Label htmlFor="bankName">銀行名</Label>
-              <Input id="bankName" name="bankName" />
+              <Label htmlFor="bankName">銀行名 *</Label>
+              <Input id="bankName" name="bankName" required />
+              {state?.error?.bankName && (
+                <p className="text-sm text-destructive">{state.error.bankName[0]}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bankBranch">支店名</Label>
-              <Input id="bankBranch" name="bankBranch" />
+              <Label htmlFor="bankBranch">支店名 *</Label>
+              <Input id="bankBranch" name="bankBranch" required />
+              {state?.error?.bankBranch && (
+                <p className="text-sm text-destructive">{state.error.bankBranch[0]}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bankAccountType">種別</Label>
+              <Label htmlFor="bankAccountType">種別 *</Label>
               <Select name="bankAccountType">
                 <SelectTrigger>
                   <SelectValue placeholder="選択">{(v) => v || "選択"}</SelectValue>
@@ -366,14 +389,23 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
                   <SelectItem value="当座" label="当座">当座</SelectItem>
                 </SelectContent>
               </Select>
+              {state?.error?.bankAccountType && (
+                <p className="text-sm text-destructive">{state.error.bankAccountType[0]}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bankAccountNumber">口座番号</Label>
-              <Input id="bankAccountNumber" name="bankAccountNumber" />
+              <Label htmlFor="bankAccountNumber">口座番号 *</Label>
+              <Input id="bankAccountNumber" name="bankAccountNumber" required />
+              {state?.error?.bankAccountNumber && (
+                <p className="text-sm text-destructive">{state.error.bankAccountNumber[0]}</p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="bankAccountHolder">口座名義</Label>
-              <Input id="bankAccountHolder" name="bankAccountHolder" />
+              <Label htmlFor="bankAccountHolder">口座名義 *</Label>
+              <Input id="bankAccountHolder" name="bankAccountHolder" required />
+              {state?.error?.bankAccountHolder && (
+                <p className="text-sm text-destructive">{state.error.bankAccountHolder[0]}</p>
+              )}
             </div>
           </div>
         </section>

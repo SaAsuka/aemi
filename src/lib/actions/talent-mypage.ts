@@ -23,8 +23,12 @@ export async function updateMyProfile(formData: FormData) {
   await prisma.talent.update({
     where: { id: session.talentId },
     data: {
-      name: data.name,
-      nameKana: data.nameKana,
+      lastName: data.lastName,
+      firstName: data.firstName,
+      lastNameKana: data.lastNameKana,
+      firstNameKana: data.firstNameKana,
+      name: data.lastName + " " + data.firstName,
+      nameKana: data.lastNameKana + " " + data.firstNameKana,
       stageName: data.stageName || null,
       nameRomaji: data.nameRomaji || null,
       email: data.email || null,
@@ -58,6 +62,7 @@ export async function updateMyProfile(formData: FormData) {
   })
 
   revalidatePath("/mypage")
+  revalidatePath("/mypage/settings")
   revalidatePath(`/admin/talents/${session.talentId}`)
   return { success: true }
 }

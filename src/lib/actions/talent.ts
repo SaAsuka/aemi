@@ -2,7 +2,7 @@
 
 import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
-import { talentSchema } from "@/lib/validations/talent"
+import { talentBaseSchema } from "@/lib/validations/talent"
 
 type TalentFilters = {
   search?: string
@@ -100,7 +100,7 @@ export async function getTalent(id: string) {
 
 export async function createTalent(formData: FormData) {
   const raw = Object.fromEntries(formData)
-  const parsed = talentSchema.safeParse(raw)
+  const parsed = talentBaseSchema.safeParse(raw)
 
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors }
@@ -109,8 +109,12 @@ export async function createTalent(formData: FormData) {
   const data = parsed.data
   await prisma.talent.create({
     data: {
-      name: data.name,
-      nameKana: data.nameKana,
+      lastName: data.lastName,
+      firstName: data.firstName,
+      lastNameKana: data.lastNameKana,
+      firstNameKana: data.firstNameKana,
+      name: data.lastName + " " + data.firstName,
+      nameKana: data.lastNameKana + " " + data.firstNameKana,
       stageName: data.stageName || null,
       nameRomaji: data.nameRomaji || null,
       email: data.email || null,
@@ -155,7 +159,7 @@ export async function createTalent(formData: FormData) {
 
 export async function updateTalent(id: string, formData: FormData) {
   const raw = Object.fromEntries(formData)
-  const parsed = talentSchema.safeParse(raw)
+  const parsed = talentBaseSchema.safeParse(raw)
 
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors }
@@ -165,8 +169,12 @@ export async function updateTalent(id: string, formData: FormData) {
   await prisma.talent.update({
     where: { id },
     data: {
-      name: data.name,
-      nameKana: data.nameKana,
+      lastName: data.lastName,
+      firstName: data.firstName,
+      lastNameKana: data.lastNameKana,
+      firstNameKana: data.firstNameKana,
+      name: data.lastName + " " + data.firstName,
+      nameKana: data.lastNameKana + " " + data.firstNameKana,
       stageName: data.stageName || null,
       nameRomaji: data.nameRomaji || null,
       email: data.email || null,

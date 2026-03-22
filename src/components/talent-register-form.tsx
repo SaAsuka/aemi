@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useActionState, useRef } from "react"
+import { useState, useRef } from "react"
 import { upload } from "@vercel/blob/client"
 import { registerTalent } from "@/lib/actions/talent-register"
 import { Button } from "@/components/ui/button"
@@ -88,7 +88,6 @@ export function TalentRegisterForm() {
       }
       setUploading(false)
 
-      // フォームデータ送信
       const formData = new FormData(formRef.current!)
       formData.set("photoUrls", JSON.stringify(photoUrls))
       const result = await registerTalent(formData)
@@ -115,14 +114,27 @@ export function TalentRegisterForm() {
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="name">名前 *</Label>
-          <Input id="name" name="name" required />
-          {state?.error?.name && <p className="text-sm text-destructive">{state.error.name[0]}</p>}
+          <Label htmlFor="lastName">姓 *</Label>
+          <Input id="lastName" name="lastName" required />
+          {state?.error?.lastName && <p className="text-sm text-destructive">{state.error.lastName[0]}</p>}
         </div>
         <div className="space-y-2">
-          <Label htmlFor="nameKana">フリガナ *</Label>
-          <Input id="nameKana" name="nameKana" required />
-          {state?.error?.nameKana && <p className="text-sm text-destructive">{state.error.nameKana[0]}</p>}
+          <Label htmlFor="firstName">名 *</Label>
+          <Input id="firstName" name="firstName" required />
+          {state?.error?.firstName && <p className="text-sm text-destructive">{state.error.firstName[0]}</p>}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="lastNameKana">セイ *</Label>
+          <Input id="lastNameKana" name="lastNameKana" required />
+          {state?.error?.lastNameKana && <p className="text-sm text-destructive">{state.error.lastNameKana[0]}</p>}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="firstNameKana">メイ *</Label>
+          <Input id="firstNameKana" name="firstNameKana" required />
+          {state?.error?.firstNameKana && <p className="text-sm text-destructive">{state.error.firstNameKana[0]}</p>}
         </div>
       </div>
 

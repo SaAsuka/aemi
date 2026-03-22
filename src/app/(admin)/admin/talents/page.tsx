@@ -15,7 +15,6 @@ import { StatusBadge } from "@/components/admin/status-badge"
 import { TALENT_STATUS_LABELS } from "@/types"
 import { SearchForm } from "@/components/admin/search-form"
 import { TalentFilters } from "@/components/admin/talent-filters"
-import { JobLinkCopyButton } from "@/components/admin/job-link-copy-button"
 import { CompositePdfIconButton } from "@/components/admin/composite-pdf-button"
 import { ExternalLink, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -91,14 +90,13 @@ export default async function TalentsPage({
                 <TableHead>ステータス</TableHead>
                 <TableHead>コンポジ生成</TableHead>
                 <TableHead>コンポジPDF</TableHead>
-                <TableHead>案件リンク</TableHead>
                 <TableHead></TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {talents.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
                     データがありません
                   </TableCell>
                 </TableRow>
@@ -132,11 +130,6 @@ export default async function TalentsPage({
                         </a>
                       ) : (
                         <span className="text-xs text-muted-foreground">未生成</span>
-                      )}
-                    </TableCell>
-                    <TableCell>
-                      {talent.accessToken && (
-                        <JobLinkCopyButton accessToken={talent.accessToken} />
                       )}
                     </TableCell>
                     <TableCell>
