@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
 import { renderToBuffer, Font } from "@react-pdf/renderer"
-import { put, get } from "@vercel/blob"
+import { put, get, del } from "@vercel/blob"
 import { prisma } from "@/lib/db"
 import { CompositePDF } from "@/lib/pdf/composite-pdf"
 import React from "react"
@@ -86,9 +86,13 @@ export async function GET(
     let blobError: string | undefined
     try {
       stage = "BLOB_UPLOAD"
+      if (talent.resume) {
+        try { await del(talent.resume) } catch {}
+      }
       const blob = await put(`${id}_composite.pdf`, Buffer.from(buffer), {
         access: "private",
         contentType: "application/pdf",
+        addRandomSuffix: false,
       })
       blobUrl = blob.url
       console.log(`[COMPOSITE] BLOB_DONE +${Date.now() - t0}ms url=${blobUrl}`)
