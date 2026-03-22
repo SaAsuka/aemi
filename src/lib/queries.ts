@@ -41,13 +41,17 @@ export const getClientOptions = cache(
 )
 
 export async function getDefaultClientId(): Promise<string> {
-  const client = await prisma.client.upsert({
-    where: { id: "default-avex" },
-    update: {},
-    create: { id: "default-avex", companyName: "avex" },
+  const existing = await prisma.client.findFirst({
+    where: { companyName: { contains: "avex", mode: "insensitive" } },
     select: { id: true },
   })
-  return client.id
+  if (existing) return existing.id
+
+  const created = await prisma.client.create({
+    data: { companyName: "avex" },
+    select: { id: true },
+  })
+  return created.id
 }
 
 export const getTalentFilterOptions = cache(
