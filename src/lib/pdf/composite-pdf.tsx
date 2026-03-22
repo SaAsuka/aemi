@@ -9,15 +9,18 @@ import {
   Font,
 } from "@react-pdf/renderer"
 
-Font.register({
-  family: "NotoSansJP",
-  fonts: [
-    { src: "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/SubsetOTF/JP/NotoSansJP-Regular.otf", fontWeight: 400 },
-    { src: "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/SubsetOTF/JP/NotoSansJP-Bold.otf", fontWeight: 700 },
-  ],
-})
+export function registerFonts() {
+  Font.register({
+    family: "NotoSansJP",
+    fonts: [
+      { src: "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/SubsetOTF/JP/NotoSansJP-Regular.otf", fontWeight: 400 },
+      { src: "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/SubsetOTF/JP/NotoSansJP-Bold.otf", fontWeight: 700 },
+    ],
+  })
+  Font.registerHyphenationCallback(word => [word])
+}
 
-Font.registerHyphenationCallback(word => [word])
+registerFonts()
 
 const C = {
   primary: "#1a1a1a",

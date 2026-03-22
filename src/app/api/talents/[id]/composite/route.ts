@@ -1,8 +1,17 @@
 import { NextResponse } from "next/server"
-import { renderToBuffer } from "@react-pdf/renderer"
+import { renderToBuffer, Font } from "@react-pdf/renderer"
 import { prisma } from "@/lib/db"
 import { CompositePDF } from "@/lib/pdf/composite-pdf"
 import React from "react"
+
+Font.register({
+  family: "NotoSansJP",
+  fonts: [
+    { src: "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/SubsetOTF/JP/NotoSansJP-Regular.otf", fontWeight: 400 },
+    { src: "https://raw.githubusercontent.com/notofonts/noto-cjk/main/Sans/SubsetOTF/JP/NotoSansJP-Bold.otf", fontWeight: 700 },
+  ],
+})
+Font.registerHyphenationCallback(word => [word])
 
 export const maxDuration = 60
 
