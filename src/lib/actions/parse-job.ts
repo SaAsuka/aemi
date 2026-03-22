@@ -49,36 +49,9 @@ export async function parseJobText(text: string): Promise<
   try {
     const response = await gemini.models.generateContent({
       model: "gemini-2.0-flash",
-      contents: [{ role: "user", parts: [{ text: `${SYSTEM_PROMPT}\n\n---\n\n${text}` }] }],
+      contents: `${SYSTEM_PROMPT}\n\n---\n\n${text}`,
       config: {
         responseMimeType: "application/json",
-        responseSchema: {
-          type: "object" as const,
-          properties: {
-            title: { type: "string" as const },
-            clientCompanyName: { type: "string" as const, nullable: true },
-            clientContactName: { type: "string" as const, nullable: true },
-            location: { type: "string" as const, nullable: true },
-            dates: { type: "string" as const, nullable: true },
-            note: { type: "string" as const, nullable: true },
-            talents: {
-              type: "array" as const,
-              items: {
-                type: "object" as const,
-                properties: {
-                  name: { type: "string" as const },
-                  status: { type: "string" as const, enum: ["ACCEPTED", "REJECTED", "PENDING"] },
-                  date: { type: "string" as const, nullable: true },
-                  startTime: { type: "string" as const, nullable: true },
-                  location: { type: "string" as const, nullable: true },
-                  note: { type: "string" as const, nullable: true },
-                },
-                required: ["name", "status"],
-              },
-            },
-          },
-          required: ["title", "talents"],
-        },
       },
     })
 
