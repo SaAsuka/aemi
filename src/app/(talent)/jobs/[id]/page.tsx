@@ -6,6 +6,7 @@ import { getOpenJob } from "@/lib/actions/job"
 import { formatDate } from "@/lib/utils/date"
 import { GENDER_LABELS } from "@/types"
 import { JobApplicationForm } from "@/components/job-application-form"
+import { TalentNav } from "@/components/talent-nav"
 
 export default async function TalentJobDetailPage({
   params,
@@ -33,6 +34,8 @@ export default async function TalentJobDetailPage({
   const backHref = t ? `/jobs?t=${t}` : "/jobs"
 
   return (
+    <>
+      {!t && <TalentNav talentName={talent.name} />}
     <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
       <Link href={backHref} className="text-sm text-muted-foreground hover:underline">
         &larr; 案件一覧に戻る
@@ -98,5 +101,6 @@ export default async function TalentJobDetailPage({
 
       <JobApplicationForm jobId={job.id} talentId={talent.id} talentName={talent.name} requirements={job.requirements} />
     </div>
+    </>
   )
 }

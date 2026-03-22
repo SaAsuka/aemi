@@ -4,6 +4,7 @@ import { getTalentByToken } from "@/lib/actions/talent"
 import { getOpenJobs } from "@/lib/actions/job"
 import { calcAge } from "@/lib/utils/date"
 import { TalentJobList } from "@/components/talent-job-list"
+import { TalentNav } from "@/components/talent-nav"
 
 type MatchStatus = "match" | "partial" | "unmatch"
 
@@ -89,16 +90,14 @@ export default async function TalentJobsPage({
   const matchCount = jobsWithMatch.filter((j) => j.matchStatus === "match").length
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-xl font-bold">{talent.name}さんの案件一覧</h1>
-        {!t && (
-          <a href="/auth/logout" className="text-sm text-muted-foreground hover:underline">
-            ログアウト
-          </a>
-        )}
+    <>
+      {!t && <TalentNav talentName={talent.name} />}
+      <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
+        <div className="flex items-center justify-between">
+          <h1 className="text-xl font-bold">{talent.name}さんの案件一覧</h1>
+        </div>
+        <TalentJobList jobs={jobsWithMatch} token={t || ""} matchCount={matchCount} />
       </div>
-      <TalentJobList jobs={jobsWithMatch} token={t || ""} matchCount={matchCount} />
-    </div>
+    </>
   )
 }

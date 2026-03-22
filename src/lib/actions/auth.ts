@@ -83,13 +83,13 @@ export async function verifyToken(token: string) {
     session.role = "talent"
     await session.save()
 
-    return { redirect: "/jobs" }
+    return { redirect: "/setup" }
   }
 
   if (authToken.type === "MAGIC_LINK") {
     const talent = await prisma.talent.findFirst({
       where: { email: authToken.email, emailVerified: true },
-      select: { id: true, subscriptionStatus: true, currentPeriodEnd: true },
+      select: { id: true, nameKana: true, subscriptionStatus: true, currentPeriodEnd: true },
     })
 
     if (!talent) return { error: "タレントが見つかりません" }
@@ -99,7 +99,7 @@ export async function verifyToken(token: string) {
     session.role = "talent"
     await session.save()
 
-    return { redirect: "/jobs" }
+    return { redirect: talent.nameKana === "未設定" ? "/setup" : "/mypage" }
   }
 
   return { error: "不明なトークンタイプ" }

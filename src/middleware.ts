@@ -27,7 +27,7 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  if (pathname === "/subscribe") {
+  if (pathname === "/subscribe" || pathname === "/setup" || pathname.startsWith("/mypage")) {
     if (!session.talentId || session.role !== "talent") {
       return NextResponse.redirect(new URL("/auth/login", request.url))
     }
@@ -37,5 +37,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/jobs/:path*", "/subscribe"],
+  matcher: ["/admin/:path*", "/jobs/:path*", "/subscribe", "/setup", "/mypage/:path*"],
 }

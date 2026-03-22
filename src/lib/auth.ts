@@ -15,7 +15,7 @@ export async function requireAdmin() {
   return session
 }
 
-export async function requireTalent() {
+export async function requireTalentRaw() {
   const session = await getSession()
   if (!session.talentId || session.role !== "talent") redirect("/auth/login")
 
@@ -24,6 +24,7 @@ export async function requireTalent() {
     select: {
       id: true,
       name: true,
+      nameKana: true,
       status: true,
       gender: true,
       birthDate: true,
@@ -35,6 +36,12 @@ export async function requireTalent() {
   })
 
   if (!talent || talent.status !== "ACTIVE") redirect("/auth/login")
+  return talent
+}
+
+export async function requireTalent() {
+  const talent = await requireTalentRaw()
+  if (talent.nameKana === "未設定") redirect("/setup")
   return talent
 }
 

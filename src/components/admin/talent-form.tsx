@@ -19,17 +19,24 @@ import type { Talent } from "@/generated/prisma/client"
 
 type ActionResult = { success?: boolean; error?: Record<string, string[]> } | null
 
-function talentAction(talent?: Talent) {
+type TalentFormProps = {
+  talent?: Talent
+  onSuccess?: () => void
+  mode?: "admin" | "talent"
+  customAction?: (formData: FormData) => Promise<ActionResult>
+}
+
+function talentAction(talent?: Talent, customAction?: (formData: FormData) => Promise<ActionResult>) {
   return async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
-    if (talent) {
-      return await updateTalent(talent.id, formData)
-    }
+    if (customAction) return await customAction(formData)
+    if (talent) return await updateTalent(talent.id, formData)
     return await createTalent(formData)
   }
 }
 
-export function TalentForm({ talent, onSuccess }: { talent?: Talent; onSuccess?: () => void }) {
-  const [state, action, isPending] = useActionState(talentAction(talent), null)
+export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: TalentFormProps) {
+  const [state, action, isPending] = useActionState(talentAction(talent, customAction), null)
+  const isAdmin = mode === "admin"
   const router = useRouter()
 
   useEffect(() => {
@@ -288,7 +295,7 @@ export function TalentForm({ talent, onSuccess }: { talent?: Talent; onSuccess?:
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+      <div className={`grid grid-cols-1 gap-4 ${isAdmin ? "sm:grid-cols-3" : ""}`}>
         <div className="space-y-2">
           <Label htmlFor="nearestStation">最寄駅</Label>
           <Input
@@ -298,27 +305,31 @@ export function TalentForm({ talent, onSuccess }: { talent?: Talent; onSuccess?:
             placeholder="例: 渋谷駅"
           />
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="lineUserId">LINE ユーザーID</Label>
-          <Input
-            id="lineUserId"
-            name="lineUserId"
-            defaultValue={talent?.lineUserId ?? ""}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="status">ステータス</Label>
-          <Select name="status" defaultValue={talent?.status ?? "ACTIVE"}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ACTIVE" label="アクティブ">アクティブ</SelectItem>
-              <SelectItem value="INACTIVE" label="非アクティブ">非アクティブ</SelectItem>
-              <SelectItem value="WITHDRAWN" label="退会">退会</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+        {isAdmin && (
+          <div className="space-y-2">
+            <Label htmlFor="lineUserId">LINE ユーザーID</Label>
+            <Input
+              id="lineUserId"
+              name="lineUserId"
+              defaultValue={talent?.lineUserId ?? ""}
+            />
+          </div>
+        )}
+        {isAdmin && (
+          <div className="space-y-2">
+            <Label htmlFor="status">ステータス</Label>
+            <Select name="status" defaultValue={talent?.status ?? "ACTIVE"}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ACTIVE" label="アクティブ">アクティブ</SelectItem>
+                <SelectItem value="INACTIVE" label="非アクティブ">非アクティブ</SelectItem>
+                <SelectItem value="WITHDRAWN" label="退会">退会</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       <h3 className="text-sm font-semibold text-muted-foreground pt-2">振込先情報</h3>
@@ -369,10 +380,12 @@ export function TalentForm({ talent, onSuccess }: { talent?: Talent; onSuccess?:
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="note">備考</Label>
-        <Textarea id="note" name="note" defaultValue={talent?.note ?? ""} />
-      </div>
+      {isAdmin && (
+        <div className="space-y-2">
+          <Label htmlFor="note">備考</Label>
+          <Textarea id="note" name="note" defaultValue={talent?.note ?? ""} />
+        </div>
+      )}
 
       <Button type="submit" disabled={isPending}>
         {isPending ? "保存中..." : talent ? "更新" : "登録"}
