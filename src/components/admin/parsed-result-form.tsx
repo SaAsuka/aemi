@@ -21,12 +21,9 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { SearchableSelect } from "@/components/ui/searchable-select"
 import { Textarea } from "@/components/ui/textarea"
 import { applyParsedJob } from "@/lib/actions/apply-parsed-job"
 import type { ParseResult, ParsedTalentEntry } from "@/lib/validations/parsed-job"
-
-type ClientOption = { id: string; companyName: string }
 
 const STATUS_LABELS: Record<string, string> = {
   ACCEPTED: "合格",
@@ -60,11 +57,9 @@ function toDatetimeLocal(v: string | null | undefined): string {
 
 export function ParsedResultForm({
   data,
-  clientOptions,
   onSuccess,
 }: {
   data: ParseResult
-  clientOptions: ClientOption[]
   onSuccess: () => void
 }) {
   const router = useRouter()
@@ -73,7 +68,6 @@ export function ParsedResultForm({
   )
   const [existingJobId, setExistingJobId] = useState(data.existingJobId ?? "")
   const [title, setTitle] = useState(data.job.title)
-  const [clientId, setClientId] = useState(data.existingClientId ?? "")
   const [description, setDescription] = useState(data.job.description ?? "")
   const [location, setLocation] = useState(data.job.location ?? "")
   const [fee, setFee] = useState(data.job.fee?.toString() ?? "")
@@ -93,16 +87,7 @@ export function ParsedResultForm({
   })
   const [saving, setSaving] = useState(false)
 
-  const clientComboOptions = clientOptions.map((c) => ({
-    value: c.id,
-    label: c.companyName,
-  }))
-
   const handleSubmit = async () => {
-    if (!clientId) {
-      toast.error("クライアントを選択してください")
-      return
-    }
     if (!title.trim()) {
       toast.error("案件名を入力してください")
       return
@@ -113,7 +98,6 @@ export function ParsedResultForm({
       mode,
       existingJobId: mode === "existing" ? existingJobId : undefined,
       title,
-      clientId,
       description: description || undefined,
       location: location || undefined,
       fee: fee ? parseInt(fee, 10) : undefined,
@@ -167,16 +151,6 @@ export function ParsedResultForm({
         <div className="space-y-1">
           <Label>案件名</Label>
           <Input value={title} onChange={(e) => setTitle(e.target.value)} />
-        </div>
-
-        <div className="space-y-1">
-          <Label>クライアント</Label>
-          <SearchableSelect
-            options={clientComboOptions}
-            value={clientId || null}
-            onValueChange={(v) => setClientId(v ?? "")}
-            placeholder="クライアントを選択..."
-          />
         </div>
 
         <div className="space-y-1">

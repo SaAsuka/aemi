@@ -17,13 +17,7 @@ import { ParsedResultForm } from "@/components/admin/parsed-result-form"
 import { parseJobText } from "@/lib/actions/parse-job"
 import type { ParseResult } from "@/lib/validations/parsed-job"
 
-type ClientOption = { id: string; companyName: string }
-
-export function ParseJobSheet({
-  clientOptions,
-}: {
-  clientOptions: ClientOption[]
-}) {
+export function ParseJobSheet() {
   const [open, setOpen] = useState(false)
   const [text, setText] = useState("")
   const [result, setResult] = useState<ParseResult | null>(null)
@@ -89,7 +83,6 @@ export function ParseJobSheet({
             </div>
             <ParsedResultForm
               data={result}
-              clientOptions={clientOptions}
               onSuccess={() => handleClose(false)}
             />
           </div>

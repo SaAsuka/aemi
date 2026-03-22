@@ -1,7 +1,6 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
 import { getJob } from "@/lib/actions/job"
-import { getClientOptions } from "@/lib/queries"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -26,10 +25,7 @@ export default async function JobDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const [job, clients] = await Promise.all([
-    getJob(id),
-    getClientOptions(),
-  ])
+  const job = await getJob(id)
 
   if (!job) notFound()
 
@@ -45,7 +41,7 @@ export default async function JobDetailPage({
           <CardTitle>案件情報</CardTitle>
         </CardHeader>
         <CardContent>
-          <JobForm job={job} clients={clients} requirements={job.requirements} />
+          <JobForm job={job} requirements={job.requirements} />
         </CardContent>
       </Card>
 

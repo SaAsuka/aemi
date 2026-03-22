@@ -42,11 +42,9 @@ const CATEGORIES = ["ACTING_VIDEO", "VOICE_SAMPLE", "PAST_WORK_VIDEO", "PROFILE_
 
 export function JobForm({
   job,
-  clients,
   requirements,
 }: {
   job?: Job
-  clients: { id: string; companyName: string }[]
   requirements?: Requirement[]
 }) {
   const [state, action, isPending] = useActionState(jobAction(job), null)
@@ -93,39 +91,19 @@ export function JobForm({
 
   return (
     <form action={action} className="space-y-4">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="clientId">クライアント *</Label>
-          <Select name="clientId" defaultValue={job?.clientId ?? ""}>
-            <SelectTrigger>
-              <SelectValue placeholder="選択" />
-            </SelectTrigger>
-            <SelectContent>
-              {clients.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.companyName}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          {state?.error?.clientId && (
-            <p className="text-sm text-destructive">{state.error.clientId[0]}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="status">ステータス</Label>
-          <Select name="status" defaultValue={job?.status ?? "DRAFT"}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="DRAFT" label="下書き">下書き</SelectItem>
-              <SelectItem value="OPEN" label="募集中">募集中</SelectItem>
-              <SelectItem value="CLOSED" label="募集終了">募集終了</SelectItem>
-              <SelectItem value="CANCELLED" label="キャンセル">キャンセル</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+      <div className="space-y-2">
+        <Label htmlFor="status">ステータス</Label>
+        <Select name="status" defaultValue={job?.status ?? "DRAFT"}>
+          <SelectTrigger>
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="DRAFT" label="下書き">下書き</SelectItem>
+            <SelectItem value="OPEN" label="募集中">募集中</SelectItem>
+            <SelectItem value="CLOSED" label="募集終了">募集終了</SelectItem>
+            <SelectItem value="CANCELLED" label="キャンセル">キャンセル</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="space-y-2">

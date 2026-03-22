@@ -1,7 +1,7 @@
 import { z } from "zod"
 
 export const jobSchema = z.object({
-  clientId: z.string().min(1, "クライアントは必須です"),
+  clientId: z.string().optional(),
   title: z.string().min(1, "案件名は必須です"),
   description: z.string().optional().or(z.literal("")),
   location: z.string().optional().or(z.literal("")),

@@ -40,6 +40,16 @@ export const getClientOptions = cache(
   )
 )
 
+export async function getDefaultClientId(): Promise<string> {
+  const client = await prisma.client.upsert({
+    where: { id: "default-avex" },
+    update: {},
+    create: { id: "default-avex", companyName: "avex" },
+    select: { id: true },
+  })
+  return client.id
+}
+
 export const getTalentFilterOptions = cache(
   unstable_cache(
     async () => {

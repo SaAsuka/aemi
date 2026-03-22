@@ -3,6 +3,7 @@
 import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
 import { jobSchema } from "@/lib/validations/job"
+import { getDefaultClientId } from "@/lib/queries"
 
 export async function getJobs(search?: string, status?: string) {
   const where: Record<string, unknown> = {}
@@ -121,10 +122,11 @@ export async function createJob(formData: FormData) {
 
   const data = parsed.data
   const requirements = extractRequirements(formData)
+  const clientId = await getDefaultClientId()
 
   await prisma.job.create({
     data: {
-      clientId: data.clientId,
+      clientId,
       title: data.title,
       description: data.description || null,
       location: data.location || null,
@@ -161,12 +163,13 @@ export async function updateJob(id: string, formData: FormData) {
 
   const data = parsed.data
   const requirements = extractRequirements(formData)
+  const clientId = await getDefaultClientId()
 
   await prisma.$transaction(async (tx) => {
     await tx.job.update({
       where: { id },
       data: {
-        clientId: data.clientId,
+        clientId,
         title: data.title,
         description: data.description || null,
         location: data.location || null,

@@ -84,13 +84,10 @@ export async function parseJobText(text: string): Promise<
     const job = parsed.data
 
     const existingJobId = await findExistingJob(job.title)
-    const existingClientId = job.clientCompanyName
-      ? await findExistingClient(job.clientCompanyName)
-      : null
 
     return {
       success: true,
-      data: { job, existingJobId, existingClientId },
+      data: { job, existingJobId, existingClientId: null },
     }
   } catch (e) {
     console.error("Gemini parse error:", e)
@@ -105,12 +102,4 @@ async function findExistingJob(title: string): Promise<string | null> {
     orderBy: { createdAt: "desc" },
   })
   return job?.id ?? null
-}
-
-async function findExistingClient(companyName: string): Promise<string | null> {
-  const client = await prisma.client.findFirst({
-    where: { companyName: { contains: companyName, mode: "insensitive" } },
-    select: { id: true },
-  })
-  return client?.id ?? null
 }

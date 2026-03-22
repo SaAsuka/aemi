@@ -2,6 +2,7 @@
 
 import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
+import { getDefaultClientId } from "@/lib/queries"
 
 type Gender = "MALE" | "FEMALE" | "OTHER"
 
@@ -9,7 +10,6 @@ type ApplyInput = {
   mode: "create" | "existing"
   existingJobId?: string
   title: string
-  clientId: string
   description?: string
   location?: string
   fee?: number
@@ -29,9 +29,11 @@ export async function applyParsedJob(input: ApplyInput): Promise<
   { success: true } | { success: false; error: string }
 > {
   try {
+    const clientId = await getDefaultClientId()
+
     const data = {
       title: input.title,
-      clientId: input.clientId,
+      clientId,
       description: input.description || null,
       location: input.location || null,
       fee: input.fee ?? null,

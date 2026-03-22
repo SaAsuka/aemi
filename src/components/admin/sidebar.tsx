@@ -21,7 +21,6 @@ const navItems = [
   { title: "案件管理", href: "/admin/jobs", icon: "📋" },
   { title: "応募管理", href: "/admin/applications", icon: "📝" },
   { title: "スケジュール", href: "/admin/schedule", icon: "📅" },
-  { title: "クライアント管理", href: "/admin/clients", icon: "🏢" },
 ]
 
 export function AdminSidebar() {
