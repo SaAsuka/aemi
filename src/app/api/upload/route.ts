@@ -23,6 +23,7 @@ export async function POST(request: Request): Promise<NextResponse> {
           ],
           maximumSizeInBytes: 100 * 1024 * 1024,
           addRandomSuffix: false,
+          allowOverwrite: true,
         }
       },
       onUploadCompleted: async () => {},
