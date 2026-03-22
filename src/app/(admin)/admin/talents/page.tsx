@@ -86,7 +86,8 @@ export default async function TalentsPage({
                 <TableHead>名前</TableHead>
                 <TableHead className="hidden sm:table-cell">フリガナ</TableHead>
                 <TableHead>ステータス</TableHead>
-                <TableHead>コンポジ</TableHead>
+                <TableHead>コンポジ生成</TableHead>
+                <TableHead>コンポジPDF</TableHead>
                 <TableHead>案件リンク</TableHead>
                 <TableHead></TableHead>
               </TableRow>
@@ -94,7 +95,7 @@ export default async function TalentsPage({
             <TableBody>
               {talents.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     データがありません
                   </TableCell>
                 </TableRow>
@@ -118,14 +119,17 @@ export default async function TalentsPage({
                       />
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-1">
-                        <CompositePdfIconButton talentId={talent.id} />
-                        {talent.resume && (
-                          <a href={talent.resume} target="_blank" rel="noopener noreferrer" title="PDFを表示">
-                            <ExternalLink className="h-4 w-4 text-muted-foreground hover:text-primary" />
-                          </a>
-                        )}
-                      </div>
+                      <CompositePdfIconButton talentId={talent.id} />
+                    </TableCell>
+                    <TableCell>
+                      {talent.resume ? (
+                        <a href={talent.resume} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 text-sm text-blue-600 hover:underline">
+                          <ExternalLink className="h-3.5 w-3.5" />
+                          表示
+                        </a>
+                      ) : (
+                        <span className="text-xs text-muted-foreground">未生成</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {talent.accessToken && (
