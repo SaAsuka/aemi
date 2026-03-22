@@ -1,6 +1,8 @@
 import Link from "next/link"
 import { getJobs } from "@/lib/actions/job"
+import { getClientOptions, getActiveTalentOptions } from "@/lib/queries"
 import { LinkButton } from "@/components/admin/link-button"
+import { ParseJobSheet } from "@/components/admin/parse-job-sheet"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -22,13 +24,20 @@ export default async function JobsPage({
   searchParams: Promise<{ q?: string; status?: string }>
 }) {
   const { q, status } = await searchParams
-  const jobs = await getJobs(q, status)
+  const [jobs, clientOptions, talentOptions] = await Promise.all([
+    getJobs(q, status),
+    getClientOptions(),
+    getActiveTalentOptions(),
+  ])
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl sm:text-2xl font-bold">案件管理</h1>
-        <LinkButton href="/admin/jobs/new">新規作成</LinkButton>
+        <div className="flex gap-2">
+          <ParseJobSheet clientOptions={clientOptions} talentOptions={talentOptions} />
+          <LinkButton href="/admin/jobs/new">新規作成</LinkButton>
+        </div>
       </div>
 
       <div className="flex flex-col gap-4 sm:flex-row">
