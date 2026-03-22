@@ -100,9 +100,18 @@ export function CompositePdfIconButton({ talentId }: { talentId: string }) {
     }
   }
 
+  if (generating) {
+    return (
+      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground animate-pulse">
+        <Loader2 className="h-3.5 w-3.5 animate-spin" />
+        生成中…
+      </span>
+    )
+  }
+
   return (
-    <Button onClick={generate} disabled={generating} variant="ghost" size="icon" title="コンポジPDF生成">
-      {generating ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileText className="h-4 w-4" />}
+    <Button onClick={generate} variant="ghost" size="icon" title="コンポジPDF生成">
+      <FileText className="h-4 w-4" />
     </Button>
   )
 }
