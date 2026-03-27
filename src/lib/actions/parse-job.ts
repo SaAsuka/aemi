@@ -1,7 +1,7 @@
 "use server"
 
 import { getGemini } from "@/lib/gemini"
-import { parsedJobResponseSchema } from "@/lib/validations/parsed-job"
+import { parsedJobResponseSchema, parsedJobSchema } from "@/lib/validations/parsed-job"
 import type { ParseResult } from "@/lib/validations/parsed-job"
 import { prisma } from "@/lib/db"
 
@@ -134,12 +134,51 @@ export async function parseJobText(text: string): Promise<
     })
 
     const raw = JSON.parse(response.text ?? "{}")
-    const parsed = parsedJobResponseSchema.safeParse(raw)
-    if (!parsed.success) {
-      return { success: false, error: "パース結果の形式が不正です" }
-    }
 
-    const { common, roles } = parsed.data
+    const parsed = parsedJobResponseSchema.safeParse(raw)
+
+    let common: ReturnType<typeof parsedJobResponseSchema.parse>["common"]
+    let roles: ReturnType<typeof parsedJobResponseSchema.parse>["roles"]
+
+    if (parsed.success) {
+      common = parsed.data.common
+      roles = parsed.data.roles
+    } else {
+      console.error("新フォーマットパース失敗:", JSON.stringify(parsed.error.issues, null, 2))
+      console.error("Gemini生レスポンス:", JSON.stringify(raw, null, 2))
+
+      const legacy = parsedJobSchema.safeParse(raw)
+      if (legacy.success) {
+        console.log("旧フォーマットでパース成功、変換します")
+        const d = legacy.data
+        common = {
+          clientCompanyName: d.clientCompanyName,
+          clientContactName: d.clientContactName,
+          location: d.location,
+          startsAt: d.startsAt,
+          endsAt: d.endsAt,
+          deadline: d.deadline,
+          dates: d.dates,
+          description: d.description,
+          note: d.note,
+        }
+        roles = [{
+          title: d.title,
+          genderReq: d.genderReq,
+          ageMin: d.ageMin,
+          ageMax: d.ageMax,
+          heightMin: d.heightMin,
+          heightMax: d.heightMax,
+          fee: d.fee,
+          capacity: d.capacity,
+          note: d.note,
+          talents: d.talents,
+        }]
+      } else {
+        console.error("旧フォーマットもパース失敗:", JSON.stringify(legacy.error.issues, null, 2))
+        return { success: false, error: "パース結果の形式が不正です" }
+      }
+    }
 
     const jobs = await Promise.all(
       roles.map(async (role) => ({

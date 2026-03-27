@@ -30,7 +30,7 @@ export const parsedJobSchema = z.object({
   capacity: z.number().nullable().optional(),
   dates: z.string().nullable().optional(),
   note: z.string().nullable().optional(),
-  talents: z.array(parsedTalentEntrySchema),
+  talents: z.array(parsedTalentEntrySchema).nullable().optional().transform((v) => v ?? []),
 })
 
 export type ParsedTalentEntry = z.infer<typeof parsedTalentEntrySchema>
@@ -58,7 +58,7 @@ export const parsedRoleSchema = z.object({
   fee: z.number().nullable().optional(),
   capacity: z.number().nullable().optional(),
   note: z.string().nullable().optional(),
-  talents: z.array(parsedTalentEntrySchema).optional().default([]),
+  talents: z.array(parsedTalentEntrySchema).nullable().optional().transform((v) => v ?? []),
 })
 
 export const parsedJobResponseSchema = z.object({
