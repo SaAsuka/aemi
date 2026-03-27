@@ -76,7 +76,9 @@ export function ParseJobSheet() {
         ) : (
           <div className="mt-4">
             <div className="flex justify-between items-center mb-4">
-              <p className="text-sm text-muted-foreground">解析結果を確認・修正してください</p>
+              <p className="text-sm text-muted-foreground">
+                解析結果を確認・修正してください（{result.jobs.length}役柄）
+              </p>
               <Button variant="ghost" size="sm" onClick={handleReset}>
                 やり直す
               </Button>
