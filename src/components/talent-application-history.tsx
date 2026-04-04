@@ -40,7 +40,7 @@ function ApplicationCard({ app }: { app: Application }) {
   const jobLocation = schedule?.location || app.job.location
 
   return (
-    <div className={`border rounded-lg p-3 border-l-4 ${s.color}`}>
+    <div className={`border rounded-lg p-4 border-l-4 ${s.color}`}>
       <div className="flex items-center justify-between">
         <Link href={`/jobs/${app.job.id}`} className="text-sm font-medium hover:underline line-clamp-1">
           {app.job.title}
@@ -51,7 +51,7 @@ function ApplicationCard({ app }: { app: Application }) {
       {app.status === "ACCEPTED" && schedule && (
         <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
           <span className="inline-flex items-center gap-1">
-            <CalendarDays className="h-3.5 w-3.5" />
+            <CalendarDays className="h-4 w-4" />
             {new Date(schedule.date).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })}
             {schedule.startTime && (
               <> {schedule.startTime}{schedule.endTime && `〜${schedule.endTime}`}</>
@@ -59,7 +59,7 @@ function ApplicationCard({ app }: { app: Application }) {
           </span>
           {jobLocation && (
             <span className="inline-flex items-center gap-1">
-              <MapPin className="h-3.5 w-3.5" />
+              <MapPin className="h-4 w-4" />
               {jobLocation}
             </span>
           )}

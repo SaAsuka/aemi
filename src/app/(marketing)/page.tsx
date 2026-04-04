@@ -35,7 +35,7 @@ export default function Home() {
 
       {/* 数字で見るVOZEL */}
       <section className="py-16 px-6 border-b border-border">
-        <div className="max-w-4xl mx-auto grid grid-cols-3 gap-8 text-center">
+        <div className="max-w-4xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-8 text-center">
           {[
             { value: "500+", label: "月間案件数" },
             { value: "¥4,000", label: "月額料金" },

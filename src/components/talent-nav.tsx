@@ -23,7 +23,7 @@ export function TalentNav({ talentName }: { talentName: string }) {
               <Link
                 key={href}
                 href={href}
-                className={`flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm px-2 sm:px-0 py-1 rounded-md transition-colors ${
+                className={`flex items-center gap-1.5 text-sm px-3 py-2 rounded-md transition-colors ${
                   (href === "/mypage" ? pathname === href : pathname === href || pathname.startsWith(href + "/"))
                     ? "text-foreground font-medium"
                     : "text-muted-foreground hover:text-foreground"
@@ -37,7 +37,7 @@ export function TalentNav({ talentName }: { talentName: string }) {
         </div>
         <a
           href="/auth/logout"
-          className="flex items-center gap-1 sm:gap-1.5 text-xs sm:text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0"
+          className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors shrink-0 py-2"
         >
           <LogOut className="h-4 w-4" />
           <span className="hidden sm:inline">ログアウト</span>

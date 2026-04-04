@@ -104,7 +104,7 @@ function SetupPhotos({ talentId, photos: initialPhotos }: { talentId: string; ph
         />
       </div>
 
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {photos.map((photo, idx) => (
           <div
             key={photo.id}
@@ -118,12 +118,12 @@ function SetupPhotos({ talentId, photos: initialPhotos }: { talentId: string; ph
             <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2">
               <span className="text-white text-xs font-medium">{photoLabels[idx]}</span>
             </div>
-            <div className="absolute top-1.5 right-1.5 flex gap-1 opacity-0 group-hover:opacity-100 transition">
-              <button type="button" className="bg-black/60 text-white p-1 rounded-lg cursor-grab">
-                <GripVertical className="h-3.5 w-3.5" />
+            <div className="absolute top-1.5 right-1.5 flex gap-1">
+              <button type="button" className="bg-black/60 text-white p-2 rounded-lg cursor-grab">
+                <GripVertical className="h-4 w-4" />
               </button>
-              <button type="button" onClick={() => handleDelete(photo.id)} className="bg-red-500/80 text-white p-1 rounded-lg hover:bg-red-500">
-                <Trash2 className="h-3.5 w-3.5" />
+              <button type="button" onClick={() => handleDelete(photo.id)} className="bg-red-500/80 text-white p-2 rounded-lg hover:bg-red-500">
+                <Trash2 className="h-4 w-4" />
               </button>
             </div>
           </div>

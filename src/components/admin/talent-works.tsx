@@ -60,14 +60,14 @@ export function TalentWorks({ talentId, works: initialWorks }: { talentId: strin
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row gap-2">
         <Input
           placeholder="キャプション（作品名など）"
           value={caption}
           onChange={e => setCaption(e.target.value)}
-          className="max-w-xs"
+          className="flex-1"
         />
-        <Button type="button" variant="outline" size="sm" disabled={uploading || !caption.trim()} onClick={() => document.getElementById(`work-upload-${talentId}`)?.click()}>
+        <Button type="button" variant="outline" size="sm" disabled={uploading || !caption.trim()} onClick={() => document.getElementById(`work-upload-${talentId}`)?.click()} className="shrink-0">
           {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
           追加
         </Button>

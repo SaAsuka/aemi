@@ -92,12 +92,12 @@ export function TalentPhotos({ talentId, photos: initialPhotos }: { talentId: st
               <div className="absolute top-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
                 {idx === 0 ? "バストアップ" : idx === 1 ? "全身" : `#${idx + 1}`}
               </div>
-              <div className="absolute top-1 right-1 flex gap-1 opacity-0 group-hover:opacity-100 transition">
-                <button type="button" className="bg-black/60 text-white p-1 rounded cursor-grab">
-                  <GripVertical className="h-3.5 w-3.5" />
+              <div className="absolute top-1 right-1 flex gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition">
+                <button type="button" className="bg-black/60 text-white p-2 rounded cursor-grab">
+                  <GripVertical className="h-4 w-4" />
                 </button>
-                <button type="button" onClick={() => handleDelete(photo.id)} className="bg-red-600 text-white p-1 rounded">
-                  <Trash2 className="h-3.5 w-3.5" />
+                <button type="button" onClick={() => handleDelete(photo.id)} className="bg-red-600 text-white p-2 rounded">
+                  <Trash2 className="h-4 w-4" />
                 </button>
               </div>
             </div>

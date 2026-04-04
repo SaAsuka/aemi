@@ -314,12 +314,12 @@ export function TalentRegisterForm() {
               <div className="relative aspect-[3/4] rounded border overflow-hidden group">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={photos[i]!.preview} alt={slot.label} className="w-full h-full object-cover" />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                  <button type="button" onClick={() => openFilePicker(i)} className="bg-white text-black rounded-full p-1.5" title="変更">
-                    <RefreshCw className="h-3.5 w-3.5" />
+                <div className="absolute inset-0 bg-black/40 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                  <button type="button" onClick={() => openFilePicker(i)} className="bg-white text-black rounded-full p-2" title="変更">
+                    <RefreshCw className="h-4 w-4" />
                   </button>
-                  <button type="button" onClick={() => removePhoto(i)} className="bg-destructive text-destructive-foreground rounded-full p-1.5" title="削除">
-                    <X className="h-3.5 w-3.5" />
+                  <button type="button" onClick={() => removePhoto(i)} className="bg-destructive text-destructive-foreground rounded-full p-2" title="削除">
+                    <X className="h-4 w-4" />
                   </button>
                 </div>
               </div>

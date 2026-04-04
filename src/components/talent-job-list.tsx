@@ -74,7 +74,7 @@ export function TalentJobList({
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value as FilterType)}
-          className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none"
+          className="h-10 rounded-lg border border-input bg-transparent px-3 text-sm outline-none"
         >
           <option value="all">全件</option>
           <option value="match">マッチのみ</option>
@@ -83,7 +83,7 @@ export function TalentJobList({
         <select
           value={sort}
           onChange={(e) => setSort(e.target.value as SortType)}
-          className="h-8 rounded-lg border border-input bg-transparent px-2.5 text-sm outline-none"
+          className="h-10 rounded-lg border border-input bg-transparent px-3 text-sm outline-none"
         >
           <option value="newest">新着順</option>
           <option value="deadline">締切が近い順</option>
@@ -120,7 +120,7 @@ export function TalentJobList({
                 <span>
                   📅 締切: {formatShortDate(job.deadline)}
                   {isWithinDays(job.deadline, 3) && (
-                    <Badge variant="destructive" className="ml-1 text-[10px]">まもなく</Badge>
+                    <Badge variant="destructive" className="ml-1 text-xs">まもなく</Badge>
                   )}
                 </span>
               )}
