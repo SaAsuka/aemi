@@ -94,7 +94,7 @@ export default async function TalentJobsPage({
   return (
     <>
       {!t && <TalentNav talentName={displayName} />}
-      <div className="mx-auto max-w-5xl px-4 py-8 space-y-6">
+      <div className="mx-auto max-w-7xl px-4 py-8 space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold">案件一覧</h1>
         </div>

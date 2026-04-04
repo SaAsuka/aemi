@@ -106,7 +106,7 @@ export function TalentJobList({
                 {isNewJob(job.createdAt) && (
                   <Badge className="bg-blue-500 text-white">NEW</Badge>
                 )}
-                <h2 className="font-semibold truncate">{job.title}</h2>
+                <h2 className="font-semibold">{job.title}</h2>
               </div>
               <MatchBadge status={job.matchStatus} />
             </div>
