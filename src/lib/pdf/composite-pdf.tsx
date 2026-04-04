@@ -208,6 +208,20 @@ function ProfilePage({ talent }: { talent: TalentData }) {
               ))}
             </View>
           ) : null}
+
+          {talent.career ? (
+            <View>
+              <Text style={s.sectionTitle}>CAREER</Text>
+              <Text style={s.careerText}>{talent.career}</Text>
+            </View>
+          ) : null}
+
+          {talent.representativeWork ? (
+            <View>
+              <Text style={s.sectionTitle}>代表作</Text>
+              <Text style={s.careerText}>{talent.representativeWork}</Text>
+            </View>
+          ) : null}
         </View>
 
         <View style={s.profileRight}>
@@ -237,28 +251,14 @@ function PhotoGridPage({ photos }: { photos: { url: string }[] }) {
   )
 }
 
-// 3ページ目以降: 経歴・代表作・出演実績
-function CareerPage({ talent }: { talent: TalentData }) {
+// 3ページ目: 出演実績（作品画像がある場合のみ）
+function WorksPage({ talent }: { talent: TalentData }) {
   const displayName = talent.stageName || talent.name
   return (
     <Page size="A4" style={s.page}>
       <PageHeader />
       <Text style={s.nameJa}>{displayName}</Text>
       {talent.nameRomaji ? <Text style={s.nameRomaji}>{talent.nameRomaji}</Text> : null}
-
-      {talent.career ? (
-        <View>
-          <Text style={s.sectionTitle}>CAREER</Text>
-          <Text style={s.careerText}>{talent.career}</Text>
-        </View>
-      ) : null}
-
-      {talent.representativeWork ? (
-        <View>
-          <Text style={s.sectionTitle}>代表作</Text>
-          <Text style={s.careerText}>{talent.representativeWork}</Text>
-        </View>
-      ) : null}
 
       {talent.works.length > 0 ? (
         <View>
@@ -279,13 +279,12 @@ function CareerPage({ talent }: { talent: TalentData }) {
 
 export function CompositePDF({ talent }: { talent: TalentData }) {
   const gridPhotos = talent.photos.slice(2, 6)
-  const hasCareer = talent.career || talent.representativeWork || talent.works.length > 0
 
   return (
     <Document>
       <ProfilePage talent={talent} />
       {gridPhotos.length > 0 && <PhotoGridPage photos={gridPhotos} />}
-      {hasCareer && <CareerPage talent={talent} />}
+      {talent.works.length > 0 && <WorksPage talent={talent} />}
     </Document>
   )
 }
