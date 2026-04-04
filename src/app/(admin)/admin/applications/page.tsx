@@ -18,6 +18,7 @@ import { NewApplicationDialog } from "@/components/admin/new-application-dialog"
 import { LineCopyButton } from "@/components/admin/line-copy-button"
 import { Button } from "@/components/ui/button"
 import { SubmissionLinks } from "@/components/admin/submission-links"
+import { DeleteApplicationButton } from "@/components/admin/delete-application-button"
 
 async function ApplicationDialogData() {
   const [talents, jobs] = await Promise.all([
@@ -114,6 +115,7 @@ export default async function ApplicationsPage({
                           talentName={app.talent.name}
                           jobTitle={app.job.title}
                         />
+                        <DeleteApplicationButton applicationId={app.id} />
                       </div>
                     </TableCell>
                   </TableRow>
