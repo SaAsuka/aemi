@@ -20,7 +20,7 @@ export default async function SettingsPage() {
   return (
     <>
       <TalentNav talentName={displayName} />
-      <div className="mx-auto max-w-2xl px-4 py-8 space-y-10">
+      <div className="mx-auto max-w-4xl px-4 py-8 space-y-10">
         <h1 className="text-xl font-bold">設定</h1>
 
         <section className="space-y-4">
