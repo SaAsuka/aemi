@@ -285,9 +285,10 @@ function WorksPage({ talent }: { talent: TalentData }) {
 
 export function CompositePDF({ talent }: { talent: TalentData }) {
   const gridPhotos = talent.photos.slice(2, 6)
+  const displayName = talent.stageName || talent.name
 
   return (
-    <Document>
+    <Document title={`${displayName} - VOZEL プロフィール`} author="VOZEL">
       <ProfilePage talent={talent} />
       {gridPhotos.length > 0 && <PhotoGridPage photos={gridPhotos} />}
       {talent.works.length > 0 && <WorksPage talent={talent} />}
