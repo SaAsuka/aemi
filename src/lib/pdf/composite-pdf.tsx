@@ -5,6 +5,7 @@ import {
   Text,
   View,
   Image,
+  Link,
   StyleSheet,
   Font,
 } from "@react-pdf/renderer"
@@ -49,7 +50,9 @@ const s = StyleSheet.create({
   infoValue: { flex: 1, fontSize: 8 },
 
   sectionTitle: { fontSize: 9, fontWeight: 700, color: C.accent, borderBottomWidth: 1, borderBottomColor: C.accent, borderBottomStyle: "solid", paddingBottom: 2, marginTop: 10, marginBottom: 4 },
-  snsItem: { fontSize: 7, color: C.secondary, marginBottom: 2 },
+  snsItem: { flexDirection: "row" as const, marginBottom: 2 },
+  snsLabel: { fontSize: 7, color: C.secondary },
+  snsLink: { fontSize: 7, color: "#2563eb", textDecoration: "underline" as const },
   careerText: { fontSize: 7.5, lineHeight: 1.5 },
 
   photo: { width: "100%", objectFit: "contain" },
@@ -203,8 +206,11 @@ function ProfilePage({ talent }: { talent: TalentData }) {
           {snsItems.length > 0 ? (
             <View>
               <Text style={s.sectionTitle}>SNS</Text>
-              {snsItems.map(([label, , display]) => (
-                <Text style={s.snsItem} key={label}>{label}: {display}</Text>
+              {snsItems.map(([label, url, display]) => (
+                <View style={s.snsItem} key={label}>
+                  <Text style={s.snsLabel}>{label}: </Text>
+                  <Link src={url} style={s.snsLink}>{display}</Link>
+                </View>
               ))}
             </View>
           ) : null}
