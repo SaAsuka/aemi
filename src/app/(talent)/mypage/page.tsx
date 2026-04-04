@@ -13,14 +13,7 @@ export default async function MyPage() {
   return (
     <>
       <TalentNav talentName={displayName} />
-      <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
-        <div className="flex items-center gap-3 min-w-0">
-          <h1 className="text-xl font-bold truncate">{displayName}</h1>
-          {talent.category && (
-            <span className="text-sm text-primary shrink-0">{talent.category}</span>
-          )}
-        </div>
-
+      <div className="mx-auto max-w-7xl px-4 py-8 space-y-6">
         <section className="space-y-4">
           <div className="flex items-center gap-2">
             <Briefcase className="h-5 w-5 text-primary" />
