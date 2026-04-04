@@ -125,7 +125,7 @@ export function CompositePdfButton({
       </Button>
       <Button onClick={() => fileRef.current?.click()} disabled={busy} variant="outline" size="sm">
         {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
-        {uploading ? "アップロード中..." : "PDFアップロード"}
+        {uploading ? "アップロード中..." : "コンポジアップロード"}
       </Button>
       <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handleUpload} />
       {displayUrl && (
