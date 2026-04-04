@@ -132,7 +132,7 @@ export function CompositePdfButton({
         <a href={displayUrl} target="_blank" rel="noopener noreferrer">
           <Button variant="ghost" size="sm">
             <ExternalLink className="h-4 w-4 mr-1" />
-            PDFを表示
+            コンポジを表示
             {source === "manual" && <span className="ml-1 text-xs text-blue-500">(手動)</span>}
           </Button>
         </a>
