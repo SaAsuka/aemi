@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         status: 304,
         headers: {
           ETag: result.blob.etag,
-          "Cache-Control": "private, no-cache",
+          "Cache-Control": "private, max-age=3600, must-revalidate",
         },
       })
     }
@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(filename)}`,
         "X-Content-Type-Options": "nosniff",
         ETag: result.blob.etag,
-        "Cache-Control": "private, no-cache",
+        "Cache-Control": "private, max-age=3600, must-revalidate",
       },
     })
   } catch (e) {

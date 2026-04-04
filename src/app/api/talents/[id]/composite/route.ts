@@ -2,6 +2,7 @@ import { NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
 import { renderToBuffer, Font } from "@react-pdf/renderer"
 import { put, get, del } from "@vercel/blob"
+import sharp from "sharp"
 import { prisma } from "@/lib/db"
 import { CompositePDF } from "@/lib/pdf/composite-pdf"
 import React from "react"
@@ -57,6 +58,7 @@ export async function GET(
 
   async function toDataUri(url: string): Promise<string> {
     try {
+      let buf: Buffer
       if (url.includes("blob.vercel-storage.com")) {
         const result = await get(url, { access: "private" })
         if (!result || result.statusCode !== 200) return url
@@ -67,15 +69,17 @@ export async function GET(
           if (done) break
           chunks.push(value)
         }
-        const buf = Buffer.concat(chunks)
-        return `data:${result.blob.contentType};base64,${buf.toString("base64")}`
+        buf = Buffer.concat(chunks)
       } else {
         const res = await fetch(url)
         if (!res.ok) return url
-        const buf = Buffer.from(await res.arrayBuffer())
-        const ct = res.headers.get("content-type") || "image/jpeg"
-        return `data:${ct};base64,${buf.toString("base64")}`
+        buf = Buffer.from(await res.arrayBuffer())
       }
+      const compressed = await sharp(buf)
+        .resize(1200, 1600, { fit: "inside", withoutEnlargement: true })
+        .jpeg({ quality: 80 })
+        .toBuffer()
+      return `data:image/jpeg;base64,${compressed.toString("base64")}`
     } catch {
       console.error(`[COMPOSITE] toDataUri failed: ${url}`)
       return url
