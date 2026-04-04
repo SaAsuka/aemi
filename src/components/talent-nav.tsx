@@ -15,7 +15,7 @@ export function TalentNav({ talentName }: { talentName: string }) {
 
   return (
     <nav className="border-b bg-background sticky top-0 z-40">
-      <div className="mx-auto max-w-2xl px-3 sm:px-4 flex items-center justify-between h-12 sm:h-14">
+      <div className="mx-auto max-w-5xl px-3 sm:px-4 flex items-center justify-between h-12 sm:h-14">
         <div className="flex items-center gap-1 sm:gap-6 min-w-0">
           <span className="font-semibold text-sm hidden sm:block truncate max-w-[120px]">{talentName}</span>
           <div className="flex items-center gap-1 sm:gap-4">

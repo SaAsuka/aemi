@@ -94,12 +94,12 @@ export function TalentJobList({
         </span>
       </div>
 
-      <div className="space-y-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {filtered.map((job) => (
           <Link
             key={job.id}
             href={`/jobs/${job.id}?t=${token}`}
-            className="block rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+            className="block rounded-xl border bg-card p-4 shadow-sm hover:shadow-md transition-shadow"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 flex-wrap min-w-0">
