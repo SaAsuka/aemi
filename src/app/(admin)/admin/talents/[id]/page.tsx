@@ -51,7 +51,7 @@ export default async function TalentDetailPage({
         </div>
         <div className="flex items-center gap-2">
           <TalentEditSheet talent={talent} />
-          <CompositePdfButton talentId={talent.id} resumeUrl={talent.resume} photoCount={talent.photos.length} />
+          <CompositePdfButton talentId={talent.id} resumeUrl={talent.resume} resumeSource={talent.resumeSource} photoCount={talent.photos.length} />
           <DeleteButton id={talent.id} type="talent" />
         </div>
       </div>

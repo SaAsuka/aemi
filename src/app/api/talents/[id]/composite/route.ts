@@ -19,10 +19,11 @@ Font.registerHyphenationCallback(word => [word])
 export const maxDuration = 60
 
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   const { id } = await params
+  const force = new URL(req.url).searchParams.get("force") === "true"
   const t0 = Date.now()
   let stage = "INIT"
 
@@ -46,6 +47,10 @@ export async function GET(
 
   if (!talent) {
     return NextResponse.json({ errors: ["タレントが見つかりません"] }, { status: 404 })
+  }
+
+  if (talent.resumeSource === "manual" && !force) {
+    return NextResponse.json({ errors: ["手動アップロードされたPDFがあります。上書きするには force=true を指定してください。"] }, { status: 409 })
   }
 
   const photoCount = talent.photos.length
@@ -123,7 +128,7 @@ export async function GET(
       blobUrl = blob.url
       console.log(`[COMPOSITE] BLOB_DONE +${Date.now() - t0}ms url=${blobUrl}`)
 
-      await prisma.talent.update({ where: { id }, data: { resume: blobUrl } })
+      await prisma.talent.update({ where: { id }, data: { resume: blobUrl, resumeSource: "auto" } })
       revalidatePath("/admin/talents")
       revalidatePath(`/admin/talents/${id}`)
       console.log(`[COMPOSITE] DB_SAVE_DONE +${Date.now() - t0}ms`)

@@ -92,6 +92,7 @@ model Talent {
   lineUserId   String?
   profileImage String?
   resume         String?
+  resumeSource   String?            @default("auto")
   nearestStation String?
   instagramUrl   String?
   xUrl           String?

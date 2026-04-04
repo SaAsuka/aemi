@@ -81,10 +81,10 @@ export default async function TalentsPage({
         <CardHeader className="border-b">
           <CardTitle className="text-primary text-lg">タレント一覧<span className="ml-2 text-sm font-normal text-muted-foreground">({talents.length}件){hasFilters && " フィルタ中"}</span></CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto px-0">
+        <CardContent className="overflow-auto max-h-[70vh] px-0">
           <Table>
             <TableHeader>
-              <TableRow className="bg-muted/60 hover:bg-muted/60">
+              <TableRow className="bg-muted/60 hover:bg-muted/60 sticky top-0 z-10">
                 <TableHead>名前</TableHead>
                 <TableHead className="hidden sm:table-cell">フリガナ</TableHead>
                 <TableHead>ステータス</TableHead>

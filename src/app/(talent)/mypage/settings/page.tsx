@@ -60,6 +60,7 @@ export default async function SettingsPage() {
           <CompositePdfButton
             talentId={talent.id}
             resumeUrl={talent.resume}
+            resumeSource={talent.resumeSource}
             photoCount={talent.photos.length}
           />
         </section>

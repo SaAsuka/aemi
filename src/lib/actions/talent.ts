@@ -65,6 +65,7 @@ export async function getTalents(filters: TalentFilters = {}) {
       status: true,
       accessToken: true,
       resume: true,
+      resumeSource: true,
       _count: { select: { photos: true } },
     },
   })
@@ -243,8 +244,8 @@ export async function getTalentByToken(token: string) {
   })
 }
 
-export async function saveResumeUrl(talentId: string, url: string) {
-  await prisma.talent.update({ where: { id: talentId }, data: { resume: url } })
+export async function saveResumeUrl(talentId: string, url: string, source: "auto" | "manual" = "auto") {
+  await prisma.talent.update({ where: { id: talentId }, data: { resume: url, resumeSource: source } })
   revalidatePath(`/admin/talents/${talentId}`)
   revalidatePath("/admin/talents")
 }
