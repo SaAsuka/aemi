@@ -77,9 +77,10 @@ function PageFooter() {
   return (
     <View style={s.footer} fixed>
       <Text style={s.footerBrand}>VOZEL</Text>
-      <Text style={s.footerText}>株式会社iRup</Text>
-      <Text style={s.footerText}>〒108-0014 東京都港区芝5-15-2 UB.TASUKIMITA 9F</Text>
-      <Text style={s.footerText}>TEL: 03-4400-2448</Text>
+      <Text style={s.footerText}>〒162-0061 東京都新宿区市谷柳町26-1 スカイコート市谷II 503</Text>
+      <Text style={s.footerText}>Tel: 070-9205-1460</Text>
+      <Text style={s.footerText}>Mail: info@vozel.jp</Text>
+      <Text style={s.footerText}>Web: https://vozel.jp</Text>
     </View>
   )
 }
