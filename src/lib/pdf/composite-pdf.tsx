@@ -112,6 +112,28 @@ type TalentData = {
   works: { imageUrl: string; caption: string }[]
 }
 
+function extractHandle(url: string | null | undefined): string {
+  if (!url) return ""
+  try {
+    const u = new URL(url)
+    const path = u.pathname.replace(/\/+$/, "")
+    const handle = path.split("/").pop() || ""
+    return handle.startsWith("@") ? handle : `@${handle}`
+  } catch {
+    return url
+  }
+}
+
+function shortenUrl(url: string | null | undefined): string {
+  if (!url) return ""
+  try {
+    const u = new URL(url)
+    return u.host + u.pathname.replace(/\/+$/, "")
+  } catch {
+    return url
+  }
+}
+
 function fmtDate(d: Date | null | undefined): string {
   if (!d) return ""
   const dt = new Date(d)
@@ -154,11 +176,11 @@ function ProfilePage({ talent }: { talent: TalentData }) {
   ] as [string, string][]).filter(([, v]) => v)
 
   const snsItems = ([
-    ["Instagram", talent.instagramUrl || ""],
-    ["X", talent.xUrl || ""],
-    ["TikTok", talent.tiktokUrl || ""],
-    ["HP", talent.websiteUrl || ""],
-  ] as [string, string][]).filter(([, v]) => v)
+    ["Instagram", talent.instagramUrl || "", extractHandle(talent.instagramUrl)],
+    ["X", talent.xUrl || "", extractHandle(talent.xUrl)],
+    ["TikTok", talent.tiktokUrl || "", extractHandle(talent.tiktokUrl)],
+    ["HP", talent.websiteUrl || "", shortenUrl(talent.websiteUrl)],
+  ] as [string, string, string][]).filter(([, v]) => v)
 
   return (
     <Page size="A4" style={s.page}>
@@ -181,8 +203,8 @@ function ProfilePage({ talent }: { talent: TalentData }) {
           {snsItems.length > 0 ? (
             <View>
               <Text style={s.sectionTitle}>SNS</Text>
-              {snsItems.map(([label, url]) => (
-                <Text style={s.snsItem} key={label}>{label}: {url}</Text>
+              {snsItems.map(([label, , display]) => (
+                <Text style={s.snsItem} key={label}>{label}: {display}</Text>
               ))}
             </View>
           ) : null}
