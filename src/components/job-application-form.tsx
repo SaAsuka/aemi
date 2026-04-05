@@ -29,11 +29,13 @@ export function JobApplicationForm({
   talentId,
   talentName,
   requirements,
+  hasResume = true,
 }: {
   jobId: string
   talentId: string
   talentName: string
   requirements?: Requirement[]
+  hasResume?: boolean
 }) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [message, setMessage] = useState("")
@@ -241,13 +243,19 @@ export function JobApplicationForm({
         </div>
       )}
 
+      {!hasResume && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
+          コンポジPDFが未登録のため応募できません。先に設定画面から宣材写真をアップロードし、コンポジPDFを生成してください。
+        </div>
+      )}
+
       <Button
         onClick={handleApply}
-        disabled={status === "loading" || !allSubmitted || anyUploading}
+        disabled={status === "loading" || !allSubmitted || anyUploading || !hasResume}
         className="w-full"
         size="lg"
       >
-        {status === "loading" ? "送信中..." : anyUploading ? "アップロード中..." : !allSubmitted ? "提出物を入力してください" : "応募する"}
+        {status === "loading" ? "送信中..." : !hasResume ? "コンポジPDF未登録" : anyUploading ? "アップロード中..." : !allSubmitted ? "提出物を入力してください" : "応募する"}
       </Button>
     </div>
   )

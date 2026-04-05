@@ -254,7 +254,7 @@ export async function getTalentForSettings(talentId: string) {
 export async function getTalentByToken(token: string) {
   return prisma.talent.findUnique({
     where: { accessToken: token },
-    select: { id: true, name: true, status: true, gender: true, birthDate: true, height: true },
+    select: { id: true, name: true, status: true, gender: true, birthDate: true, height: true, resume: true },
   })
 }
 

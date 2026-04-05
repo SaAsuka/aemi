@@ -1,8 +1,9 @@
 import { redirect } from "next/navigation"
 import Link from "next/link"
-import { requireTalent, isSubscriptionActive } from "@/lib/auth"
+import { requireTalent } from "@/lib/auth"
 import { getTalentByToken } from "@/lib/actions/talent"
 import { getOpenJob } from "@/lib/actions/job"
+import { prisma } from "@/lib/db"
 import { formatDate } from "@/lib/utils/date"
 import { GENDER_LABELS } from "@/types"
 import { JobApplicationForm } from "@/components/job-application-form"
@@ -29,7 +30,11 @@ export default async function TalentJobDetailPage({
   }
 
   const displayName = talent.name
-  const job = await getOpenJob(id)
+  const [job, talentResume] = await Promise.all([
+    getOpenJob(id),
+    prisma.talent.findUnique({ where: { id: talent.id }, select: { resume: true } }),
+  ])
+  const hasResume = !!talentResume?.resume
   if (!job) redirect("/jobs")
 
   const backHref = t ? `/jobs?t=${t}` : "/jobs"
@@ -108,7 +113,7 @@ export default async function TalentJobDetailPage({
         </div>
       )}
 
-      <JobApplicationForm jobId={job.id} talentId={talent.id} talentName={talent.name} requirements={job.requirements} />
+      <JobApplicationForm jobId={job.id} talentId={talent.id} talentName={talent.name} requirements={job.requirements} hasResume={hasResume} />
     </div>
     </>
   )
