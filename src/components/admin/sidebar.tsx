@@ -40,20 +40,20 @@ export function AdminSidebar() {
   }, [setOpen])
 
   return (
-    <>
-      {/* ホバートリガー: サイドバーが閉じているとき左端に透明なエリアを表示 */}
-      <div
-        className="fixed inset-y-0 left-0 z-20 w-3 hidden md:block"
-        onMouseEnter={handleMouseEnter}
-      />
-      <div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-        <Sidebar>
-          <SidebarHeader className="border-b p-4">
-            <Link href="/admin" className="font-bold text-xl">
-              VOZEL
-            </Link>
-            <p className="text-xs text-muted-foreground">案件管理システム</p>
-          </SidebarHeader>
+    <Sidebar
+      collapsible="icon"
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <SidebarHeader className="border-b p-4 group-data-[collapsible=icon]:p-2">
+        <Link href="/admin" className="font-bold text-xl group-data-[collapsible=icon]:hidden">
+          VOZEL
+        </Link>
+        <Link href="/admin" className="hidden group-data-[collapsible=icon]:block font-bold text-sm text-center">
+          V
+        </Link>
+        <p className="text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">案件管理システム</p>
+      </SidebarHeader>
           <SidebarContent>
             <SidebarGroup>
               <SidebarGroupLabel>メニュー</SidebarGroupLabel>
@@ -80,16 +80,14 @@ export function AdminSidebar() {
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
-          <SidebarFooter className="border-t p-4 space-y-2">
-            <Link href="/" className="text-sm text-muted-foreground hover:underline block">
-              LP を表示
-            </Link>
-            <a href="/auth/logout" className="text-sm text-muted-foreground hover:underline block">
-              ログアウト
-            </a>
-          </SidebarFooter>
-        </Sidebar>
-      </div>
-    </>
+      <SidebarFooter className="border-t p-4 space-y-2 group-data-[collapsible=icon]:p-2">
+        <Link href="/" className="text-sm text-muted-foreground hover:underline block group-data-[collapsible=icon]:hidden">
+          LP を表示
+        </Link>
+        <a href="/auth/logout" className="text-sm text-muted-foreground hover:underline block group-data-[collapsible=icon]:hidden">
+          ログアウト
+        </a>
+      </SidebarFooter>
+    </Sidebar>
   )
 }

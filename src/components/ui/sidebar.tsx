@@ -205,6 +205,8 @@ function Sidebar({
     )
   }
 
+  const { onMouseEnter, onMouseLeave, ...restProps } = props as React.ComponentProps<"div">
+
   return (
     <div
       className="group peer hidden text-sidebar-foreground md:block"
@@ -213,6 +215,8 @@ function Sidebar({
       data-variant={variant}
       data-side={side}
       data-slot="sidebar"
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       {/* This is what handles the sidebar gap on desktop */}
       <div
@@ -229,6 +233,8 @@ function Sidebar({
       <div
         data-slot="sidebar-container"
         data-side={side}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
         className={cn(
           "fixed inset-y-0 z-10 hidden h-svh w-(--sidebar-width) transition-[left,right,width] duration-200 ease-linear data-[side=left]:left-0 data-[side=left]:group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)] data-[side=right]:right-0 data-[side=right]:group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)] md:flex",
           // Adjust the padding for floating and inset variants.
@@ -237,7 +243,7 @@ function Sidebar({
             : "group-data-[collapsible=icon]:w-(--sidebar-width-icon) group-data-[side=left]:border-r group-data-[side=right]:border-l",
           className
         )}
-        {...props}
+        {...restProps}
       >
         <div
           data-sidebar="sidebar"
