@@ -104,6 +104,7 @@ model Talent {
   bankAccountNumber String?
   bankAccountHolder String?
   passwordHash         String?
+  mustChangePassword   Boolean            @default(false)
   accessToken          String?            @unique @default(cuid())
   emailVerified        Boolean            @default(false)
   stripeCustomerId     String?            @unique

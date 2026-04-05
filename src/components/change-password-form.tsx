@@ -1,12 +1,14 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { changePassword } from "@/lib/actions/auth"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-export function ChangePasswordForm() {
+export function ChangePasswordForm({ mustChangePassword = false }: { mustChangePassword?: boolean }) {
+  const router = useRouter()
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
   const [newPasswordConfirm, setNewPasswordConfirm] = useState("")
@@ -36,6 +38,12 @@ export function ChangePasswordForm() {
       setError(result.error)
       return
     }
+
+    if (mustChangePassword) {
+      router.push("/mypage")
+      return
+    }
+
     setSuccess(true)
     setCurrentPassword("")
     setNewPassword("")

@@ -4,8 +4,9 @@ import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
 import { jobSchema } from "@/lib/validations/job"
 import { getDefaultClientId } from "@/lib/queries"
+import { matchTalentToJob } from "@/lib/utils/job-matching"
 
-export async function getJobs(search?: string, status?: string) {
+export async function getJobs(search?: string, status?: string, talentId?: string) {
   const where: Record<string, unknown> = {}
 
   if (search) {
@@ -16,12 +17,26 @@ export async function getJobs(search?: string, status?: string) {
     where.status = status
   }
 
-  return prisma.job.findMany({
+  const jobs = await prisma.job.findMany({
     where,
     orderBy: { createdAt: "desc" },
     include: {
       _count: { select: { applications: true } },
     },
+  })
+
+  if (!talentId) return jobs
+
+  const talent = await prisma.talent.findUnique({
+    where: { id: talentId },
+    select: { gender: true, birthDate: true, height: true },
+  })
+
+  if (!talent) return jobs
+
+  return jobs.filter((job) => {
+    const { matchStatus } = matchTalentToJob(talent, job)
+    return matchStatus !== "unmatch"
   })
 }
 
@@ -56,8 +71,15 @@ export async function getJob(id: string) {
 }
 
 export async function getOpenJobs() {
+  const now = new Date()
   return prisma.job.findMany({
-    where: { status: "OPEN" },
+    where: {
+      status: "OPEN",
+      OR: [
+        { deadline: null },
+        { deadline: { gte: now } },
+      ],
+    },
     orderBy: { createdAt: "desc" },
     select: {
       id: true, title: true, location: true, fee: true,
@@ -69,8 +91,16 @@ export async function getOpenJobs() {
 }
 
 export async function getOpenJob(id: string) {
+  const now = new Date()
   return prisma.job.findUnique({
-    where: { id, status: "OPEN" },
+    where: {
+      id,
+      status: "OPEN",
+      OR: [
+        { deadline: null },
+        { deadline: { gte: now } },
+      ],
+    },
     select: {
       id: true, title: true, description: true, location: true, fee: true,
       genderReq: true, ageMin: true, ageMax: true, heightMin: true, heightMax: true,

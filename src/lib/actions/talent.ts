@@ -71,6 +71,20 @@ export async function getTalents(filters: TalentFilters = {}) {
   })
 }
 
+export async function getActiveTalentsForMatching() {
+  return prisma.talent.findMany({
+    where: { status: "ACTIVE" },
+    orderBy: { name: "asc" },
+    select: {
+      id: true,
+      name: true,
+      gender: true,
+      birthDate: true,
+      height: true,
+    },
+  })
+}
+
 export async function getTalent(id: string) {
   const talent = await prisma.talent.findUnique({
     where: { id },

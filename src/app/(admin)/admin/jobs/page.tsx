@@ -1,7 +1,9 @@
 import Link from "next/link"
 import { getJobs } from "@/lib/actions/job"
+import { getActiveTalentsForMatching } from "@/lib/actions/talent"
 import { LinkButton } from "@/components/admin/link-button"
 import { ParseJobSheet } from "@/components/admin/parse-job-sheet"
+import { TalentFilter } from "@/components/admin/talent-filter"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -20,10 +22,13 @@ import { formatDate } from "@/lib/utils/date"
 export default async function JobsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string }>
+  searchParams: Promise<{ q?: string; status?: string; talentId?: string }>
 }) {
-  const { q, status } = await searchParams
-  const jobs = await getJobs(q, status)
+  const { q, status, talentId } = await searchParams
+  const [jobs, talents] = await Promise.all([
+    getJobs(q, status, talentId),
+    getActiveTalentsForMatching(),
+  ])
 
   return (
     <div className="space-y-6">
@@ -47,6 +52,7 @@ export default async function JobsPage({
           ]}
           defaultValue={status}
         />
+        <TalentFilter talents={talents} defaultValue={talentId} />
       </div>
 
       <Card>

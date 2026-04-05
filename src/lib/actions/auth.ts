@@ -27,7 +27,7 @@ export async function inviteTalent(email: string) {
 export async function passwordLogin(email: string, password: string) {
   const talent = await prisma.talent.findFirst({
     where: { email, emailVerified: true },
-    select: { id: true, passwordHash: true, nameKana: true },
+    select: { id: true, passwordHash: true, nameKana: true, mustChangePassword: true },
   })
 
   if (!talent) return { error: "メールアドレスまたはパスワードが正しくありません" }
@@ -44,10 +44,13 @@ export async function passwordLogin(email: string, password: string) {
   session.role = "talent"
   await session.save()
 
-  return {
-    success: true,
-    redirect: talent.nameKana === "未設定" ? "/setup" : "/mypage",
-  }
+  const redirect = talent.nameKana === "未設定"
+    ? "/setup"
+    : talent.mustChangePassword
+      ? "/mypage/settings"
+      : "/mypage"
+
+  return { success: true, redirect }
 }
 
 export async function requestPasswordReset(email: string) {
@@ -87,7 +90,7 @@ export async function resetPassword(token: string, password: string) {
 
   const talent = await prisma.talent.findFirst({
     where: { email: authToken.email, emailVerified: true },
-    select: { id: true, nameKana: true },
+    select: { id: true, nameKana: true, mustChangePassword: true },
   })
 
   if (!talent) return { error: "タレントが見つかりません" }
@@ -96,7 +99,7 @@ export async function resetPassword(token: string, password: string) {
 
   await prisma.$transaction([
     prisma.authToken.update({ where: { id: authToken.id }, data: { usedAt: new Date() } }),
-    prisma.talent.update({ where: { id: talent.id }, data: { passwordHash } }),
+    prisma.talent.update({ where: { id: talent.id }, data: { passwordHash, mustChangePassword: false } }),
   ])
 
   const session = await getSession()
@@ -104,10 +107,8 @@ export async function resetPassword(token: string, password: string) {
   session.role = "talent"
   await session.save()
 
-  return {
-    success: true,
-    redirect: talent.nameKana === "未設定" ? "/setup" : "/mypage",
-  }
+  const redirect = talent.nameKana === "未設定" ? "/setup" : "/mypage"
+  return { success: true, redirect }
 }
 
 export async function changePassword(currentPassword: string, newPassword: string) {
@@ -131,7 +132,7 @@ export async function changePassword(currentPassword: string, newPassword: strin
   const passwordHash = await bcrypt.hash(newPassword, 10)
   await prisma.talent.update({
     where: { id: session.talentId },
-    data: { passwordHash },
+    data: { passwordHash, mustChangePassword: false },
   })
 
   return { success: true }

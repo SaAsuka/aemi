@@ -1,17 +1,10 @@
 import { redirect } from "next/navigation"
-import { requireTalent, isSubscriptionActive } from "@/lib/auth"
+import { requireTalent } from "@/lib/auth"
 import { getTalentByToken } from "@/lib/actions/talent"
 import { getOpenJobs } from "@/lib/actions/job"
-import { calcAge } from "@/lib/utils/date"
+import { matchTalentToJob, type MatchStatus, type UnmatchReason } from "@/lib/utils/job-matching"
 import { TalentJobList } from "@/components/talent-job-list"
 import { TalentNav } from "@/components/talent-nav"
-
-type MatchStatus = "match" | "partial" | "unmatch"
-
-type UnmatchReason = {
-  field: "gender" | "age" | "height"
-  label: string
-}
 
 export type JobWithMatch = Awaited<ReturnType<typeof getOpenJobs>>[number] & {
   matchStatus: MatchStatus
@@ -39,54 +32,10 @@ export default async function TalentJobsPage({
   const displayName = talent.name
 
   const jobs = await getOpenJobs()
-  const talentAge = talent.birthDate ? calcAge(talent.birthDate) : null
 
   const jobsWithMatch: JobWithMatch[] = jobs.map((job) => {
-    const reasons: UnmatchReason[] = []
-    let hasUnknown = false
-
-    if (job.genderReq) {
-      if (!talent.gender) {
-        hasUnknown = true
-      } else if (talent.gender !== job.genderReq) {
-        reasons.push({ field: "gender", label: "性別不一致" })
-      }
-    }
-
-    if (job.ageMin != null || job.ageMax != null) {
-      if (talentAge == null) {
-        hasUnknown = true
-      } else {
-        if (job.ageMin != null && talentAge < job.ageMin) {
-          reasons.push({ field: "age", label: "年齢条件外" })
-        } else if (job.ageMax != null && talentAge > job.ageMax) {
-          reasons.push({ field: "age", label: "年齢条件外" })
-        }
-      }
-    }
-
-    if (job.heightMin != null || job.heightMax != null) {
-      if (talent.height == null) {
-        hasUnknown = true
-      } else {
-        if (job.heightMin != null && talent.height < job.heightMin) {
-          reasons.push({ field: "height", label: "身長条件外" })
-        } else if (job.heightMax != null && talent.height > job.heightMax) {
-          reasons.push({ field: "height", label: "身長条件外" })
-        }
-      }
-    }
-
-    let matchStatus: MatchStatus
-    if (reasons.length > 0) {
-      matchStatus = "unmatch"
-    } else if (hasUnknown) {
-      matchStatus = "partial"
-    } else {
-      matchStatus = "match"
-    }
-
-    return { ...job, matchStatus, unmatchReasons: reasons }
+    const { matchStatus, unmatchReasons } = matchTalentToJob(talent, job)
+    return { ...job, matchStatus, unmatchReasons }
   })
 
   const matchCount = jobsWithMatch.filter((j) => j.matchStatus === "match").length

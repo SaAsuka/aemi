@@ -2,6 +2,10 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { getJob } from "@/lib/actions/job"
+import { getActiveTalentsForMatching } from "@/lib/actions/talent"
+import { matchTalentToJob } from "@/lib/utils/job-matching"
+import { calcAge } from "@/lib/utils/date"
+import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Table,
@@ -26,9 +30,19 @@ export default async function JobDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const job = await getJob(id)
+  const [job, allTalents] = await Promise.all([getJob(id), getActiveTalentsForMatching()])
 
   if (!job) notFound()
+
+  const appliedTalentIds = new Set(job.applications.map((a) => a.talent.id))
+  const matchingTalents = allTalents
+    .filter((t) => !appliedTalentIds.has(t.id))
+    .map((t) => ({
+      ...t,
+      age: t.birthDate ? calcAge(t.birthDate) : null,
+      ...matchTalentToJob(t, job),
+    }))
+    .filter((t) => t.matchStatus !== "unmatch")
 
   return (
     <div className="max-w-4xl space-y-6">
@@ -134,6 +148,52 @@ export default async function JobDetailPage({
                           jobTitle={job.title}
                         />
                       </div>
+                    </TableCell>
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>該当タレント（{matchingTalents.length}名）</CardTitle>
+        </CardHeader>
+        <CardContent className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>タレント名</TableHead>
+                <TableHead>性別</TableHead>
+                <TableHead>年齢</TableHead>
+                <TableHead>身長</TableHead>
+                <TableHead>マッチ</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {matchingTalents.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                    該当するタレントがいません
+                  </TableCell>
+                </TableRow>
+              ) : (
+                matchingTalents.map((t) => (
+                  <TableRow key={t.id}>
+                    <TableCell>
+                      <Link href={`/admin/talents/${t.id}`} className="hover:underline">
+                        {t.name}
+                      </Link>
+                    </TableCell>
+                    <TableCell>{t.gender ? GENDER_LABELS[t.gender] : "−"}</TableCell>
+                    <TableCell>{t.age != null ? `${t.age}歳` : "−"}</TableCell>
+                    <TableCell>{t.height ? `${t.height}cm` : "−"}</TableCell>
+                    <TableCell>
+                      <Badge variant={t.matchStatus === "match" ? "default" : "secondary"}>
+                        {t.matchStatus === "match" ? "一致" : "一部不明"}
+                      </Badge>
                     </TableCell>
                   </TableRow>
                 ))

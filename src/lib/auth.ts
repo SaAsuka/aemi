@@ -32,6 +32,7 @@ export async function requireTalentRaw() {
       birthDate: true,
       height: true,
       email: true,
+      mustChangePassword: true,
       subscriptionStatus: true,
       currentPeriodEnd: true,
     },
@@ -44,6 +45,7 @@ export async function requireTalentRaw() {
 export async function requireTalent() {
   const talent = await requireTalentRaw()
   if (talent.nameKana === "未設定") redirect("/setup")
+  if (talent.mustChangePassword) redirect("/mypage/settings")
   return talent
 }
 
