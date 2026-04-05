@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/db"
 import { getSession } from "@/lib/auth"
 import { setupSchema } from "@/lib/validations/talent"
+import { upsertSocialLinks, upsertBankAccount } from "./talent-relations"
 
 export async function setupTalent(formData: FormData) {
   const session = await getSession()
@@ -50,18 +51,12 @@ export async function setupTalent(formData: FormData) {
       address: data.address || null,
       representativeWork: data.representativeWork || null,
       nearestStation: data.nearestStation || null,
-      instagramUrl: data.instagramUrl || null,
-      xUrl: data.xUrl || null,
-      tiktokUrl: data.tiktokUrl || null,
-      websiteUrl: data.websiteUrl || null,
-      bankName: data.bankName || null,
-      bankBranch: data.bankBranch || null,
-      bankAccountType: data.bankAccountType || null,
-      bankAccountNumber: data.bankAccountNumber || null,
-      bankAccountHolder: data.bankAccountHolder || null,
       passwordHash,
     },
   })
+
+  await upsertSocialLinks(session.talentId, data)
+  await upsertBankAccount(session.talentId, data)
 
   revalidatePath("/mypage")
   return { success: true, redirect: "/mypage" }

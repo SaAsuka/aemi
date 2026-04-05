@@ -61,6 +61,13 @@ enum JobDateType {
   OTHER
 }
 
+enum SocialPlatform {
+  INSTAGRAM
+  X
+  TIKTOK
+  WEBSITE
+}
+
 enum SubmissionCategory {
   ACTING_VIDEO
   VOICE_SAMPLE
@@ -100,33 +107,60 @@ model Talent {
   resume         String?
   resumeSource   String?            @default("auto")
   nearestStation String?
-  instagramUrl   String?
-  xUrl           String?
-  tiktokUrl      String?
-  websiteUrl     String?
-  bankName       String?
-  bankBranch     String?
-  bankAccountType  String?
-  bankAccountNumber String?
-  bankAccountHolder String?
   passwordHash         String?
   mustChangePassword   Boolean            @default(false)
   accessToken          String?            @unique @default(cuid())
   emailVerified        Boolean            @default(false)
-  stripeCustomerId     String?            @unique
-  subscriptionStatus   SubscriptionStatus @default(NONE)
-  subscriptionId       String?            @unique
-  currentPeriodEnd     DateTime?
   status               TalentStatus       @default(ACTIVE)
   note                 String?
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
-  applications Application[]
-  photos       TalentPhoto[]
-  works        TalentWork[]
+  applications  Application[]
+  photos        TalentPhoto[]
+  works         TalentWork[]
+  bankAccount   TalentBankAccount?
+  socialLinks   TalentSocialLink[]
+  subscription  TalentSubscription?
 
   @@map("talents")
+}
+
+model TalentBankAccount {
+  id            String @id @default(cuid())
+  talentId      String @unique
+  talent        Talent @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  bankName      String
+  branchName    String
+  accountType   String
+  accountNumber String
+  accountHolder String
+
+  @@map("talent_bank_accounts")
+}
+
+model TalentSocialLink {
+  id        String         @id @default(cuid())
+  talentId  String
+  talent    Talent         @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  platform  SocialPlatform
+  url       String
+
+  @@unique([talentId, platform])
+  @@index([talentId])
+  @@map("talent_social_links")
+}
+
+model TalentSubscription {
+  id               String             @id @default(cuid())
+  talentId         String             @unique
+  talent           Talent             @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  stripeCustomerId String?            @unique
+  subscriptionId   String?            @unique
+  status           SubscriptionStatus @default(NONE)
+  currentPeriodEnd DateTime?
+
+  @@map("talent_subscriptions")
 }
 
 model TalentPhoto {

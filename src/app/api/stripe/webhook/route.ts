@@ -31,12 +31,19 @@ export async function POST(request: NextRequest) {
         const subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription.id
         const subscription = await stripe.subscriptions.retrieve(subscriptionId, { expand: ["items"] })
         const periodEnd = getPeriodEnd(subscription)
-        await prisma.talent.update({
-          where: { id: talentId },
-          data: {
+        await prisma.talentSubscription.upsert({
+          where: { talentId },
+          create: {
+            talentId,
             stripeCustomerId: typeof session.customer === "string" ? session.customer : session.customer?.id,
             subscriptionId,
-            subscriptionStatus: "ACTIVE",
+            status: "ACTIVE",
+            ...(periodEnd && { currentPeriodEnd: periodEnd }),
+          },
+          update: {
+            stripeCustomerId: typeof session.customer === "string" ? session.customer : session.customer?.id,
+            subscriptionId,
+            status: "ACTIVE",
             ...(periodEnd && { currentPeriodEnd: periodEnd }),
           },
         })
@@ -47,8 +54,8 @@ export async function POST(request: NextRequest) {
     case "customer.subscription.updated": {
       const subscription = event.data.object as Stripe.Subscription
       const subscriptionId = subscription.id
-      const talent = await prisma.talent.findUnique({ where: { subscriptionId } })
-      if (talent) {
+      const sub = await prisma.talentSubscription.findUnique({ where: { subscriptionId } })
+      if (sub) {
         const statusMap: Record<string, "ACTIVE" | "PAST_DUE" | "CANCELED" | "UNPAID"> = {
           active: "ACTIVE",
           past_due: "PAST_DUE",
@@ -56,10 +63,10 @@ export async function POST(request: NextRequest) {
           unpaid: "UNPAID",
         }
         const periodEnd = getPeriodEnd(subscription)
-        await prisma.talent.update({
-          where: { id: talent.id },
+        await prisma.talentSubscription.update({
+          where: { id: sub.id },
           data: {
-            subscriptionStatus: statusMap[subscription.status] || "NONE",
+            status: statusMap[subscription.status] || "NONE",
             ...(periodEnd && { currentPeriodEnd: periodEnd }),
           },
         })
@@ -69,11 +76,11 @@ export async function POST(request: NextRequest) {
 
     case "customer.subscription.deleted": {
       const subscription = event.data.object as Stripe.Subscription
-      const talent = await prisma.talent.findUnique({ where: { subscriptionId: subscription.id } })
-      if (talent) {
-        await prisma.talent.update({
-          where: { id: talent.id },
-          data: { subscriptionStatus: "CANCELED" },
+      const sub = await prisma.talentSubscription.findUnique({ where: { subscriptionId: subscription.id } })
+      if (sub) {
+        await prisma.talentSubscription.update({
+          where: { id: sub.id },
+          data: { status: "CANCELED" },
         })
       }
       break
@@ -83,11 +90,11 @@ export async function POST(request: NextRequest) {
       const invoice = event.data.object as Stripe.Invoice
       const customerId = typeof invoice.customer === "string" ? invoice.customer : invoice.customer?.id
       if (customerId) {
-        const talent = await prisma.talent.findUnique({ where: { stripeCustomerId: customerId } })
-        if (talent) {
-          await prisma.talent.update({
-            where: { id: talent.id },
-            data: { subscriptionStatus: "PAST_DUE" },
+        const sub = await prisma.talentSubscription.findUnique({ where: { stripeCustomerId: customerId } })
+        if (sub) {
+          await prisma.talentSubscription.update({
+            where: { id: sub.id },
+            data: { status: "PAST_DUE" },
           })
         }
       }

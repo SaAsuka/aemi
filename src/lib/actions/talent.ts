@@ -3,6 +3,7 @@
 import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
 import { talentBaseSchema } from "@/lib/validations/talent"
+import { upsertSocialLinks, upsertBankAccount } from "./talent-relations"
 
 type TalentFilters = {
   search?: string
@@ -98,6 +99,9 @@ export async function getTalent(id: string) {
       },
       photos: { orderBy: { sortOrder: "asc" } },
       works: { orderBy: { sortOrder: "asc" } },
+      bankAccount: true,
+      socialLinks: true,
+      subscription: true,
     },
   })
 
@@ -122,7 +126,7 @@ export async function createTalent(formData: FormData) {
   }
 
   const data = parsed.data
-  await prisma.talent.create({
+  const talent = await prisma.talent.create({
     data: {
       lastName: data.lastName,
       firstName: data.firstName,
@@ -153,19 +157,13 @@ export async function createTalent(formData: FormData) {
       profileImage: data.profileImage || null,
       resume: data.resume || null,
       nearestStation: data.nearestStation || null,
-      instagramUrl: data.instagramUrl || null,
-      xUrl: data.xUrl || null,
-      tiktokUrl: data.tiktokUrl || null,
-      websiteUrl: data.websiteUrl || null,
-      bankName: data.bankName || null,
-      bankBranch: data.bankBranch || null,
-      bankAccountType: data.bankAccountType || null,
-      bankAccountNumber: data.bankAccountNumber || null,
-      bankAccountHolder: data.bankAccountHolder || null,
       status: data.status,
       note: data.note || null,
     },
   })
+
+  await upsertSocialLinks(talent.id, data)
+  await upsertBankAccount(talent.id, data)
 
   revalidatePath("/admin/talents")
   updateTag("talents")
@@ -212,19 +210,13 @@ export async function updateTalent(id: string, formData: FormData) {
       lineUserId: data.lineUserId || null,
       profileImage: data.profileImage || null,
       nearestStation: data.nearestStation || null,
-      instagramUrl: data.instagramUrl || null,
-      xUrl: data.xUrl || null,
-      tiktokUrl: data.tiktokUrl || null,
-      websiteUrl: data.websiteUrl || null,
-      bankName: data.bankName || null,
-      bankBranch: data.bankBranch || null,
-      bankAccountType: data.bankAccountType || null,
-      bankAccountNumber: data.bankAccountNumber || null,
-      bankAccountHolder: data.bankAccountHolder || null,
       status: data.status,
       note: data.note || null,
     },
   })
+
+  await upsertSocialLinks(id, data)
+  await upsertBankAccount(id, data)
 
   updateTag("talents")
   return { success: true }
@@ -247,6 +239,8 @@ export async function getTalentForSettings(talentId: string) {
     include: {
       photos: { orderBy: { sortOrder: "asc" } },
       works: { orderBy: { sortOrder: "asc" } },
+      bankAccount: true,
+      socialLinks: true,
     },
   })
 }

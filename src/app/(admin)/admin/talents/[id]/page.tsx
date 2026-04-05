@@ -147,12 +147,13 @@ export default async function TalentDetailPage({
               <p className="whitespace-pre-wrap">{talent.representativeWork}</p>
             </div>
           )}
-          {(talent.instagramUrl || talent.xUrl || talent.tiktokUrl || talent.websiteUrl) && (
+          {talent.socialLinks.length > 0 && (
             <div className="mt-4 flex flex-wrap gap-3 text-sm">
-              {talent.instagramUrl && <a href={talent.instagramUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Instagram</a>}
-              {talent.xUrl && <a href={talent.xUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">X</a>}
-              {talent.tiktokUrl && <a href={talent.tiktokUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">TikTok</a>}
-              {talent.websiteUrl && <a href={talent.websiteUrl} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">公式HP</a>}
+              {talent.socialLinks.map((link) => (
+                <a key={link.id} href={link.url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">
+                  {link.platform === "INSTAGRAM" ? "Instagram" : link.platform === "X" ? "X" : link.platform === "TIKTOK" ? "TikTok" : "公式HP"}
+                </a>
+              ))}
             </div>
           )}
         </CardContent>

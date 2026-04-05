@@ -33,8 +33,9 @@ export async function requireTalentRaw() {
       height: true,
       email: true,
       mustChangePassword: true,
-      subscriptionStatus: true,
-      currentPeriodEnd: true,
+      subscription: {
+        select: { status: true, currentPeriodEnd: true, stripeCustomerId: true },
+      },
     },
   })
 
@@ -49,8 +50,9 @@ export async function requireTalent() {
   return talent
 }
 
-export function isSubscriptionActive(talent: { subscriptionStatus: string; currentPeriodEnd: Date | null }) {
-  if (talent.subscriptionStatus === "ACTIVE") return true
-  if (talent.subscriptionStatus === "CANCELED" && talent.currentPeriodEnd && talent.currentPeriodEnd > new Date()) return true
+export function isSubscriptionActive(talent: { subscription?: { status: string; currentPeriodEnd: Date | null } | null }) {
+  if (!talent.subscription) return false
+  if (talent.subscription.status === "ACTIVE") return true
+  if (talent.subscription.status === "CANCELED" && talent.subscription.currentPeriodEnd && talent.subscription.currentPeriodEnd > new Date()) return true
   return false
 }

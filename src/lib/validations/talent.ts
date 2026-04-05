@@ -43,6 +43,14 @@ export const talentBaseSchema = z.object({
   note: optionalString,
 })
 
+export const bankAccountSchema = z.object({
+  bankName: z.string().min(1, "銀行名は必須です"),
+  bankBranch: z.string().min(1, "支店名は必須です"),
+  bankAccountType: z.string().min(1, "種別は必須です"),
+  bankAccountNumber: z.string().min(1, "口座番号は必須です"),
+  bankAccountHolder: z.string().min(1, "口座名義は必須です"),
+})
+
 export const talentSchema = talentBaseSchema.extend({
   bankName: z.string().min(1, "銀行名は必須です"),
   bankBranch: z.string().min(1, "支店名は必須です"),

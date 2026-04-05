@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/db"
 import { talentBaseSchema } from "@/lib/validations/talent"
+import { upsertSocialLinks, upsertBankAccount } from "./talent-relations"
 
 export async function registerTalent(formData: FormData) {
   const raw = Object.fromEntries(formData)
@@ -20,6 +21,7 @@ export async function registerTalent(formData: FormData) {
   }
 
   const talent = await prisma.talent.create({
+
     data: {
       lastName: data.lastName,
       firstName: data.firstName,
@@ -46,15 +48,6 @@ export async function registerTalent(formData: FormData) {
       address: data.address || null,
       representativeWork: data.representativeWork || null,
       nearestStation: data.nearestStation || null,
-      instagramUrl: data.instagramUrl || null,
-      xUrl: data.xUrl || null,
-      tiktokUrl: data.tiktokUrl || null,
-      websiteUrl: data.websiteUrl || null,
-      bankName: data.bankName || null,
-      bankBranch: data.bankBranch || null,
-      bankAccountType: data.bankAccountType || null,
-      bankAccountNumber: data.bankAccountNumber || null,
-      bankAccountHolder: data.bankAccountHolder || null,
       profileImage: photoUrls[0] || null,
       status: "ACTIVE",
       photos: photoUrls.length > 0 ? {
@@ -62,6 +55,9 @@ export async function registerTalent(formData: FormData) {
       } : undefined,
     },
   })
+
+  await upsertSocialLinks(talent.id, data)
+  await upsertBankAccount(talent.id, data)
 
   return { success: true }
 }

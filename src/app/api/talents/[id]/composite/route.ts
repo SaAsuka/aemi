@@ -37,6 +37,7 @@ export async function GET(
       include: {
         photos: { orderBy: { sortOrder: "asc" } },
         works: { orderBy: { sortOrder: "asc" } },
+        socialLinks: true,
       },
     })
     console.log(`[COMPOSITE] DB_DONE +${Date.now() - t0}ms photos=${talent?.photos?.length ?? 0} works=${talent?.works?.length ?? 0}`)

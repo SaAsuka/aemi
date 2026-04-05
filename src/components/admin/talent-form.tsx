@@ -15,19 +15,28 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import type { Talent } from "@/generated/prisma/client"
+import type { Talent, TalentBankAccount, TalentSocialLink } from "@/generated/prisma/client"
 import { GENDER_LABELS, TALENT_STATUS_LABELS } from "@/types"
 
 type ActionResult = { success?: boolean; error?: Record<string, string[]> } | null
 
+type TalentWithRelations = Talent & {
+  bankAccount?: TalentBankAccount | null
+  socialLinks?: TalentSocialLink[]
+}
+
 type TalentFormProps = {
-  talent?: Talent
+  talent?: TalentWithRelations
   onSuccess?: () => void
   mode?: "admin" | "talent"
   customAction?: (formData: FormData) => Promise<ActionResult>
 }
 
-function talentAction(talent?: Talent, customAction?: (formData: FormData) => Promise<ActionResult>) {
+function getSocialUrl(links: TalentSocialLink[] | undefined, platform: string): string {
+  return links?.find((l) => l.platform === platform)?.url ?? ""
+}
+
+function talentAction(talent?: TalentWithRelations, customAction?: (formData: FormData) => Promise<ActionResult>) {
   return async (_prev: ActionResult, formData: FormData): Promise<ActionResult> => {
     if (customAction) return await customAction(formData)
     if (talent) return await updateTalent(talent.id, formData)
@@ -293,7 +302,7 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
           <Input
             id="instagramUrl"
             name="instagramUrl"
-            defaultValue={talent?.instagramUrl ?? ""}
+            defaultValue={getSocialUrl(talent?.socialLinks, "INSTAGRAM")}
             placeholder="https://instagram.com/..."
           />
         </div>
@@ -302,7 +311,7 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
           <Input
             id="xUrl"
             name="xUrl"
-            defaultValue={talent?.xUrl ?? ""}
+            defaultValue={getSocialUrl(talent?.socialLinks, "X")}
             placeholder="https://x.com/..."
           />
         </div>
@@ -311,7 +320,7 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
           <Input
             id="tiktokUrl"
             name="tiktokUrl"
-            defaultValue={talent?.tiktokUrl ?? ""}
+            defaultValue={getSocialUrl(talent?.socialLinks, "TIKTOK")}
             placeholder="https://tiktok.com/..."
           />
         </div>
@@ -320,7 +329,7 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
           <Input
             id="websiteUrl"
             name="websiteUrl"
-            defaultValue={talent?.websiteUrl ?? ""}
+            defaultValue={getSocialUrl(talent?.socialLinks, "WEBSITE")}
             placeholder="https://..."
           />
         </div>
@@ -372,7 +381,7 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
           <Input
             id="bankName"
             name="bankName"
-            defaultValue={talent?.bankName ?? ""}
+            defaultValue={talent?.bankAccount?.bankName ?? ""}
             required={bankRequired}
           />
           {state?.error?.bankName && (
@@ -384,7 +393,7 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
           <Input
             id="bankBranch"
             name="bankBranch"
-            defaultValue={talent?.bankBranch ?? ""}
+            defaultValue={talent?.bankAccount?.branchName ?? ""}
             required={bankRequired}
           />
           {state?.error?.bankBranch && (
@@ -393,7 +402,7 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
         </div>
         <div className="space-y-2">
           <Label htmlFor="bankAccountType">種別{bankRequired && " *"}</Label>
-          <Select name="bankAccountType" defaultValue={talent?.bankAccountType ?? ""}>
+          <Select name="bankAccountType" defaultValue={talent?.bankAccount?.accountType ?? ""}>
             <SelectTrigger>
               <SelectValue placeholder="選択">{(v) => v || "選択"}</SelectValue>
             </SelectTrigger>
@@ -411,7 +420,7 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
           <Input
             id="bankAccountNumber"
             name="bankAccountNumber"
-            defaultValue={talent?.bankAccountNumber ?? ""}
+            defaultValue={talent?.bankAccount?.accountNumber ?? ""}
             required={bankRequired}
           />
           {state?.error?.bankAccountNumber && (
@@ -423,7 +432,7 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
           <Input
             id="bankAccountHolder"
             name="bankAccountHolder"
-            defaultValue={talent?.bankAccountHolder ?? ""}
+            defaultValue={talent?.bankAccount?.accountHolder ?? ""}
             required={bankRequired}
           />
           {state?.error?.bankAccountHolder && (

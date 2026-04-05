@@ -154,7 +154,7 @@ export async function verifyToken(token: string) {
   if (authToken.type === "INVITE") {
     let talent = await prisma.talent.findFirst({
       where: { email: authToken.email },
-      select: { id: true, stripeCustomerId: true, subscriptionStatus: true },
+      select: { id: true },
     })
 
     if (!talent) {
@@ -165,7 +165,7 @@ export async function verifyToken(token: string) {
           email: authToken.email,
           emailVerified: true,
         },
-        select: { id: true, stripeCustomerId: true, subscriptionStatus: true },
+        select: { id: true },
       })
     } else {
       await prisma.talent.update({

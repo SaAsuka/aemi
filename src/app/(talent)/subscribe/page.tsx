@@ -12,12 +12,14 @@ export default async function SubscribePage() {
     "use server"
     const t = await requireTalent()
     if (!t.email) return
-    const { url, customerId } = await createCheckoutSession(t.id, t.email, null)
-    if (customerId) {
+    const stripeCustomerId = t.subscription?.stripeCustomerId
+    const { url, customerId } = await createCheckoutSession(t.id, t.email, stripeCustomerId)
+    if (customerId && !stripeCustomerId) {
       const { prisma } = await import("@/lib/db")
-      await prisma.talent.update({
-        where: { id: t.id },
-        data: { stripeCustomerId: customerId },
+      await prisma.talentSubscription.upsert({
+        where: { talentId: t.id },
+        create: { talentId: t.id, stripeCustomerId: customerId },
+        update: { stripeCustomerId: customerId },
       })
     }
     if (url) redirect(url)

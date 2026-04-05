@@ -106,13 +106,10 @@ type TalentData = {
   category?: string | null
   birthplace?: string | null
   representativeWork?: string | null
-  instagramUrl?: string | null
-  xUrl?: string | null
-  tiktokUrl?: string | null
-  websiteUrl?: string | null
   profileImage?: string | null
   photos: { url: string }[]
   works: { imageUrl: string; caption: string }[]
+  socialLinks?: { platform: string; url: string }[]
 }
 
 function extractHandle(url: string | null | undefined): string {
@@ -178,11 +175,12 @@ function ProfilePage({ talent }: { talent: TalentData }) {
     ["資格", talent.qualifications || ""],
   ] as [string, string][]).filter(([, v]) => v)
 
+  const linkMap = new Map((talent.socialLinks ?? []).map((l) => [l.platform, l.url]))
   const snsItems = ([
-    ["Instagram", talent.instagramUrl || "", extractHandle(talent.instagramUrl)],
-    ["X", talent.xUrl || "", extractHandle(talent.xUrl)],
-    ["TikTok", talent.tiktokUrl || "", extractHandle(talent.tiktokUrl)],
-    ["HP", talent.websiteUrl || "", shortenUrl(talent.websiteUrl)],
+    ["Instagram", linkMap.get("INSTAGRAM") || "", extractHandle(linkMap.get("INSTAGRAM"))],
+    ["X", linkMap.get("X") || "", extractHandle(linkMap.get("X"))],
+    ["TikTok", linkMap.get("TIKTOK") || "", extractHandle(linkMap.get("TIKTOK"))],
+    ["HP", linkMap.get("WEBSITE") || "", shortenUrl(linkMap.get("WEBSITE"))],
   ] as [string, string, string][]).filter(([, v]) => v)
 
   return (
