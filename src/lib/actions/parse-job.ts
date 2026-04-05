@@ -14,10 +14,18 @@ const SYSTEM_PROMPT = `あなたはキャスティング案件のテキストを
     "clientCompanyName": "クライアント会社名",
     "clientContactName": "クライアント担当者名",
     "location": "撮影場所",
-    "startsAt": "YYYY-MM-DDTHH:MM:SS形式（開始日時）",
-    "endsAt": "YYYY-MM-DDTHH:MM:SS形式（終了日時）",
     "deadline": "YYYY-MM-DDTHH:MM:SS形式（応募締切）",
-    "dates": "日程情報（テキストのまま）",
+    "dates": [
+      {
+        "type": "AUDITION or SHOOTING or OTHER",
+        "date": "YYYY-MM-DD形式",
+        "startTime": "HH:MM形式（わかる場合）",
+        "endTime": "HH:MM形式（わかる場合）",
+        "location": "個別の場所（全体と異なる場合）",
+        "note": "備考"
+      }
+    ],
+    "requirements": ["ACTING_VIDEO", "VOICE_SAMPLE", "PAST_WORK_VIDEO", "PROFILE_PHOTO"],
     "description": "案件の説明・詳細",
     "note": "その他備考（案件全体に関わるもの）"
   },
@@ -51,7 +59,7 @@ const SYSTEM_PROMPT = `あなたはキャスティング案件のテキストを
 - roles[i].titleは「案件名 - 役柄名」形式にする（例: "〇〇CM撮影 - 男性メイン"）
 - 役柄が1つだけの場合はtitleを案件名そのものにしてよい
 - 複数役柄がある場合は性別・年齢・体型条件の違いで分割する
-- 共通情報（場所、日程、締切、クライアント）はcommonに入れる
+- 共通情報（場所、日程、締切、クライアント、提出要件）はcommonに入れる
 - 役柄固有の情報（性別、年齢、身長、報酬、募集人数）はrolesに入れる
 - タレント候補がいる場合は該当する役柄のtalentsに入れる
 
@@ -61,6 +69,13 @@ const SYSTEM_PROMPT = `あなたはキャスティング案件のテキストを
 - ageMin/ageMax: 年齢条件（数値）。「20代」→ageMin:20, ageMax:29
 - heightMin/heightMax: 身長条件（cm、数値）
 - capacity: 募集人数（数値）
+- dates: 日程の配列。typeはAUDITION（オーディション）、SHOOTING（撮影）、OTHER（その他）
+- requirements: タレントに提出を求めるもの。以下のカテゴリのみ使用:
+  - ACTING_VIDEO: 課題演技動画、自己PR動画、演技動画
+  - VOICE_SAMPLE: ボイスサンプル、音声
+  - PAST_WORK_VIDEO: 過去出演動画、出演映像
+  - PROFILE_PHOTO: 宣材写真、プロフィール写真、全身写真
+  テキストに「動画提出」「写真提出」「ボイスサンプル」等の記載があれば該当カテゴリを配列に含める
 
 ステータスのマッピング:
 - 決定、合格、採用、OK → ACCEPTED
@@ -75,17 +90,18 @@ const SYSTEM_PROMPT = `あなたはキャスティング案件のテキストを
 - 金額は数値に変換する（文字列ではなく数値型で出力）
 
 具体例:
-入力テキスト「〇〇化粧品CM 男性20代170cm以上 3名 / 女性30代 2名 報酬各5万円 渋谷スタジオ 4/10撮影 締切4/5」
+入力テキスト「〇〇化粧品CM 男性20代170cm以上 3名 / 女性30代 2名 報酬各5万円 渋谷スタジオ 4/10撮影 締切4/5 自己PR動画提出」
 出力:
 {
   "common": {
     "clientCompanyName": null,
     "clientContactName": null,
     "location": "渋谷スタジオ",
-    "startsAt": "2026-04-10T00:00:00",
-    "endsAt": null,
     "deadline": "2026-04-05T00:00:00",
-    "dates": "4/10撮影",
+    "dates": [
+      { "type": "SHOOTING", "date": "2026-04-10", "startTime": null, "endTime": null, "location": null, "note": null }
+    ],
+    "requirements": ["ACTING_VIDEO"],
     "description": "〇〇化粧品CM",
     "note": null
   },
@@ -155,10 +171,9 @@ export async function parseJobText(text: string): Promise<
           clientCompanyName: d.clientCompanyName,
           clientContactName: d.clientContactName,
           location: d.location,
-          startsAt: d.startsAt,
-          endsAt: d.endsAt,
           deadline: d.deadline,
-          dates: d.dates,
+          dates: [],
+          requirements: [],
           description: d.description,
           note: d.note,
         }

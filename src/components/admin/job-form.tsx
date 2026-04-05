@@ -194,33 +194,7 @@ export function JobForm({
 
       <div className="border-t pt-4">
         <p className="text-sm font-medium mb-3">スケジュール</p>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="startsAt">開始日</Label>
-            <Input
-              id="startsAt"
-              name="startsAt"
-              type="date"
-              defaultValue={
-                job?.startsAt
-                  ? new Date(job.startsAt).toISOString().split("T")[0]
-                  : ""
-              }
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="endsAt">終了日</Label>
-            <Input
-              id="endsAt"
-              name="endsAt"
-              type="date"
-              defaultValue={
-                job?.endsAt
-                  ? new Date(job.endsAt).toISOString().split("T")[0]
-                  : ""
-              }
-            />
-          </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="space-y-2">
             <Label htmlFor="deadline">応募締切</Label>
             <Input
@@ -234,8 +208,6 @@ export function JobForm({
               }
             />
           </div>
-        </div>
-        <div className="mt-4">
           <div className="space-y-2">
             <Label htmlFor="capacity">募集人数</Label>
             <Input
@@ -247,6 +219,7 @@ export function JobForm({
             />
           </div>
         </div>
+        <p className="text-xs text-muted-foreground mt-2">日程（オーディション日・撮影日等）は保存後に案件詳細から追加できます</p>
       </div>
 
       <div className="border-t pt-4">

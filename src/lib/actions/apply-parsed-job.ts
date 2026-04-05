@@ -6,6 +6,17 @@ import { getDefaultClientId } from "@/lib/queries"
 
 type Gender = "MALE" | "FEMALE" | "OTHER"
 
+type JobDateInput = {
+  type: "AUDITION" | "SHOOTING" | "OTHER"
+  date: string
+  startTime?: string | null
+  endTime?: string | null
+  location?: string | null
+  note?: string | null
+}
+
+type SubmissionCategory = "ACTING_VIDEO" | "VOICE_SAMPLE" | "PAST_WORK_VIDEO" | "PROFILE_PHOTO"
+
 type ApplyInput = {
   mode: "create" | "existing"
   existingJobId?: string
@@ -18,11 +29,11 @@ type ApplyInput = {
   ageMax?: number
   heightMin?: number
   heightMax?: number
-  startsAt?: string
-  endsAt?: string
   deadline?: string
   capacity?: number
   note?: string
+  dates?: JobDateInput[]
+  requirements?: SubmissionCategory[]
 }
 
 export async function applyParsedJob(input: ApplyInput): Promise<
@@ -42,12 +53,21 @@ export async function applyParsedJob(input: ApplyInput): Promise<
       ageMax: input.ageMax ?? null,
       heightMin: input.heightMin ?? null,
       heightMax: input.heightMax ?? null,
-      startsAt: input.startsAt ? new Date(input.startsAt) : null,
-      endsAt: input.endsAt ? new Date(input.endsAt) : null,
       deadline: input.deadline ? new Date(input.deadline) : null,
       capacity: input.capacity ?? null,
       note: input.note || null,
     }
+
+    const datesData = (input.dates ?? []).map((d) => ({
+      type: d.type as "AUDITION" | "SHOOTING" | "OTHER",
+      date: new Date(d.date),
+      startTime: d.startTime || null,
+      endTime: d.endTime || null,
+      location: d.location || null,
+      note: d.note || null,
+    }))
+
+    const reqData = (input.requirements ?? []).map((cat) => ({ category: cat }))
 
     if (input.mode === "existing" && input.existingJobId) {
       await prisma.job.update({
@@ -59,6 +79,8 @@ export async function applyParsedJob(input: ApplyInput): Promise<
         data: {
           ...data,
           status: "OPEN",
+          dates: datesData.length > 0 ? { create: datesData } : undefined,
+          requirements: reqData.length > 0 ? { create: reqData } : undefined,
         },
       })
     }
@@ -78,40 +100,50 @@ export async function applyParsedJobs(inputs: ApplyInput[]): Promise<
   try {
     const clientId = await getDefaultClientId()
 
-    await prisma.$transaction(
-      inputs.map((input) => {
-        const data = {
-          title: input.title,
-          clientId,
-          description: input.description || null,
-          location: input.location || null,
-          fee: input.fee ?? null,
-          genderReq: input.genderReq || null,
-          ageMin: input.ageMin ?? null,
-          ageMax: input.ageMax ?? null,
-          heightMin: input.heightMin ?? null,
-          heightMax: input.heightMax ?? null,
-          startsAt: input.startsAt ? new Date(input.startsAt) : null,
-          endsAt: input.endsAt ? new Date(input.endsAt) : null,
-          deadline: input.deadline ? new Date(input.deadline) : null,
-          capacity: input.capacity ?? null,
-          note: input.note || null,
-        }
+    for (const input of inputs) {
+      const data = {
+        title: input.title,
+        clientId,
+        description: input.description || null,
+        location: input.location || null,
+        fee: input.fee ?? null,
+        genderReq: input.genderReq || null,
+        ageMin: input.ageMin ?? null,
+        ageMax: input.ageMax ?? null,
+        heightMin: input.heightMin ?? null,
+        heightMax: input.heightMax ?? null,
+        deadline: input.deadline ? new Date(input.deadline) : null,
+        capacity: input.capacity ?? null,
+        note: input.note || null,
+      }
 
-        if (input.mode === "existing" && input.existingJobId) {
-          return prisma.job.update({
-            where: { id: input.existingJobId },
-            data,
-          })
-        }
-        return prisma.job.create({
+      const datesData = (input.dates ?? []).map((d) => ({
+        type: d.type as "AUDITION" | "SHOOTING" | "OTHER",
+        date: new Date(d.date),
+        startTime: d.startTime || null,
+        endTime: d.endTime || null,
+        location: d.location || null,
+        note: d.note || null,
+      }))
+
+      const reqData = (input.requirements ?? []).map((cat) => ({ category: cat }))
+
+      if (input.mode === "existing" && input.existingJobId) {
+        await prisma.job.update({
+          where: { id: input.existingJobId },
+          data,
+        })
+      } else {
+        await prisma.job.create({
           data: {
             ...data,
             status: "OPEN",
+            dates: datesData.length > 0 ? { create: datesData } : undefined,
+            requirements: reqData.length > 0 ? { create: reqData } : undefined,
           },
         })
-      })
-    )
+      }
+    }
 
     revalidatePath("/admin/jobs")
     updateTag("jobs")

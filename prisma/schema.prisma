@@ -55,6 +55,12 @@ enum AuthTokenType {
   PASSWORD_RESET
 }
 
+enum JobDateType {
+  AUDITION
+  SHOOTING
+  OTHER
+}
+
 enum SubmissionCategory {
   ACTING_VIDEO
   VOICE_SAMPLE
@@ -177,8 +183,6 @@ model Job {
   ageMax      Int?
   heightMin   Int?
   heightMax   Int?
-  startsAt    DateTime?
-  endsAt      DateTime?
   deadline    DateTime?
   capacity    Int?
   status      JobStatus @default(DRAFT)
@@ -188,10 +192,26 @@ model Job {
 
   applications Application[]
   requirements JobRequirement[]
+  dates        JobDate[]
 
   @@index([clientId])
   @@index([status])
   @@map("jobs")
+}
+
+model JobDate {
+  id        String      @id @default(cuid())
+  jobId     String
+  job       Job         @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  type      JobDateType
+  date      DateTime
+  startTime String?
+  endTime   String?
+  location  String?
+  note      String?
+
+  @@index([jobId])
+  @@map("job_dates")
 }
 
 model Application {

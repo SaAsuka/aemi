@@ -118,10 +118,7 @@ export function ParsedResultForm({
   const router = useRouter()
   const [common, setCommon] = useState({
     location: data.common.location ?? "",
-    startsAt: toDatetimeLocal(data.common.startsAt),
-    endsAt: toDatetimeLocal(data.common.endsAt),
     deadline: toDatetimeLocal(data.common.deadline),
-    dates: data.common.dates ?? "",
     description: data.common.description ?? "",
     commonNote: data.common.note ?? "",
     clientCompanyName: data.common.clientCompanyName ?? "",
@@ -170,11 +167,11 @@ export function ParsedResultForm({
         ageMax: r.ageMax ? parseInt(r.ageMax, 10) : undefined,
         heightMin: r.heightMin ? parseInt(r.heightMin, 10) : undefined,
         heightMax: r.heightMax ? parseInt(r.heightMax, 10) : undefined,
-        startsAt: common.startsAt || undefined,
-        endsAt: common.endsAt || undefined,
         deadline: common.deadline || undefined,
         capacity: r.capacity ? parseInt(r.capacity, 10) : undefined,
         note: mergedNote || undefined,
+        dates: data.common.dates,
+        requirements: data.common.requirements as ("ACTING_VIDEO" | "VOICE_SAMPLE" | "PAST_WORK_VIDEO" | "PROFILE_PHOTO")[],
       }
     })
 
@@ -220,36 +217,42 @@ export function ParsedResultForm({
           />
         </div>
 
-        <div className="grid grid-cols-3 gap-4">
-          <div className="space-y-1">
-            <Label>開始日時</Label>
-            <Input
-              type="datetime-local"
-              value={common.startsAt}
-              onChange={(e) => updateCommon("startsAt", e.target.value)}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>終了日時</Label>
-            <Input
-              type="datetime-local"
-              value={common.endsAt}
-              onChange={(e) => updateCommon("endsAt", e.target.value)}
-            />
-          </div>
-          <div className="space-y-1">
-            <Label>応募締切</Label>
-            <Input
-              type="datetime-local"
-              value={common.deadline}
-              onChange={(e) => updateCommon("deadline", e.target.value)}
-            />
-          </div>
+        <div className="space-y-1">
+          <Label>応募締切</Label>
+          <Input
+            type="datetime-local"
+            value={common.deadline}
+            onChange={(e) => updateCommon("deadline", e.target.value)}
+            className="max-w-64"
+          />
         </div>
 
-        {common.dates && (
-          <div className="text-sm text-muted-foreground">
-            日程情報（原文）: {common.dates}
+        {data.common.dates.length > 0 && (
+          <div className="text-sm">
+            <Label>検出された日程</Label>
+            <div className="mt-1 space-y-1">
+              {data.common.dates.map((d, i) => (
+                <div key={i} className="text-muted-foreground">
+                  {d.type === "AUDITION" ? "オーディション" : d.type === "SHOOTING" ? "撮影" : "その他"}: {d.date}
+                  {d.startTime && ` ${d.startTime}`}
+                  {d.location && ` (${d.location})`}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {data.common.requirements.length > 0 && (
+          <div className="text-sm">
+            <Label>検出された提出要件</Label>
+            <div className="mt-1 text-muted-foreground">
+              {data.common.requirements.map((r) => ({
+                ACTING_VIDEO: "課題演技動画",
+                VOICE_SAMPLE: "ボイスサンプル",
+                PAST_WORK_VIDEO: "過去出演動画",
+                PROFILE_PHOTO: "宣材写真",
+              }[r])).join("、")}
+            </div>
           </div>
         )}
 

@@ -126,13 +126,6 @@ export function TalentJobList({
               )}
             </div>
 
-            {(job.startsAt || job.endsAt) && (
-              <p className="text-sm text-muted-foreground mt-1">
-                期間: {job.startsAt ? formatShortDate(job.startsAt) : "−"} 〜{" "}
-                {job.endsAt ? formatShortDate(job.endsAt) : "−"}
-              </p>
-            )}
-
             <JobConditions job={job} />
           </Link>
         ))}

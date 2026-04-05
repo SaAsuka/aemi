@@ -91,7 +91,7 @@ export async function getTalent(id: string) {
     include: {
       applications: {
         include: {
-          job: { select: { id: true, title: true, location: true, startsAt: true } },
+          job: { select: { id: true, title: true, location: true } },
           schedule: { select: { date: true, startTime: true, endTime: true, location: true, status: true } },
         },
         orderBy: { appliedAt: "desc" },
@@ -234,7 +234,7 @@ export async function getTalentApplications(talentId: string) {
   return prisma.application.findMany({
     where: { talentId },
     include: {
-      job: { select: { id: true, title: true, location: true, startsAt: true } },
+      job: { select: { id: true, title: true, location: true } },
       schedule: { select: { date: true, startTime: true, endTime: true, location: true, status: true } },
     },
     orderBy: { appliedAt: "desc" },

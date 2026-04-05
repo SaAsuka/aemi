@@ -18,6 +18,7 @@ import { JOB_STATUS_LABELS } from "@/types"
 import { SearchForm } from "@/components/admin/search-form"
 import { StatusFilter } from "@/components/admin/status-filter"
 import { formatDate } from "@/lib/utils/date"
+import { firstDateByType } from "@/lib/utils/job-dates"
 
 export default async function JobsPage({
   searchParams,
@@ -66,6 +67,8 @@ export default async function JobsPage({
                 <TableHead>案件名</TableHead>
                 <TableHead>報酬</TableHead>
                 <TableHead className="hidden sm:table-cell">締切</TableHead>
+                <TableHead className="hidden md:table-cell">オーディション</TableHead>
+                <TableHead className="hidden md:table-cell">撮影</TableHead>
                 <TableHead>応募数</TableHead>
                 <TableHead>ステータス</TableHead>
                 <TableHead>操作</TableHead>
@@ -74,7 +77,7 @@ export default async function JobsPage({
             <TableBody>
               {jobs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground">
                     データがありません
                   </TableCell>
                 </TableRow>
@@ -94,6 +97,12 @@ export default async function JobsPage({
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
                       {job.deadline ? formatDate(job.deadline) : "−"}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {firstDateByType(job.dates, "AUDITION") ?? "−"}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {firstDateByType(job.dates, "SHOOTING") ?? "−"}
                     </TableCell>
                     <TableCell>{job._count.applications}</TableCell>
                     <TableCell>

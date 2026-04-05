@@ -11,8 +11,6 @@ export const jobSchema = z.object({
   ageMax: z.coerce.number().int().nonnegative().optional().or(z.literal("")),
   heightMin: z.coerce.number().int().positive().optional().or(z.literal("")),
   heightMax: z.coerce.number().int().positive().optional().or(z.literal("")),
-  startsAt: z.string().optional().or(z.literal("")),
-  endsAt: z.string().optional().or(z.literal("")),
   deadline: z.string().optional().or(z.literal("")),
   capacity: z.coerce.number().int().positive().optional().or(z.literal("")),
   status: z.enum(["DRAFT", "OPEN", "CLOSED", "CANCELLED"]).default("DRAFT"),

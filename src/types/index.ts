@@ -33,6 +33,12 @@ export const SCHEDULE_STATUS_LABELS: Record<string, string> = {
   CANCELLED: "キャンセル",
 }
 
+export const JOB_DATE_TYPE_LABELS: Record<string, string> = {
+  AUDITION: "オーディション",
+  SHOOTING: "撮影",
+  OTHER: "その他",
+}
+
 export const SUBMISSION_CATEGORY_LABELS: Record<string, string> = {
   ACTING_VIDEO: "課題演技動画",
   VOICE_SAMPLE: "ボイスサンプル",

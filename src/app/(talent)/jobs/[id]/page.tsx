@@ -58,10 +58,18 @@ export default async function TalentJobDetailPage({
             <span className="text-muted-foreground">報酬: </span>&yen;{job.fee.toLocaleString()}
           </div>
         )}
-        {(job.startsAt || job.endsAt) && (
-          <div>
-            <span className="text-muted-foreground">期間: </span>
-            {job.startsAt ? formatDate(job.startsAt) : "−"} 〜 {job.endsAt ? formatDate(job.endsAt) : "−"}
+        {job.dates.length > 0 && (
+          <div className="space-y-1">
+            {job.dates.map((d, i) => (
+              <div key={i}>
+                <span className="text-muted-foreground">
+                  {d.type === "AUDITION" ? "オーディション" : d.type === "SHOOTING" ? "撮影" : "日程"}:{" "}
+                </span>
+                {formatDate(d.date)}
+                {d.startTime && ` ${d.startTime}`}
+                {d.location && ` (${d.location})`}
+              </div>
+            ))}
           </div>
         )}
         {job.deadline && (

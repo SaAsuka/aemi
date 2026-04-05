@@ -36,14 +36,24 @@ export const parsedJobSchema = z.object({
 export type ParsedTalentEntry = z.infer<typeof parsedTalentEntrySchema>
 export type ParsedJob = z.infer<typeof parsedJobSchema>
 
+export const parsedJobDateSchema = z.object({
+  type: z.enum(["AUDITION", "SHOOTING", "OTHER"]),
+  date: z.string(),
+  startTime: z.string().nullable().optional(),
+  endTime: z.string().nullable().optional(),
+  location: z.string().nullable().optional(),
+  note: z.string().nullable().optional(),
+})
+
+const submissionCategoryEnum = z.enum(["ACTING_VIDEO", "VOICE_SAMPLE", "PAST_WORK_VIDEO", "PROFILE_PHOTO"])
+
 export const parsedCommonSchema = z.object({
   clientCompanyName: z.string().nullable().optional(),
   clientContactName: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
-  startsAt: z.string().nullable().optional(),
-  endsAt: z.string().nullable().optional(),
   deadline: z.string().nullable().optional(),
-  dates: z.string().nullable().optional(),
+  dates: z.array(parsedJobDateSchema).nullable().optional().transform((v) => v ?? []),
+  requirements: z.array(submissionCategoryEnum).nullable().optional().transform((v) => v ?? []),
   description: z.string().nullable().optional(),
   note: z.string().nullable().optional(),
 })

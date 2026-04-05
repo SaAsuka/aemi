@@ -22,6 +22,7 @@ export async function getJobs(search?: string, status?: string, talentId?: strin
     orderBy: { createdAt: "desc" },
     include: {
       _count: { select: { applications: true } },
+      dates: { orderBy: { date: "asc" } },
     },
   })
 
@@ -46,6 +47,7 @@ export async function getJob(id: string) {
     include: {
       client: true,
       requirements: true,
+      dates: { orderBy: { date: "asc" } },
       applications: {
         select: {
           id: true,
@@ -84,8 +86,9 @@ export async function getOpenJobs() {
     select: {
       id: true, title: true, location: true, fee: true,
       genderReq: true, ageMin: true, ageMax: true, heightMin: true, heightMax: true,
-      startsAt: true, endsAt: true, deadline: true, createdAt: true, capacity: true,
+      deadline: true, createdAt: true, capacity: true,
       client: { select: { companyName: true } },
+      dates: { orderBy: { date: "asc" as const } },
     },
   })
 }
@@ -104,8 +107,9 @@ export async function getOpenJob(id: string) {
     select: {
       id: true, title: true, description: true, location: true, fee: true,
       genderReq: true, ageMin: true, ageMax: true, heightMin: true, heightMax: true,
-      startsAt: true, endsAt: true, deadline: true, capacity: true,
+      deadline: true, capacity: true,
       client: { select: { companyName: true } },
+      dates: { orderBy: { date: "asc" as const } },
       requirements: {
         select: {
           id: true, category: true, description: true, referenceUrl: true, referenceFile: true,
@@ -162,8 +166,6 @@ export async function createJob(formData: FormData) {
       ageMax: typeof data.ageMax === "number" ? data.ageMax : null,
       heightMin: typeof data.heightMin === "number" ? data.heightMin : null,
       heightMax: typeof data.heightMax === "number" ? data.heightMax : null,
-      startsAt: data.startsAt ? new Date(data.startsAt) : null,
-      endsAt: data.endsAt ? new Date(data.endsAt) : null,
       deadline: data.deadline ? new Date(data.deadline) : null,
       capacity: typeof data.capacity === "number" ? data.capacity : null,
       status: data.status,
@@ -205,8 +207,6 @@ export async function updateJob(id: string, formData: FormData) {
         ageMax: typeof data.ageMax === "number" ? data.ageMax : null,
         heightMin: typeof data.heightMin === "number" ? data.heightMin : null,
         heightMax: typeof data.heightMax === "number" ? data.heightMax : null,
-        startsAt: data.startsAt ? new Date(data.startsAt) : null,
-        endsAt: data.endsAt ? new Date(data.endsAt) : null,
         deadline: data.deadline ? new Date(data.deadline) : null,
         capacity: typeof data.capacity === "number" ? data.capacity : null,
         status: data.status,

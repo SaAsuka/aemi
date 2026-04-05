@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/table"
 import { StatusFilter } from "@/components/admin/status-filter"
 import { formatDate } from "@/lib/utils/date"
+import { firstDateByType } from "@/lib/utils/job-dates"
 import { ApplicationStatusSelect } from "@/components/admin/application-status-select"
 import { NewApplicationDialog } from "@/components/admin/new-application-dialog"
 import { LineCopyButton } from "@/components/admin/line-copy-button"
@@ -70,8 +71,8 @@ export default async function ApplicationsPage({
                 <TableHead>案件</TableHead>
                 <TableHead className="hidden sm:table-cell">提出物</TableHead>
                 <TableHead className="hidden sm:table-cell">締切日</TableHead>
-                <TableHead className="hidden md:table-cell">オーディション日</TableHead>
-                <TableHead className="hidden md:table-cell">撮影日</TableHead>
+                <TableHead className="hidden md:table-cell">オーディション</TableHead>
+                <TableHead className="hidden md:table-cell">撮影</TableHead>
                 <TableHead>ステータス</TableHead>
               </TableRow>
             </TableHeader>
@@ -108,10 +109,10 @@ export default async function ApplicationsPage({
                       {app.job.deadline ? formatDate(app.job.deadline) : "−"}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {app.job.startsAt ? formatDate(app.job.startsAt) : "−"}
+                      {firstDateByType(app.job.dates, "AUDITION") ?? "−"}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
-                      {app.job.endsAt ? formatDate(app.job.endsAt) : "−"}
+                      {firstDateByType(app.job.dates, "SHOOTING") ?? "−"}
                     </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">

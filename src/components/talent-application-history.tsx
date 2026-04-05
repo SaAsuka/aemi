@@ -29,7 +29,6 @@ type Application = {
     id: string
     title: string
     location: string | null
-    startsAt: Date | null
   }
   schedule: Schedule | null
 }
