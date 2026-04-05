@@ -16,13 +16,14 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar"
+import { BarChart3, Users, Briefcase, FileText, CalendarDays } from "lucide-react"
 
 const navItems = [
-  { title: "ダッシュボード", href: "/admin", icon: "📊" },
-  { title: "タレント管理", href: "/admin/talents", icon: "👤" },
-  { title: "案件管理", href: "/admin/jobs", icon: "📋" },
-  { title: "応募管理", href: "/admin/applications", icon: "📝" },
-  { title: "スケジュール", href: "/admin/schedule", icon: "📅" },
+  { title: "ダッシュボード", href: "/admin", icon: BarChart3 },
+  { title: "タレント管理", href: "/admin/talents", icon: Users },
+  { title: "案件管理", href: "/admin/jobs", icon: Briefcase },
+  { title: "応募管理", href: "/admin/applications", icon: FileText },
+  { title: "スケジュール", href: "/admin/schedule", icon: CalendarDays },
 ]
 
 export function AdminSidebar() {
@@ -70,7 +71,7 @@ export function AdminSidebar() {
                           render={<Link href={item.href} />}
                           isActive={isActive}
                         >
-                          <span>{item.icon}</span>
+                          <item.icon className="h-4 w-4 shrink-0" />
                           <span>{item.title}</span>
                         </SidebarMenuButton>
                       </SidebarMenuItem>
