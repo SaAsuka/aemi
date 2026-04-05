@@ -27,7 +27,11 @@ async function setupAction(_prev: ActionResult, formData: FormData): Promise<Act
   return await setupTalent(formData)
 }
 
-const photoLabels = ["バストアップ", "全身", "#3", "#4", "#5", "#6"]
+function photoLabel(idx: number): string {
+  if (idx === 0) return "バストアップ"
+  if (idx === 1) return "全身"
+  return `#${idx + 1}`
+}
 
 function SetupPhotos({ talentId, photos: initialPhotos }: { talentId: string; photos: TalentPhoto[] }) {
   const [photos, setPhotos] = useState(initialPhotos)
@@ -69,25 +73,22 @@ function SetupPhotos({ talentId, photos: initialPhotos }: { talentId: string; ph
     await reorderTalentPhotos(talentId, reordered.map(p => p.id))
   }, [dragIdx, photos, talentId])
 
-  const emptySlots = Math.max(0, 6 - photos.length)
-
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{photos.length} / 6 枚</span>
-          {photos.length === 6 && (
-            <span className="text-xs text-green-600 font-medium">OK</span>
-          )}
-          {photos.length !== 6 && (
-            <span className="text-xs text-amber-600">コンポジPDF生成には6枚必要です</span>
+          <span className="text-sm font-medium">{photos.length} 枚</span>
+          {photos.length >= 6 ? (
+            <span className="text-xs text-green-600 font-medium">コンポジOK（上位6枚を使用）</span>
+          ) : (
+            <span className="text-xs text-amber-600">コンポジPDF生成には6枚以上必要です</span>
           )}
         </div>
         <Button
           type="button"
           variant="outline"
           size="sm"
-          disabled={uploading || photos.length >= 6}
+          disabled={uploading}
           onClick={() => document.getElementById("setup-photo-upload")?.click()}
         >
           {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
@@ -112,11 +113,14 @@ function SetupPhotos({ talentId, photos: initialPhotos }: { talentId: string; ph
             onDragStart={() => handleDragStart(idx)}
             onDragOver={(e) => e.preventDefault()}
             onDrop={() => handleDrop(idx)}
-            className={`relative group rounded-xl overflow-hidden border-2 border-border transition-all ${dragIdx === idx ? "opacity-50 scale-95" : "hover:border-primary/30"}`}
+            className={`relative group rounded-xl overflow-hidden border-2 transition-all ${idx < 6 ? "border-primary/30" : "border-border"} ${dragIdx === idx ? "opacity-50 scale-95" : "hover:border-primary/30"}`}
           >
-            <img src={blobProxyUrl(photo.url)} alt={photoLabels[idx]} className="w-full aspect-[3/4] object-cover" />
+            <img src={blobProxyUrl(photo.url)} alt={photoLabel(idx)} className="w-full aspect-[3/4] object-cover" />
             <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-              <span className="text-white text-xs font-medium">{photoLabels[idx]}</span>
+              <span className="text-white text-xs font-medium">
+                {photoLabel(idx)}
+                {idx < 6 && <span className="ml-1 text-[10px] opacity-75">コンポジ</span>}
+              </span>
             </div>
             <div className="absolute top-1.5 right-1.5 flex gap-1">
               <button type="button" className="bg-black/60 text-white p-2 rounded-lg cursor-grab">
@@ -127,18 +131,6 @@ function SetupPhotos({ talentId, photos: initialPhotos }: { talentId: string; ph
               </button>
             </div>
           </div>
-        ))}
-        {Array.from({ length: emptySlots }).map((_, i) => (
-          <button
-            key={`empty-${i}`}
-            type="button"
-            onClick={() => document.getElementById("setup-photo-upload")?.click()}
-            disabled={uploading}
-            className="aspect-[3/4] rounded-xl border-2 border-dashed border-muted-foreground/25 flex flex-col items-center justify-center gap-2 text-muted-foreground/50 hover:border-primary/30 hover:text-primary/50 transition-colors"
-          >
-            <Camera className="h-6 w-6" />
-            <span className="text-xs">{photoLabels[photos.length + i]}</span>
-          </button>
         ))}
       </div>
     </div>
@@ -164,7 +156,7 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
           <h2 className="text-base font-semibold">宣材写真</h2>
         </div>
         <p className="text-sm text-muted-foreground">
-          コンポジPDF生成に必要な6枚の写真をアップロードしてください。先頭2枚はバストアップ・全身に使われます。
+          写真をアップロードしてください。上位6枚がコンポジPDFに使用されます（先頭2枚はバストアップ・全身）。
         </p>
         <SetupPhotos talentId={talentId} photos={photos} />
       </section>

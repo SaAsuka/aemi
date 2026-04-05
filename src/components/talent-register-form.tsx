@@ -65,12 +65,12 @@ export function TalentRegisterForm() {
     })
   }
 
-  const allSlotsFilled = photos.every(p => p !== null)
+  const filledCount = photos.filter(p => p !== null).length
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    if (!allSlotsFilled) {
-      setSubmitError("写真を6枚すべて設定してください")
+    if (filledCount < 6) {
+      setSubmitError("写真を6枚以上設定してください")
       return
     }
     setIsPending(true)
@@ -346,10 +346,10 @@ export function TalentRegisterForm() {
 
       {submitError && <p className="text-sm text-destructive">{submitError}</p>}
 
-      <Button type="submit" disabled={isPending || !allSlotsFilled} className="w-full">
+      <Button type="submit" disabled={isPending || filledCount < 6} className="w-full">
         {uploading ? (
           <><Loader2 className="h-4 w-4 animate-spin mr-2" />写真アップロード中...</>
-        ) : isPending ? "送信中..." : !allSlotsFilled ? "写真を6枚すべて設定してください" : "登録する"}
+        ) : isPending ? "送信中..." : filledCount < 6 ? "写真を6枚以上設定してください" : "登録する"}
       </Button>
     </form>
   )

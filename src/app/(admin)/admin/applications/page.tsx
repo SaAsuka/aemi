@@ -69,14 +69,16 @@ export default async function ApplicationsPage({
                 <TableHead>タレント</TableHead>
                 <TableHead>案件</TableHead>
                 <TableHead className="hidden sm:table-cell">提出物</TableHead>
-                <TableHead className="hidden sm:table-cell">応募日</TableHead>
+                <TableHead className="hidden sm:table-cell">締切日</TableHead>
+                <TableHead className="hidden md:table-cell">オーディション日</TableHead>
+                <TableHead className="hidden md:table-cell">撮影日</TableHead>
                 <TableHead>ステータス</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {applications.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
                     データがありません
                   </TableCell>
                 </TableRow>
@@ -90,9 +92,6 @@ export default async function ApplicationsPage({
                       >
                         {app.talent.name}
                       </Link>
-                      <p className="text-xs text-muted-foreground sm:hidden">
-                        {formatDate(app.appliedAt)}
-                      </p>
                     </TableCell>
                     <TableCell>
                       <Link
@@ -105,7 +104,15 @@ export default async function ApplicationsPage({
                     <TableCell className="hidden sm:table-cell">
                       <SubmissionLinks submissions={app.submissions} />
                     </TableCell>
-                    <TableCell className="hidden sm:table-cell">{formatDate(app.appliedAt)}</TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {app.job.deadline ? formatDate(app.job.deadline) : "−"}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {app.job.startsAt ? formatDate(app.job.startsAt) : "−"}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell">
+                      {app.job.endsAt ? formatDate(app.job.endsAt) : "−"}
+                    </TableCell>
                     <TableCell>
                       <div className="flex items-center gap-1">
                         <LineCopyButton talent={app.talent} />

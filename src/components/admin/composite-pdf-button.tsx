@@ -52,10 +52,8 @@ export function CompositePdfButton({
   const router = useRouter()
 
   const generate = async () => {
-    if (photoCount !== 6) {
-      alert(photoCount < 6
-        ? `宣材写真が${photoCount}枚しか登録されていません。コンポジ生成には6枚必要です。`
-        : `宣材写真が${photoCount}枚登録されています。6枚にしてください（${photoCount - 6}枚超過）。`)
+    if (photoCount < 6) {
+      alert(`宣材写真が${photoCount}枚しか登録されていません。コンポジ生成には6枚以上必要です。`)
       return
     }
 
@@ -148,10 +146,8 @@ export function CompositePdfIconButton({ talentId, photoCount }: { talentId: str
   const generate = async (e: React.MouseEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    if (photoCount !== 6) {
-      alert(photoCount < 6
-        ? `宣材写真が${photoCount}枚しか登録されていません。コンポジ生成には6枚必要です。`
-        : `宣材写真が${photoCount}枚登録されています。6枚にしてください（${photoCount - 6}枚超過）。`)
+    if (photoCount < 6) {
+      alert(`宣材写真が${photoCount}枚しか登録されていません。コンポジ生成には6枚以上必要です。`)
       return
     }
     setGenerating(true)
