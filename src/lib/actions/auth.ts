@@ -185,6 +185,27 @@ export async function verifyToken(token: string) {
   return { error: "不明なトークンタイプ" }
 }
 
+export async function setTalentPasswordByAdmin(talentId: string, newPassword: string) {
+  const session = await getSession()
+  if (session.role !== "admin") return { error: "権限がありません" }
+
+  if (newPassword.length < 8) return { error: "パスワードは8文字以上で入力してください" }
+
+  const talent = await prisma.talent.findUnique({
+    where: { id: talentId },
+    select: { id: true },
+  })
+  if (!talent) return { error: "タレントが見つかりません" }
+
+  const passwordHash = await bcrypt.hash(newPassword, 10)
+  await prisma.talent.update({
+    where: { id: talentId },
+    data: { passwordHash, mustChangePassword: true },
+  })
+
+  return { success: true }
+}
+
 export async function adminLogin(password: string) {
   if (password !== process.env.ADMIN_PASSWORD) {
     return { error: "パスワードが正しくありません" }

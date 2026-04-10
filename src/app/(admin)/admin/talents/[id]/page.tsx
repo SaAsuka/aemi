@@ -14,6 +14,7 @@ import { TalentEditSheet } from "@/components/admin/talent-edit-sheet"
 import { DeleteButton } from "@/components/admin/delete-button"
 import { StatusBadge } from "@/components/admin/status-badge"
 import { CompositePdfButton } from "@/components/admin/composite-pdf-button"
+import { SetPasswordDialog } from "@/components/admin/set-password-dialog"
 import { TalentPhotos } from "@/components/admin/talent-photos"
 import { TalentWorks } from "@/components/admin/talent-works"
 import { APPLICATION_STATUS_LABELS } from "@/types"
@@ -51,6 +52,7 @@ export default async function TalentDetailPage({
         </div>
         <div className="flex items-center gap-2">
           <TalentEditSheet talent={talent} />
+          <SetPasswordDialog talentId={talent.id} talentName={talent.name} />
           <CompositePdfButton talentId={talent.id} resumeUrl={talent.resume} resumeSource={talent.resumeSource} photoCount={talent.photos.length} />
           <DeleteButton id={talent.id} type="talent" />
         </div>
