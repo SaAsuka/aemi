@@ -136,6 +136,7 @@ export async function createTalent(formData: FormData) {
       nameKana: data.lastNameKana + " " + data.firstNameKana,
       stageName: data.stageName || null,
       nameRomaji: data.nameRomaji || null,
+      emailVerified: true,
       email: data.email || null,
       phone: data.phone || null,
       gender: data.gender || null,
