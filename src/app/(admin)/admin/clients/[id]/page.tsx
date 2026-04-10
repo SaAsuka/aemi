@@ -45,7 +45,7 @@ export default async function ClientDetailPage({
         <CardHeader>
           <CardTitle>案件一覧（{client.jobs.length}件）</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent>
           <Table>
             <TableHeader>
               <TableRow>

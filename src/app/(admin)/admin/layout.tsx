@@ -12,7 +12,7 @@ export default function AdminLayout({
     <SidebarProvider defaultOpen={false}>
       <AdminSidebar />
       <SidebarInset>
-        <main className="p-3 sm:p-6">{children}</main>
+        <div className="h-dvh overflow-auto p-3 sm:p-6">{children}</div>
       </SidebarInset>
     </SidebarProvider>
   )

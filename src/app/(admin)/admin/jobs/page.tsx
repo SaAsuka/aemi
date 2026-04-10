@@ -60,7 +60,7 @@ export default async function JobsPage({
         <CardHeader>
           <CardTitle>案件一覧（{jobs.length}件）</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent>
           <Table>
             <TableHeader>
               <TableRow>

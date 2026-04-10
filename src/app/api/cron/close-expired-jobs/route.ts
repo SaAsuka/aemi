@@ -10,7 +10,17 @@ export async function GET(request: Request) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
 
-  const result = await prisma.job.updateMany({
+  const reopened = await prisma.job.updateMany({
+    where: {
+      status: "CLOSED",
+      deadline: { gte: today },
+    },
+    data: {
+      status: "OPEN",
+    },
+  })
+
+  const closed = await prisma.job.updateMany({
     where: {
       status: "OPEN",
       deadline: { lt: today },
@@ -21,7 +31,8 @@ export async function GET(request: Request) {
   })
 
   return NextResponse.json({
-    closed: result.count,
-    timestamp: today.toISOString(),
+    reopened: reopened.count,
+    closed: closed.count,
+    timestamp: new Date().toISOString(),
   })
 }

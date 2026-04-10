@@ -183,7 +183,7 @@ export default async function TalentDetailPage({
         <CardHeader>
           <CardTitle>応募履歴（{talent.applications.length}件）</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent>
           <Table>
             <TableHeader>
               <TableRow>

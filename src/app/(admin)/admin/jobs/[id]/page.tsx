@@ -99,7 +99,7 @@ export default async function JobDetailPage({
         <CardHeader>
           <CardTitle>応募一覧（{job.applications.length}件）</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
@@ -161,7 +161,7 @@ export default async function JobDetailPage({
         <CardHeader>
           <CardTitle>該当タレント（{matchingTalents.length}名）</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent>
           <Table>
             <TableHeader>
               <TableRow>

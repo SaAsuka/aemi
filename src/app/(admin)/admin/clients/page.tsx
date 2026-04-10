@@ -33,7 +33,7 @@ export default async function ClientsPage({
         <CardHeader>
           <CardTitle>クライアント一覧（{clients.length}件）</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent>
           <Table>
             <TableHeader>
               <TableRow>

@@ -63,7 +63,7 @@ export default async function ApplicationsPage({
         <CardHeader>
           <CardTitle>応募一覧（{applications.length}件）</CardTitle>
         </CardHeader>
-        <CardContent className="overflow-x-auto">
+        <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
