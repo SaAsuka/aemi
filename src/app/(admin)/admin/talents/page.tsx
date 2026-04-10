@@ -20,6 +20,7 @@ import { ExternalLink, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { RegisterLinkCopy } from "@/components/admin/register-link-copy"
 import { InviteTalentButton } from "@/components/admin/invite-talent-button"
+import { ClickableRow } from "@/components/admin/clickable-row"
 
 type TalentSearchParams = {
   q?: string
@@ -102,7 +103,7 @@ export default async function TalentsPage({
                 </TableRow>
               ) : (
                 talents.map((talent, i) => (
-                  <TableRow key={talent.id} className={i % 2 === 1 ? "bg-muted/30" : ""}>
+                  <ClickableRow key={talent.id} href={`/admin/talents/${talent.id}`} className={i % 2 === 1 ? "bg-muted/30" : ""}>
                     <TableCell>
                       <Link
                         href={`/admin/talents/${talent.id}`}
@@ -139,7 +140,7 @@ export default async function TalentsPage({
                         </Button>
                       </Link>
                     </TableCell>
-                  </TableRow>
+                  </ClickableRow>
                 ))
               )}
             </TableBody>
