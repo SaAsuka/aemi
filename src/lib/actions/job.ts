@@ -7,6 +7,13 @@ import { getDefaultClientId } from "@/lib/queries"
 import { matchTalentToJob } from "@/lib/utils/job-matching"
 
 export async function getJobs(search?: string, status?: string, talentId?: string) {
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  await prisma.job.updateMany({
+    where: { status: "CLOSED", deadline: { gte: today } },
+    data: { status: "OPEN" },
+  })
+
   const where: Record<string, unknown> = {}
 
   if (search) {
