@@ -7,12 +7,13 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const now = new Date()
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
 
   const result = await prisma.job.updateMany({
     where: {
       status: "OPEN",
-      deadline: { lt: now },
+      deadline: { lt: today },
     },
     data: {
       status: "CLOSED",
@@ -21,6 +22,6 @@ export async function GET(request: Request) {
 
   return NextResponse.json({
     closed: result.count,
-    timestamp: now.toISOString(),
+    timestamp: today.toISOString(),
   })
 }

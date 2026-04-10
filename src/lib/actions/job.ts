@@ -73,13 +73,14 @@ export async function getJob(id: string) {
 }
 
 export async function getOpenJobs() {
-  const now = new Date()
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
   return prisma.job.findMany({
     where: {
       status: "OPEN",
       OR: [
         { deadline: null },
-        { deadline: { gte: now } },
+        { deadline: { gte: today } },
       ],
     },
     orderBy: { createdAt: "desc" },
@@ -94,14 +95,15 @@ export async function getOpenJobs() {
 }
 
 export async function getOpenJob(id: string) {
-  const now = new Date()
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
   return prisma.job.findUnique({
     where: {
       id,
       status: "OPEN",
       OR: [
         { deadline: null },
-        { deadline: { gte: now } },
+        { deadline: { gte: today } },
       ],
     },
     select: {
