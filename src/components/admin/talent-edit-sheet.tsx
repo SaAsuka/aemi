@@ -5,12 +5,12 @@ import { useRouter } from "next/navigation"
 import { Pencil } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet"
+  Dialog,
+  DialogTrigger,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { TalentForm } from "@/components/admin/talent-form"
 import type { Talent } from "@/generated/prisma/client"
 
@@ -19,17 +19,17 @@ export function TalentEditSheet({ talent }: { talent: Talent }) {
   const router = useRouter()
 
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger
         render={<Button variant="outline" size="sm" />}
       >
         <Pencil className="h-4 w-4" />
         編集
-      </SheetTrigger>
-      <SheetContent className="overflow-y-auto sm:max-w-[50vw] p-6">
-        <SheetHeader>
-          <SheetTitle>基本情報 編集</SheetTitle>
-        </SheetHeader>
+      </DialogTrigger>
+      <DialogContent className="overflow-y-auto max-h-[85vh] sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>基本情報 編集</DialogTitle>
+        </DialogHeader>
         <TalentForm
           talent={talent}
           onSuccess={() => {
@@ -37,7 +37,7 @@ export function TalentEditSheet({ talent }: { talent: Talent }) {
             router.refresh()
           }}
         />
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   )
 }
