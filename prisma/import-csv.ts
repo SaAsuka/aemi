@@ -279,7 +279,6 @@ async function main() {
         birthplace: nullIfEmpty(birthplace),
         address: nullIfEmpty(address),
         status: "ACTIVE",
-        emailVerified: false,
         createdAt: timestamp ? parseTimestamp(timestamp) : new Date(),
       },
     })

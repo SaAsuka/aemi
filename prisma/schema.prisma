@@ -110,7 +110,7 @@ model Talent {
   passwordHash         String?
   mustChangePassword   Boolean            @default(false)
   accessToken          String?            @unique @default(cuid())
-  emailVerified        Boolean            @default(false)
+  emailVerified        Boolean            @default(true)
   status               TalentStatus       @default(ACTIVE)
   note                 String?
   createdAt            DateTime           @default(now())
