@@ -3,6 +3,7 @@ import { getTalentApplications } from "@/lib/actions/talent"
 import { TalentNav } from "@/components/talent-nav"
 import { TalentApplicationHistory } from "@/components/talent-application-history"
 import { Briefcase } from "lucide-react"
+import { LineConnectAlert } from "@/components/line-connect-alert"
 
 export default async function MyPage() {
   const talent = await requireTalent()
@@ -14,6 +15,9 @@ export default async function MyPage() {
     <>
       <TalentNav talentName={displayName} />
       <div className="mx-auto max-w-7xl px-4 py-8 space-y-6">
+        {talent.email === "test@example.com" && !talent.lineUserId && (
+          <LineConnectAlert />
+        )}
         <section className="space-y-4">
           <div className="flex items-center gap-2">
             <Briefcase className="h-5 w-5 text-primary" />
