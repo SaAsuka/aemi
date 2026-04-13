@@ -3,7 +3,7 @@
 import { useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { deleteApplication } from "@/lib/actions/application"
-import { Trash2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
 
 export function DeleteApplicationButton({ applicationId }: { applicationId: string }) {
   const [isPending, startTransition] = useTransition()
@@ -18,14 +18,14 @@ export function DeleteApplicationButton({ applicationId }: { applicationId: stri
   }
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="outline"
+      size="xs"
       onClick={handleDelete}
       disabled={isPending}
-      className="text-muted-foreground hover:text-red-500 transition-colors disabled:opacity-50"
-      title="削除"
+      className="text-destructive hover:text-destructive"
     >
-      <Trash2 className="h-4 w-4" />
-    </button>
+      {isPending ? "削除中..." : "削除"}
+    </Button>
   )
 }

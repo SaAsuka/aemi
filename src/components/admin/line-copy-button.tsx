@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Copy, Check, FileText } from "lucide-react"
+import { Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { calcAge } from "@/lib/utils/date"
 import { GENDER_LABELS } from "@/types"
@@ -39,12 +39,12 @@ export function LineCopyButton({ talent }: { talent: TalentInfo }) {
 
   return (
     <span className="inline-flex gap-1">
-      <Button variant="ghost" size="icon" className="h-7 w-7" onClick={copyText} title="LINE用テキストをコピー">
-        {copiedText ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+      <Button variant="outline" size="xs" onClick={copyText}>
+        {copiedText ? <><Check className="h-3 w-3 text-green-600" /> コピー済</> : "情報コピー"}
       </Button>
       {talent.resume && (
-        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={copyPdf} title="PDF URLをコピー">
-          {copiedPdf ? <Check className="h-3.5 w-3.5 text-green-600" /> : <FileText className="h-3.5 w-3.5" />}
+        <Button variant="outline" size="xs" onClick={copyPdf}>
+          {copiedPdf ? <><Check className="h-3 w-3 text-green-600" /> コピー済</> : "PDFコピー"}
         </Button>
       )}
     </span>
