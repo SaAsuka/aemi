@@ -15,7 +15,7 @@ export default async function MyPage() {
     <>
       <TalentNav talentName={displayName} />
       <div className="mx-auto max-w-7xl px-4 py-8 space-y-6">
-        {talent.email === "test@example.com" && !talent.lineUserId && (
+        {!talent.lineUserId && (
           <LineConnectAlert />
         )}
         <section className="space-y-4">
