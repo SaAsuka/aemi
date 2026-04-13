@@ -19,6 +19,7 @@ import { DeleteApplicationButton } from "@/components/admin/delete-application-b
 import { BulkActionsBar } from "@/components/admin/bulk-actions-bar"
 import { SortableHeader } from "@/components/admin/sortable-header"
 import { Pagination } from "@/components/admin/pagination"
+import { blobProxyUrl } from "@/lib/utils/blob"
 
 type AppRow = {
   id: string
@@ -127,7 +128,7 @@ export function ApplicationTable({
                     className="inline-flex items-center gap-2 hover:underline"
                   >
                     {app.talent.profileImage ? (
-                      <img src={app.talent.profileImage} alt="" className="h-7 w-7 rounded-full object-cover" />
+                      <img src={blobProxyUrl(app.talent.profileImage)} alt="" className="h-7 w-7 rounded-full object-cover" />
                     ) : (
                       <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs">{app.talent.name.charAt(0)}</span>
                     )}
