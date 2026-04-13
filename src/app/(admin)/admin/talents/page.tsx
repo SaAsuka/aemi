@@ -89,6 +89,7 @@ export default async function TalentsPage({
                 <TableHead>名前</TableHead>
                 <TableHead className="hidden sm:table-cell">フリガナ</TableHead>
                 <TableHead>ステータス</TableHead>
+                <TableHead>LINE</TableHead>
                 <TableHead>決済</TableHead>
                 <TableHead>コンポジ生成</TableHead>
                 <TableHead>コンポジPDF</TableHead>
@@ -98,7 +99,7 @@ export default async function TalentsPage({
             <TableBody>
               {talents.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
                     データがありません
                   </TableCell>
                 </TableRow>
@@ -120,6 +121,13 @@ export default async function TalentsPage({
                         status={talent.status}
                         label={TALENT_STATUS_LABELS[talent.status]}
                       />
+                    </TableCell>
+                    <TableCell>
+                      {talent.lineUserId ? (
+                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800">連携済</span>
+                      ) : (
+                        <span className="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-gray-100 text-gray-800">未連携</span>
+                      )}
                     </TableCell>
                     <TableCell>
                       {(() => {

@@ -64,6 +64,7 @@ export async function getTalents(filters: TalentFilters = {}) {
       hip: true,
       shoeSize: true,
       status: true,
+      lineUserId: true,
       accessToken: true,
       resume: true,
       resumeSource: true,
