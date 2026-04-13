@@ -181,6 +181,34 @@ export async function updateApplicationStatus(id: string, status: string) {
   return { success: true }
 }
 
+export async function bulkUpdateApplicationStatus(ids: string[], status: string) {
+  const validStatuses = ["APPLIED", "RESUME_SENT", "ACCEPTED", "REJECTED", "AUTO_REJECTED", "CANCELLED"]
+  if (!validStatuses.includes(status)) return { error: "無効なステータスです" }
+  if (ids.length === 0) return { error: "対象が選択されていません" }
+
+  const decidedStatuses = ["ACCEPTED", "REJECTED", "AUTO_REJECTED", "CANCELLED"]
+  await prisma.application.updateMany({
+    where: { id: { in: ids } },
+    data: {
+      status: status as "APPLIED" | "RESUME_SENT" | "ACCEPTED" | "REJECTED" | "AUTO_REJECTED" | "CANCELLED",
+      decidedAt: decidedStatuses.includes(status) ? new Date() : null,
+    },
+  })
+  revalidatePath("/admin/applications")
+  updateTag("talents")
+  updateTag("jobs")
+  return { success: true, count: ids.length }
+}
+
+export async function bulkDeleteApplications(ids: string[]) {
+  if (ids.length === 0) return { error: "対象が選択されていません" }
+  await prisma.application.deleteMany({ where: { id: { in: ids } } })
+  revalidatePath("/admin/applications")
+  updateTag("talents")
+  updateTag("jobs")
+  return { success: true, count: ids.length }
+}
+
 export async function deleteApplication(id: string) {
   await prisma.application.delete({ where: { id } })
   revalidatePath("/admin/applications")
