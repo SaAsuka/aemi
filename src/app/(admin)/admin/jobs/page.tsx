@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { getJobs } from "@/lib/actions/job"
+import { getJobs, getJobCount } from "@/lib/actions/job"
 import { getActiveTalentsForMatching } from "@/lib/actions/talent"
 import { LinkButton } from "@/components/admin/link-button"
 import { ParseJobSheet } from "@/components/admin/parse-job-sheet"
@@ -17,20 +17,24 @@ import { StatusBadge } from "@/components/admin/status-badge"
 import { JOB_STATUS_LABELS } from "@/types"
 import { SearchForm } from "@/components/admin/search-form"
 import { StatusFilter } from "@/components/admin/status-filter"
+import { matchTalentToJob } from "@/lib/utils/job-matching"
 import { formatDate } from "@/lib/utils/date"
 import { firstDateByType } from "@/lib/utils/job-dates"
+import { Pagination } from "@/components/admin/pagination"
+import { SortableHeader } from "@/components/admin/sortable-header"
 import { CsvExportButton } from "@/components/admin/csv-export-button"
 import { exportJobsCsv } from "@/lib/actions/export"
 
 export default async function JobsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; status?: string; talentId?: string }>
+  searchParams: Promise<{ q?: string; status?: string; talentId?: string; sort?: string; order?: string; page?: string }>
 }) {
-  const { q, status, talentId } = await searchParams
-  const [jobs, talents] = await Promise.all([
-    getJobs(q, status, talentId),
+  const { q, status, talentId, sort, order, page } = await searchParams
+  const [jobs, talents, totalCount] = await Promise.all([
+    getJobs(q, status, talentId, sort, order, page ? Number(page) : 1),
     getActiveTalentsForMatching(),
+    getJobCount(q, status),
   ])
 
   return (
@@ -61,26 +65,26 @@ export default async function JobsPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>案件一覧（{jobs.length}件）</CardTitle>
+          <CardTitle>案件一覧（{totalCount}件）</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>案件名</TableHead>
-                <TableHead>報酬</TableHead>
-                <TableHead className="hidden sm:table-cell">締切</TableHead>
+                <SortableHeader column="title" label="案件名" />
+                <SortableHeader column="fee" label="報酬" />
+                <SortableHeader column="deadline" label="締切" className="hidden sm:table-cell" />
                 <TableHead className="hidden md:table-cell">オーディション</TableHead>
                 <TableHead className="hidden md:table-cell">撮影</TableHead>
-                <TableHead>応募数</TableHead>
-                <TableHead>ステータス</TableHead>
+                <TableHead>応募</TableHead>
+                <SortableHeader column="status" label="ステータス" />
                 <TableHead>操作</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {jobs.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground">
                     データがありません
                   </TableCell>
                 </TableRow>
@@ -107,7 +111,18 @@ export default async function JobsPage({
                     <TableCell className="hidden md:table-cell">
                       {firstDateByType(job.dates, "SHOOTING") ?? "−"}
                     </TableCell>
-                    <TableCell>{job._count.applications}</TableCell>
+                    <TableCell>
+                      {(() => {
+                        const matchCount = talents.filter(t => matchTalentToJob(t, job).matchStatus !== "unmatch").length
+                        const appCount = job._count.applications
+                        return (
+                          <div className="text-xs space-y-0.5">
+                            <div>{appCount}名応募</div>
+                            <div className="text-muted-foreground">マッチ{matchCount}名</div>
+                          </div>
+                        )
+                      })()}
+                    </TableCell>
                     <TableCell>
                       <StatusBadge
                         status={job.status}
@@ -124,6 +139,7 @@ export default async function JobsPage({
               )}
             </TableBody>
           </Table>
+          <Pagination total={totalCount} />
         </CardContent>
       </Card>
     </div>

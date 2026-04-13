@@ -17,11 +17,36 @@ type TalentFilters = {
   hipMax?: number
   shoeMin?: number
   shoeMax?: number
+  sort?: string
+  order?: "asc" | "desc"
+  page?: number
+  pageSize?: number
 }
 
-export async function getTalents(filters: TalentFilters = {}) {
-  const where: Record<string, unknown> = {}
+const TALENT_SELECT = {
+  id: true,
+  name: true,
+  nameKana: true,
+  gender: true,
+  birthDate: true,
+  height: true,
+  bust: true,
+  waist: true,
+  hip: true,
+  shoeSize: true,
+  status: true,
+  lineUserId: true,
+  accessToken: true,
+  resume: true,
+  resumeSource: true,
+  subscription: {
+    select: { status: true, currentPeriodEnd: true },
+  },
+  _count: { select: { photos: true } },
+} as const
 
+function buildTalentWhere(filters: TalentFilters) {
+  const where: Record<string, unknown> = {}
   if (filters.search) {
     where.OR = [
       { name: { contains: filters.search, mode: "insensitive" as const } },
@@ -29,7 +54,6 @@ export async function getTalents(filters: TalentFilters = {}) {
       { email: { contains: filters.search, mode: "insensitive" as const } },
     ]
   }
-
   const rangeFields = [
     ["height", "heightMin", "heightMax"],
     ["bust", "bustMin", "bustMax"],
@@ -37,7 +61,6 @@ export async function getTalents(filters: TalentFilters = {}) {
     ["hip", "hipMin", "hipMax"],
     ["shoeSize", "shoeMin", "shoeMax"],
   ] as const
-
   for (const [field, minKey, maxKey] of rangeFields) {
     const min = filters[minKey]
     const max = filters[maxKey]
@@ -48,31 +71,30 @@ export async function getTalents(filters: TalentFilters = {}) {
       where[field] = cond
     }
   }
+  return where
+}
+
+const TALENT_SORT_FIELDS = ["name", "nameKana", "status", "height", "createdAt"] as const
+
+export async function getTalentCount(filters: TalentFilters = {}) {
+  return prisma.talent.count({ where: buildTalentWhere(filters) })
+}
+
+export async function getTalents(filters: TalentFilters = {}) {
+  const where = buildTalentWhere(filters)
+  const pageSize = filters.pageSize ?? 50
+  const page = filters.page ?? 1
+  const sortField = TALENT_SORT_FIELDS.includes(filters.sort as typeof TALENT_SORT_FIELDS[number])
+    ? filters.sort!
+    : "createdAt"
+  const sortOrder = filters.order ?? "desc"
 
   return prisma.talent.findMany({
     where,
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      nameKana: true,
-      gender: true,
-      birthDate: true,
-      height: true,
-      bust: true,
-      waist: true,
-      hip: true,
-      shoeSize: true,
-      status: true,
-      lineUserId: true,
-      accessToken: true,
-      resume: true,
-      resumeSource: true,
-      subscription: {
-        select: { status: true, currentPeriodEnd: true },
-      },
-      _count: { select: { photos: true } },
-    },
+    orderBy: { [sortField]: sortOrder },
+    skip: (page - 1) * pageSize,
+    take: pageSize,
+    select: TALENT_SELECT,
   })
 }
 

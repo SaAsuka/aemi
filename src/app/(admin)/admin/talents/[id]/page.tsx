@@ -17,7 +17,7 @@ import { CompositePdfButton } from "@/components/admin/composite-pdf-button"
 import { SetPasswordDialog } from "@/components/admin/set-password-dialog"
 import { TalentPhotos } from "@/components/admin/talent-photos"
 import { TalentWorks } from "@/components/admin/talent-works"
-import { APPLICATION_STATUS_LABELS } from "@/types"
+import { APPLICATION_STATUS_LABELS, TALENT_STATUS_LABELS, SUBSCRIPTION_STATUS_LABELS, STATUS_COLORS } from "@/types"
 import { formatDate, calcAge } from "@/lib/utils/date"
 import { Button } from "@/components/ui/button"
 import { ArrowLeft } from "lucide-react"
@@ -55,6 +55,29 @@ export default async function TalentDetailPage({
           <SetPasswordDialog talentId={talent.id} talentName={talent.name} />
           <CompositePdfButton talentId={talent.id} resumeUrl={talent.resume} resumeSource={talent.resumeSource} photoCount={talent.photos.length} />
           <DeleteButton id={talent.id} type="talent" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="rounded-lg border p-3 text-center">
+          <p className="text-xs text-muted-foreground">ステータス</p>
+          <StatusBadge status={talent.status} label={TALENT_STATUS_LABELS[talent.status]} />
+        </div>
+        <div className="rounded-lg border p-3 text-center">
+          <p className="text-xs text-muted-foreground">LINE連携</p>
+          <p className={`text-sm font-medium ${talent.lineUserId ? "text-green-700" : "text-gray-500"}`}>
+            {talent.lineUserId ? "連携済" : "未連携"}
+          </p>
+        </div>
+        <div className="rounded-lg border p-3 text-center">
+          <p className="text-xs text-muted-foreground">サブスク</p>
+          <p className="text-sm font-medium">
+            {SUBSCRIPTION_STATUS_LABELS[talent.subscription?.status ?? "NONE"] ?? "未契約"}
+          </p>
+        </div>
+        <div className="rounded-lg border p-3 text-center">
+          <p className="text-xs text-muted-foreground">登録日</p>
+          <p className="text-sm font-medium">{formatDate(talent.createdAt)}</p>
         </div>
       </div>
 

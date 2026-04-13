@@ -4,42 +4,81 @@ import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
 import { applicationSchema } from "@/lib/validations/application"
 
-export async function getApplications(status?: string, jobId?: string) {
+function buildAppWhere(status?: string, jobId?: string) {
   const where: Record<string, unknown> = {}
+  if (status && status !== "ALL") where.status = status
+  if (jobId) where.jobId = jobId
+  return where
+}
 
-  if (status && status !== "ALL") {
-    where.status = status
-  }
-  if (jobId) {
-    where.jobId = jobId
-  }
+export async function getApplicationCount(status?: string, jobId?: string) {
+  return prisma.application.count({ where: buildAppWhere(status, jobId) })
+}
 
+const APP_SELECT = {
+  id: true,
+  status: true,
+  appliedAt: true,
+  talent: {
+    select: {
+      id: true, name: true,
+      birthDate: true, height: true, gender: true,
+      nearestStation: true, resume: true,
+      profileImage: true,
+    },
+  },
+  job: {
+    select: {
+      id: true, title: true, deadline: true,
+      dates: { orderBy: { date: "asc" as const } },
+    },
+  },
+  submissions: {
+    select: {
+      id: true, category: true, fileUrl: true, externalUrl: true, fileName: true,
+    },
+  },
+} as const
+
+export async function getApplications(status?: string, jobId?: string, sort?: string, order?: string, page?: number) {
+  const where = buildAppWhere(status, jobId)
+  const sortOrder: "asc" | "desc" = order === "asc" ? "asc" : "desc"
+  const pageSize = 50
+  const currentPage = page ?? 1
+
+  if (sort === "talent") {
+    return prisma.application.findMany({
+      where,
+      orderBy: { talent: { name: sortOrder } },
+      skip: (currentPage - 1) * pageSize,
+      take: pageSize,
+      select: APP_SELECT,
+    })
+  }
+  if (sort === "job") {
+    return prisma.application.findMany({
+      where,
+      orderBy: { job: { title: sortOrder } },
+      skip: (currentPage - 1) * pageSize,
+      take: pageSize,
+      select: APP_SELECT,
+    })
+  }
+  if (sort === "status") {
+    return prisma.application.findMany({
+      where,
+      orderBy: { status: sortOrder },
+      skip: (currentPage - 1) * pageSize,
+      take: pageSize,
+      select: APP_SELECT,
+    })
+  }
   return prisma.application.findMany({
     where,
-    orderBy: { appliedAt: "desc" },
-    select: {
-      id: true,
-      status: true,
-      appliedAt: true,
-      talent: {
-        select: {
-          id: true, name: true,
-          birthDate: true, height: true, gender: true,
-          nearestStation: true, resume: true,
-        },
-      },
-      job: {
-        select: {
-          id: true, title: true, deadline: true,
-          dates: { orderBy: { date: "asc" as const } },
-        },
-      },
-      submissions: {
-        select: {
-          id: true, category: true, fileUrl: true, externalUrl: true, fileName: true,
-        },
-      },
-    },
+    orderBy: { appliedAt: sortOrder },
+    skip: (currentPage - 1) * pageSize,
+    take: pageSize,
+    select: APP_SELECT,
   })
 }
 

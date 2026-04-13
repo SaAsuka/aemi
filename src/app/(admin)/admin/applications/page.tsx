@@ -1,6 +1,6 @@
 import { Suspense } from "react"
 import Link from "next/link"
-import { getApplications } from "@/lib/actions/application"
+import { getApplications, getApplicationCount } from "@/lib/actions/application"
 import { getActiveTalentOptions, getOpenJobOptions } from "@/lib/queries"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -20,6 +20,8 @@ import { LineCopyButton } from "@/components/admin/line-copy-button"
 import { Button } from "@/components/ui/button"
 import { SubmissionLinks } from "@/components/admin/submission-links"
 import { DeleteApplicationButton } from "@/components/admin/delete-application-button"
+import { Pagination } from "@/components/admin/pagination"
+import { SortableHeader } from "@/components/admin/sortable-header"
 import { CsvExportButton } from "@/components/admin/csv-export-button"
 import { exportApplicationsCsv } from "@/lib/actions/export"
 
@@ -34,10 +36,13 @@ async function ApplicationDialogData() {
 export default async function ApplicationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string }>
+  searchParams: Promise<{ status?: string; sort?: string; order?: string; page?: string }>
 }) {
-  const { status } = await searchParams
-  const applications = await getApplications(status)
+  const { status, sort, order, page } = await searchParams
+  const [applications, totalCount] = await Promise.all([
+    getApplications(status, undefined, sort, order, page ? Number(page) : 1),
+    getApplicationCount(status),
+  ])
 
   return (
     <div className="space-y-6">
@@ -66,19 +71,19 @@ export default async function ApplicationsPage({
 
       <Card>
         <CardHeader>
-          <CardTitle>応募一覧（{applications.length}件）</CardTitle>
+          <CardTitle>応募一覧（{totalCount}件）</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>タレント</TableHead>
-                <TableHead>案件</TableHead>
+                <SortableHeader column="talent" label="タレント" />
+                <SortableHeader column="job" label="案件" />
                 <TableHead className="hidden sm:table-cell">提出物</TableHead>
                 <TableHead className="hidden sm:table-cell">締切日</TableHead>
                 <TableHead className="hidden md:table-cell">オーディション</TableHead>
                 <TableHead className="hidden md:table-cell">撮影</TableHead>
-                <TableHead>ステータス</TableHead>
+                <SortableHeader column="status" label="ステータス" />
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -94,8 +99,13 @@ export default async function ApplicationsPage({
                     <TableCell>
                       <Link
                         href={`/admin/talents/${app.talent.id}`}
-                        className="hover:underline"
+                        className="inline-flex items-center gap-2 hover:underline"
                       >
+                        {app.talent.profileImage ? (
+                          <img src={app.talent.profileImage} alt="" className="h-7 w-7 rounded-full object-cover" />
+                        ) : (
+                          <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs">{app.talent.name.charAt(0)}</span>
+                        )}
                         {app.talent.name}
                       </Link>
                     </TableCell>
@@ -136,6 +146,7 @@ export default async function ApplicationsPage({
               )}
             </TableBody>
           </Table>
+          <Pagination total={totalCount} />
         </CardContent>
       </Card>
     </div>

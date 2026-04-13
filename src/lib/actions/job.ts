@@ -8,7 +8,20 @@ import { matchTalentToJob } from "@/lib/utils/job-matching"
 import { sendLinePush } from "@/lib/line"
 import { formatDate } from "@/lib/utils/date"
 
-export async function getJobs(search?: string, status?: string, talentId?: string) {
+const JOB_SORT_FIELDS = ["title", "fee", "deadline", "status", "createdAt"] as const
+
+function buildJobWhere(search?: string, status?: string) {
+  const where: Record<string, unknown> = {}
+  if (search) where.title = { contains: search, mode: "insensitive" }
+  if (status && status !== "ALL") where.status = status
+  return where
+}
+
+export async function getJobCount(search?: string, status?: string) {
+  return prisma.job.count({ where: buildJobWhere(search, status) })
+}
+
+export async function getJobs(search?: string, status?: string, talentId?: string, sort?: string, order?: string, page?: number) {
   const today = new Date()
   today.setHours(0, 0, 0, 0)
   await prisma.job.updateMany({
@@ -16,19 +29,17 @@ export async function getJobs(search?: string, status?: string, talentId?: strin
     data: { status: "OPEN" },
   })
 
-  const where: Record<string, unknown> = {}
-
-  if (search) {
-    where.title = { contains: search, mode: "insensitive" }
-  }
-
-  if (status && status !== "ALL") {
-    where.status = status
-  }
+  const where = buildJobWhere(search, status)
+  const sortField = JOB_SORT_FIELDS.includes(sort as typeof JOB_SORT_FIELDS[number]) ? sort! : "createdAt"
+  const sortOrder = order === "asc" ? "asc" : "desc"
+  const pageSize = 50
+  const currentPage = page ?? 1
 
   const jobs = await prisma.job.findMany({
     where,
-    orderBy: { createdAt: "desc" },
+    orderBy: { [sortField]: sortOrder },
+    skip: talentId ? 0 : (currentPage - 1) * pageSize,
+    take: talentId ? undefined : pageSize,
     include: {
       _count: { select: { applications: true } },
       dates: { orderBy: { date: "asc" } },
