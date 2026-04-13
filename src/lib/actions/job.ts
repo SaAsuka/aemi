@@ -5,6 +5,8 @@ import { prisma } from "@/lib/db"
 import { jobSchema } from "@/lib/validations/job"
 import { getDefaultClientId } from "@/lib/queries"
 import { matchTalentToJob } from "@/lib/utils/job-matching"
+import { sendLinePush } from "@/lib/line"
+import { formatDate } from "@/lib/utils/date"
 
 export async function getJobs(search?: string, status?: string, talentId?: string) {
   const today = new Date()
@@ -163,7 +165,7 @@ export async function createJob(formData: FormData) {
   const requirements = extractRequirements(formData)
   const clientId = await getDefaultClientId()
 
-  await prisma.job.create({
+  const job = await prisma.job.create({
     data: {
       clientId,
       title: data.title,
@@ -183,11 +185,53 @@ export async function createJob(formData: FormData) {
         create: requirements,
       },
     },
+    include: { dates: { orderBy: { date: "asc" }, take: 1 } },
   })
 
   revalidatePath("/admin/jobs")
   updateTag("jobs")
+
+  if (data.status === "OPEN") {
+    notifyMatchingTalents(job).catch((e) =>
+      console.error("[LINE] 通知処理エラー:", e)
+    )
+  }
+
   return { success: true }
+}
+
+async function notifyMatchingTalents(job: {
+  id: string
+  title: string
+  location: string | null
+  fee: number | null
+  genderReq: string | null
+  ageMin: number | null
+  ageMax: number | null
+  heightMin: number | null
+  heightMax: number | null
+  dates: { date: Date; startTime: string | null }[]
+}) {
+  const talents = await prisma.talent.findMany({
+    where: { status: "ACTIVE", lineUserId: { not: null } },
+    select: { lineUserId: true, gender: true, birthDate: true, height: true },
+  })
+
+  const lines = [`新しい案件が登録されました\n`, `■ ${job.title}`]
+  if (job.dates.length > 0) {
+    const d = job.dates[0]
+    lines.push(`日程: ${formatDate(d.date)}${d.startTime ? ` ${d.startTime}〜` : ""}`)
+  }
+  if (job.location) lines.push(`場所: ${job.location}`)
+  if (job.fee) lines.push(`報酬: ¥${job.fee.toLocaleString()}`)
+  lines.push(`\n詳細・応募はこちら\nhttps://app.vozel.jp/jobs/${job.id}`)
+  const message = lines.join("\n")
+
+  for (const talent of talents) {
+    const { matchStatus } = matchTalentToJob(talent, job)
+    if (matchStatus === "unmatch") continue
+    await sendLinePush(talent.lineUserId!, message)
+  }
 }
 
 export async function updateJob(id: string, formData: FormData) {
