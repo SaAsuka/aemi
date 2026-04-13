@@ -19,6 +19,8 @@ import { SearchForm } from "@/components/admin/search-form"
 import { StatusFilter } from "@/components/admin/status-filter"
 import { formatDate } from "@/lib/utils/date"
 import { firstDateByType } from "@/lib/utils/job-dates"
+import { CsvExportButton } from "@/components/admin/csv-export-button"
+import { exportJobsCsv } from "@/lib/actions/export"
 
 export default async function JobsPage({
   searchParams,
@@ -36,6 +38,7 @@ export default async function JobsPage({
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl sm:text-2xl font-bold">案件管理</h1>
         <div className="flex gap-2">
+          <CsvExportButton action={exportJobsCsv} filename="案件一覧.csv" />
           <ParseJobSheet />
           <LinkButton href="/admin/jobs/new">新規作成</LinkButton>
         </div>

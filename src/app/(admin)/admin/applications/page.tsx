@@ -20,6 +20,8 @@ import { LineCopyButton } from "@/components/admin/line-copy-button"
 import { Button } from "@/components/ui/button"
 import { SubmissionLinks } from "@/components/admin/submission-links"
 import { DeleteApplicationButton } from "@/components/admin/delete-application-button"
+import { CsvExportButton } from "@/components/admin/csv-export-button"
+import { exportApplicationsCsv } from "@/lib/actions/export"
 
 async function ApplicationDialogData() {
   const [talents, jobs] = await Promise.all([
@@ -41,9 +43,12 @@ export default async function ApplicationsPage({
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl sm:text-2xl font-bold">応募管理</h1>
-        <Suspense fallback={<Button variant="outline" size="sm" disabled>新規応募</Button>}>
-          <ApplicationDialogData />
-        </Suspense>
+        <div className="flex items-center gap-2">
+          <CsvExportButton action={exportApplicationsCsv} filename="応募一覧.csv" />
+          <Suspense fallback={<Button variant="outline" size="sm" disabled>新規応募</Button>}>
+            <ApplicationDialogData />
+          </Suspense>
+        </div>
       </div>
 
       <StatusFilter

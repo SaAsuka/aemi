@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { blobProxyUrl } from "@/lib/utils/blob"
-import { getTalents } from "@/lib/actions/talent"
+import { getTalents, getTalentCount } from "@/lib/actions/talent"
 import { LinkButton } from "@/components/admin/link-button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -21,6 +21,10 @@ import { Button } from "@/components/ui/button"
 import { RegisterLinkCopy } from "@/components/admin/register-link-copy"
 import { InviteTalentButton } from "@/components/admin/invite-talent-button"
 import { ClickableRow } from "@/components/admin/clickable-row"
+import { Pagination } from "@/components/admin/pagination"
+import { SortableHeader } from "@/components/admin/sortable-header"
+import { CsvExportButton } from "@/components/admin/csv-export-button"
+import { exportTalentsCsv } from "@/lib/actions/export"
 
 type TalentSearchParams = {
   q?: string
@@ -34,6 +38,9 @@ type TalentSearchParams = {
   hipMax?: string
   shoeMin?: string
   shoeMax?: string
+  sort?: string
+  order?: string
+  page?: string
 }
 
 function toNum(val: string | undefined): number | undefined {
@@ -48,7 +55,7 @@ export default async function TalentsPage({
   searchParams: Promise<TalentSearchParams>
 }) {
   const params = await searchParams
-  const talents = await getTalents({
+  const filters = {
     search: params.q,
     heightMin: toNum(params.heightMin),
     heightMax: toNum(params.heightMax),
@@ -60,14 +67,22 @@ export default async function TalentsPage({
     hipMax: toNum(params.hipMax),
     shoeMin: toNum(params.shoeMin),
     shoeMax: toNum(params.shoeMax),
-  })
-  const hasFilters = Object.keys(params).some((k) => k !== "q" && params[k as keyof TalentSearchParams])
+    sort: params.sort,
+    order: (params.order === "asc" ? "asc" : "desc") as "asc" | "desc",
+    page: toNum(params.page) ?? 1,
+  }
+  const [talents, totalCount] = await Promise.all([
+    getTalents(filters),
+    getTalentCount(filters),
+  ])
+  const hasFilters = Object.keys(params).some((k) => !["q", "sort", "order", "page"].includes(k) && params[k as keyof TalentSearchParams])
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h1 className="text-xl sm:text-2xl font-bold">タレント管理</h1>
         <div className="flex items-center gap-2">
+          <CsvExportButton action={exportTalentsCsv} filename="タレント一覧.csv" />
           <InviteTalentButton />
           <RegisterLinkCopy />
           <LinkButton href="/admin/talents/new">新規登録</LinkButton>
@@ -78,17 +93,29 @@ export default async function TalentsPage({
 
       <TalentFilters />
 
+      <div className="flex flex-wrap gap-3 text-sm">
+        <span className="rounded-md bg-green-50 px-3 py-1 text-green-700">
+          アクティブ {talents.filter(t => t.status === "ACTIVE").length}名
+        </span>
+        <span className="rounded-md bg-blue-50 px-3 py-1 text-blue-700">
+          LINE連携 {talents.filter(t => t.lineUserId).length}名
+        </span>
+        <span className="rounded-md bg-purple-50 px-3 py-1 text-purple-700">
+          サブスク契約 {talents.filter(t => t.subscription?.status === "ACTIVE").length}名
+        </span>
+      </div>
+
       <Card>
         <CardHeader className="border-b">
-          <CardTitle className="text-primary text-lg">タレント一覧<span className="ml-2 text-sm font-normal text-muted-foreground">({talents.length}件){hasFilters && " フィルタ中"}</span></CardTitle>
+          <CardTitle className="text-primary text-lg">タレント一覧<span className="ml-2 text-sm font-normal text-muted-foreground">({totalCount}件){hasFilters && " フィルタ中"}</span></CardTitle>
         </CardHeader>
         <CardContent className="overflow-auto max-h-[70vh] px-0">
           <Table>
             <TableHeader>
               <TableRow className="bg-muted/60 hover:bg-muted/60 sticky top-0 z-10">
-                <TableHead>名前</TableHead>
-                <TableHead className="hidden sm:table-cell">フリガナ</TableHead>
-                <TableHead>ステータス</TableHead>
+                <SortableHeader column="name" label="名前" />
+                <SortableHeader column="nameKana" label="フリガナ" className="hidden sm:table-cell" />
+                <SortableHeader column="status" label="ステータス" />
                 <TableHead>LINE</TableHead>
                 <TableHead>決済</TableHead>
                 <TableHead>コンポジ生成</TableHead>
@@ -165,6 +192,7 @@ export default async function TalentsPage({
               )}
             </TableBody>
           </Table>
+          <Pagination total={totalCount} />
         </CardContent>
       </Card>
     </div>
