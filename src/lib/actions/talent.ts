@@ -82,6 +82,7 @@ export async function getActiveTalentsForMatching() {
       gender: true,
       birthDate: true,
       height: true,
+      lineUserId: true,
     },
   })
 }

@@ -23,7 +23,7 @@ import { formatDate } from "@/lib/utils/date"
 import { ApplicationStatusSelect } from "@/components/admin/application-status-select"
 import { LineCopyButton } from "@/components/admin/line-copy-button"
 import { SubmissionLinks } from "@/components/admin/submission-links"
-import { LineNotifyButton } from "@/components/admin/line-notify-button"
+import { MatchingTalentsTable } from "@/components/admin/matching-talents-table"
 
 export default async function JobDetailPage({
   params,
@@ -159,49 +159,22 @@ export default async function JobDetailPage({
       </Card>
 
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader>
           <CardTitle>該当タレント（{matchingTalents.length}名）</CardTitle>
-          <LineNotifyButton jobId={job.id} matchCount={matchingTalents.length} />
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>タレント名</TableHead>
-                <TableHead>性別</TableHead>
-                <TableHead>年齢</TableHead>
-                <TableHead>身長</TableHead>
-                <TableHead>マッチ</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {matchingTalents.length === 0 ? (
-                <TableRow>
-                  <TableCell colSpan={5} className="text-center text-muted-foreground">
-                    該当するタレントがいません
-                  </TableCell>
-                </TableRow>
-              ) : (
-                matchingTalents.map((t) => (
-                  <TableRow key={t.id}>
-                    <TableCell>
-                      <Link href={`/admin/talents/${t.id}`} className="hover:underline">
-                        {t.name}
-                      </Link>
-                    </TableCell>
-                    <TableCell>{t.gender ? GENDER_LABELS[t.gender] : "−"}</TableCell>
-                    <TableCell>{t.age != null ? `${t.age}歳` : "−"}</TableCell>
-                    <TableCell>{t.height ? `${t.height}cm` : "−"}</TableCell>
-                    <TableCell>
-                      <Badge variant={t.matchStatus === "match" ? "default" : "secondary"}>
-                        {t.matchStatus === "match" ? "一致" : "一部不明"}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))
-              )}
-            </TableBody>
-          </Table>
+          <MatchingTalentsTable
+            jobId={job.id}
+            talents={matchingTalents.map((t) => ({
+              id: t.id,
+              name: t.name,
+              gender: t.gender,
+              age: t.age,
+              height: t.height,
+              matchStatus: t.matchStatus as "match" | "partial",
+              hasLine: !!t.lineUserId,
+            }))}
+          />
         </CardContent>
       </Card>
     </div>
