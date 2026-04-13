@@ -23,6 +23,7 @@ import { formatDate } from "@/lib/utils/date"
 import { ApplicationStatusSelect } from "@/components/admin/application-status-select"
 import { LineCopyButton } from "@/components/admin/line-copy-button"
 import { SubmissionLinks } from "@/components/admin/submission-links"
+import { LineNotifyButton } from "@/components/admin/line-notify-button"
 
 export default async function JobDetailPage({
   params,
@@ -158,8 +159,9 @@ export default async function JobDetailPage({
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>該当タレント（{matchingTalents.length}名）</CardTitle>
+          <LineNotifyButton jobId={job.id} matchCount={matchingTalents.length} />
         </CardHeader>
         <CardContent>
           <Table>

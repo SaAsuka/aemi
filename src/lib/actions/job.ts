@@ -281,6 +281,39 @@ export async function updateJob(id: string, formData: FormData) {
   return { success: true }
 }
 
+export async function sendLineNotification(jobId: string) {
+  const job = await prisma.job.findUnique({
+    where: { id: jobId },
+    include: { dates: { orderBy: { date: "asc" }, take: 1 } },
+  })
+  if (!job) return { error: "案件が見つかりません" }
+
+  const talents = await prisma.talent.findMany({
+    where: { status: "ACTIVE", lineUserId: { not: null } },
+    select: { lineUserId: true, gender: true, birthDate: true, height: true },
+  })
+
+  const lines = [`新しい案件が登録されました\n`, `■ ${job.title}`]
+  if (job.dates.length > 0) {
+    const d = job.dates[0]
+    lines.push(`日程: ${formatDate(d.date)}${d.startTime ? ` ${d.startTime}〜` : ""}`)
+  }
+  if (job.location) lines.push(`場所: ${job.location}`)
+  if (job.fee) lines.push(`報酬: ¥${job.fee.toLocaleString()}`)
+  lines.push(`\n詳細・応募はこちら\nhttps://app.vozel.jp/jobs/${job.id}`)
+  const message = lines.join("\n")
+
+  let sentCount = 0
+  for (const talent of talents) {
+    const { matchStatus } = matchTalentToJob(talent, job)
+    if (matchStatus === "unmatch") continue
+    const ok = await sendLinePush(talent.lineUserId!, message)
+    if (ok) sentCount++
+  }
+
+  return { success: true, sentCount }
+}
+
 export async function deleteJob(id: string) {
   await prisma.job.delete({ where: { id } })
   revalidatePath("/admin/jobs")
