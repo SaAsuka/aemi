@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { StatusBadge } from "@/components/admin/status-badge"
-import { TALENT_STATUS_LABELS } from "@/types"
+import { TALENT_STATUS_LABELS, SUBSCRIPTION_STATUS_LABELS, STATUS_COLORS } from "@/types"
 import { SearchForm } from "@/components/admin/search-form"
 import { TalentFilters } from "@/components/admin/talent-filters"
 import { CompositePdfIconButton } from "@/components/admin/composite-pdf-button"
@@ -89,6 +89,7 @@ export default async function TalentsPage({
                 <TableHead>名前</TableHead>
                 <TableHead className="hidden sm:table-cell">フリガナ</TableHead>
                 <TableHead>ステータス</TableHead>
+                <TableHead>決済</TableHead>
                 <TableHead>コンポジ生成</TableHead>
                 <TableHead>コンポジPDF</TableHead>
                 <TableHead></TableHead>
@@ -97,7 +98,7 @@ export default async function TalentsPage({
             <TableBody>
               {talents.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={6} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={7} className="text-center text-muted-foreground py-8">
                     データがありません
                   </TableCell>
                 </TableRow>
@@ -119,6 +120,17 @@ export default async function TalentsPage({
                         status={talent.status}
                         label={TALENT_STATUS_LABELS[talent.status]}
                       />
+                    </TableCell>
+                    <TableCell>
+                      {(() => {
+                        const subStatus = talent.subscription?.status ?? "NONE"
+                        const colorClass = STATUS_COLORS[`SUB_${subStatus}`] ?? "bg-gray-100 text-gray-800"
+                        return (
+                          <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colorClass}`}>
+                            {SUBSCRIPTION_STATUS_LABELS[subStatus] ?? "未契約"}
+                          </span>
+                        )
+                      })()}
                     </TableCell>
                     <TableCell>
                       <CompositePdfIconButton talentId={talent.id} photoCount={talent._count.photos} />

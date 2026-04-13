@@ -67,6 +67,9 @@ export async function getTalents(filters: TalentFilters = {}) {
       accessToken: true,
       resume: true,
       resumeSource: true,
+      subscription: {
+        select: { status: true, currentPeriodEnd: true },
+      },
       _count: { select: { photos: true } },
     },
   })

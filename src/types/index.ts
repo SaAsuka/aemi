@@ -46,6 +46,14 @@ export const SUBMISSION_CATEGORY_LABELS: Record<string, string> = {
   PROFILE_PHOTO: "宣材写真",
 }
 
+export const SUBSCRIPTION_STATUS_LABELS: Record<string, string> = {
+  NONE: "未契約",
+  ACTIVE: "契約中",
+  PAST_DUE: "支払遅延",
+  CANCELED: "解約済",
+  UNPAID: "未払い",
+}
+
 export const STATUS_COLORS: Record<string, string> = {
   ACTIVE: "bg-green-100 text-green-800",
   INACTIVE: "bg-gray-100 text-gray-800",
@@ -62,6 +70,11 @@ export const STATUS_COLORS: Record<string, string> = {
   CONFIRMED: "bg-blue-100 text-blue-800",
   COMPLETED: "bg-green-100 text-green-800",
   NO_SHOW: "bg-red-100 text-red-800",
+  SUB_NONE: "bg-gray-100 text-gray-800",
+  SUB_ACTIVE: "bg-green-100 text-green-800",
+  SUB_PAST_DUE: "bg-orange-100 text-orange-800",
+  SUB_CANCELED: "bg-yellow-100 text-yellow-800",
+  SUB_UNPAID: "bg-red-100 text-red-800",
   MALE: "bg-blue-100 text-blue-800",
   FEMALE: "bg-pink-100 text-pink-800",
   OTHER: "bg-gray-100 text-gray-800",
