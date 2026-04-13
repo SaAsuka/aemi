@@ -8,7 +8,8 @@ import { TalentWorks } from "@/components/admin/talent-works"
 import { CompositePdfButton } from "@/components/admin/composite-pdf-button"
 import { updateMyProfile } from "@/lib/actions/talent-mypage"
 import { ChangePasswordForm } from "@/components/change-password-form"
-import { Camera, Film, FileText, Lock, AlertTriangle } from "lucide-react"
+import { Camera, Film, FileText, Lock, AlertTriangle, MessageCircle } from "lucide-react"
+import { LineConnectSection } from "@/components/line-connect-section"
 
 export default async function SettingsPage() {
   const session = await requireTalentRaw()
@@ -45,6 +46,16 @@ export default async function SettingsPage() {
           </div>
           <ChangePasswordForm mustChangePassword={session.mustChangePassword} />
         </section>
+
+        {talent.email === "test@example.com" && (
+          <section className="space-y-4">
+            <div className="flex items-center gap-2">
+              <MessageCircle className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold">LINE通知</h2>
+            </div>
+            <LineConnectSection connected={!!talent.lineUserId} />
+          </section>
+        )}
 
         <section className="space-y-4">
           <div className="flex items-center gap-2">
