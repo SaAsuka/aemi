@@ -399,12 +399,14 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
 
   const navigateToErrorStep = useCallback((errors: Record<string, string[]>) => {
     let minStep = TOTAL_STEPS
-    for (const key of Object.keys(errors)) {
+    const messages: string[] = []
+    for (const [key, msgs] of Object.entries(errors)) {
+      if (key === "_form") continue
       const s = FIELD_TO_STEP[key]
       if (s && s < minStep) minStep = s
+      if (msgs[0]) messages.push(msgs[0])
     }
-    const count = Object.keys(errors).length
-    setStepError(`入力内容にエラーが${count}件あります`)
+    setStepError(messages.length > 0 ? messages.join("、") : "入力内容にエラーがあります")
     setStep(minStep)
     window.scrollTo(0, 0)
   }, [])
