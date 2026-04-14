@@ -1,13 +1,11 @@
 "use client"
 
-import { useActionState } from "react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, useCallback, useRef } from "react"
 import { upload } from "@vercel/blob/client"
 import { setupTalent } from "@/lib/actions/talent-setup"
 import { addTalentPhoto, deleteTalentPhoto, reorderTalentPhotos } from "@/lib/actions/talent-photo"
 import { blobProxyUrl } from "@/lib/utils/blob"
-import { setupSchema } from "@/lib/validations/talent"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -26,10 +24,6 @@ const STORAGE_KEY = "vozel_setup_draft"
 const TOTAL_STEPS = 4
 
 type ActionResult = { success?: boolean; redirect?: string; error?: Record<string, string[]> } | null
-
-async function setupAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
-  return await setupTalent(formData)
-}
 
 function photoLabel(idx: number): string {
   if (idx === 0) return "バストアップ"
@@ -218,20 +212,14 @@ function FieldError({ name, clientErrors, serverErrors }: {
 
 // --- メインフォーム ---
 export function TalentSetupForm({ email, talentId, photos }: { email: string; talentId: string; photos: TalentPhoto[] }) {
-  const [state, action, isPending] = useActionState(setupAction, null)
   const router = useRouter()
   const [step, setStep] = useState(1)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({})
+  const [serverErrors, setServerErrors] = useState<Record<string, string[]> | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   const [restored, setRestored] = useState(false)
   const formRef = useRef<HTMLFormElement>(null)
-
-  useEffect(() => {
-    if (state?.success && state.redirect) {
-      sessionStorage.removeItem(STORAGE_KEY)
-      router.push(state.redirect)
-    }
-  }, [state, router])
 
   // ブラウザ戻るボタンでステップを戻す
   useEffect(() => {
@@ -394,6 +382,84 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
     window.scrollTo({ top: 0, behavior: "smooth" })
   }, [step])
 
+  const FIELD_TO_STEP: Record<string, number> = {
+    lastName: 1, firstName: 1, lastNameKana: 1, firstNameKana: 1,
+    bankName: 3, bankBranch: 3, bankAccountType: 3, bankAccountNumber: 3, bankAccountHolder: 3,
+    password: 4, passwordConfirm: 4,
+  }
+
+  const navigateToErrorStep = useCallback((errors: Record<string, string[]>) => {
+    let minStep = TOTAL_STEPS
+    for (const key of Object.keys(errors)) {
+      const s = FIELD_TO_STEP[key]
+      if (s && s < minStep) minStep = s
+    }
+    setStep(minStep)
+    window.scrollTo({ top: 0, behavior: "smooth" })
+  }, [])
+
+  const validateAllSteps = useCallback((): boolean => {
+    if (!formRef.current) return false
+    const form = formRef.current
+    const allRequired: Record<number, string[]> = {
+      1: ["lastName", "firstName", "lastNameKana", "firstNameKana"],
+      3: ["bankName", "bankBranch", "bankAccountType", "bankAccountNumber", "bankAccountHolder"],
+      4: ["password", "passwordConfirm"],
+    }
+    const errors: Record<string, string | undefined> = {}
+    let firstErrorStep: number | null = null
+
+    for (const [stepStr, fields] of Object.entries(allRequired)) {
+      const s = Number(stepStr)
+      for (const name of fields) {
+        const el = form.elements.namedItem(name)
+        const value = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement ? el.value : ""
+        if (!value.trim()) {
+          errors[name] = "この項目は必須です"
+          if (!firstErrorStep) firstErrorStep = s
+        }
+      }
+    }
+
+    const pw = (form.elements.namedItem("password") as HTMLInputElement)?.value ?? ""
+    const confirm = (form.elements.namedItem("passwordConfirm") as HTMLInputElement)?.value ?? ""
+    if (pw && pw.length < 8) {
+      errors["password"] = "パスワードは8文字以上で入力してください"
+      if (!firstErrorStep) firstErrorStep = 4
+    }
+    if (pw && confirm && pw !== confirm) {
+      errors["passwordConfirm"] = "パスワードが一致しません"
+      if (!firstErrorStep) firstErrorStep = 4
+    }
+
+    setFieldErrors(errors)
+    if (firstErrorStep) {
+      setStep(firstErrorStep)
+      window.scrollTo({ top: 0, behavior: "smooth" })
+      return false
+    }
+    return true
+  }, [])
+
+  const handleSubmit = useCallback(async () => {
+    if (!formRef.current) return
+    if (!validateAllSteps()) return
+
+    setIsSubmitting(true)
+    setServerErrors(null)
+    const formData = new FormData(formRef.current)
+    const result = await setupTalent(formData)
+    setIsSubmitting(false)
+
+    if (result?.success && result.redirect) {
+      sessionStorage.removeItem(STORAGE_KEY)
+      router.push(result.redirect)
+    } else if (result?.error) {
+      setServerErrors(result.error)
+      navigateToErrorStep(result.error)
+    }
+  }, [validateAllSteps, navigateToErrorStep, router])
+
   return (
     <div className="space-y-6">
       <StepProgressBar current={step} total={TOTAL_STEPS} />
@@ -418,7 +484,7 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
         </section>
       )}
 
-      <form ref={formRef} action={action} className="space-y-10" onChange={handleChange}>
+      <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="space-y-10" onChange={handleChange}>
         {/* ステップ1: 基本情報 */}
         <div className={step === 1 ? "" : "hidden"}>
           <section className="space-y-4">
@@ -431,12 +497,12 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
               <div className="space-y-2">
                 <Label htmlFor="lastName">姓 *</Label>
                 <Input id="lastName" name="lastName" onBlur={handleBlur} />
-                <FieldError name="lastName" clientErrors={fieldErrors} serverErrors={state?.error} />
+                <FieldError name="lastName" clientErrors={fieldErrors} serverErrors={serverErrors} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="firstName">名 *</Label>
                 <Input id="firstName" name="firstName" onBlur={handleBlur} />
-                <FieldError name="firstName" clientErrors={fieldErrors} serverErrors={state?.error} />
+                <FieldError name="firstName" clientErrors={fieldErrors} serverErrors={serverErrors} />
               </div>
             </div>
 
@@ -444,12 +510,12 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
               <div className="space-y-2">
                 <Label htmlFor="lastNameKana">セイ *</Label>
                 <Input id="lastNameKana" name="lastNameKana" onBlur={handleBlur} />
-                <FieldError name="lastNameKana" clientErrors={fieldErrors} serverErrors={state?.error} />
+                <FieldError name="lastNameKana" clientErrors={fieldErrors} serverErrors={serverErrors} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="firstNameKana">メイ *</Label>
                 <Input id="firstNameKana" name="firstNameKana" onBlur={handleBlur} />
-                <FieldError name="firstNameKana" clientErrors={fieldErrors} serverErrors={state?.error} />
+                <FieldError name="firstNameKana" clientErrors={fieldErrors} serverErrors={serverErrors} />
               </div>
             </div>
 
@@ -611,12 +677,12 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
               <div className="space-y-2">
                 <Label htmlFor="bankName">銀行名 *</Label>
                 <Input id="bankName" name="bankName" onBlur={handleBlur} />
-                <FieldError name="bankName" clientErrors={fieldErrors} serverErrors={state?.error} />
+                <FieldError name="bankName" clientErrors={fieldErrors} serverErrors={serverErrors} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="bankBranch">支店名 *</Label>
                 <Input id="bankBranch" name="bankBranch" onBlur={handleBlur} />
-                <FieldError name="bankBranch" clientErrors={fieldErrors} serverErrors={state?.error} />
+                <FieldError name="bankBranch" clientErrors={fieldErrors} serverErrors={serverErrors} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="bankAccountType">種別 *</Label>
@@ -629,17 +695,17 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
                     <SelectItem value="当座" label="当座">当座</SelectItem>
                   </SelectContent>
                 </Select>
-                <FieldError name="bankAccountType" clientErrors={fieldErrors} serverErrors={state?.error} />
+                <FieldError name="bankAccountType" clientErrors={fieldErrors} serverErrors={serverErrors} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="bankAccountNumber">口座番号 *</Label>
                 <Input id="bankAccountNumber" name="bankAccountNumber" onBlur={handleBlur} />
-                <FieldError name="bankAccountNumber" clientErrors={fieldErrors} serverErrors={state?.error} />
+                <FieldError name="bankAccountNumber" clientErrors={fieldErrors} serverErrors={serverErrors} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="bankAccountHolder">口座名義 *</Label>
                 <Input id="bankAccountHolder" name="bankAccountHolder" onBlur={handleBlur} />
-                <FieldError name="bankAccountHolder" clientErrors={fieldErrors} serverErrors={state?.error} />
+                <FieldError name="bankAccountHolder" clientErrors={fieldErrors} serverErrors={serverErrors} />
               </div>
             </div>
           </section>
@@ -659,12 +725,12 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
               <div className="space-y-2">
                 <Label htmlFor="password">パスワード *</Label>
                 <Input id="password" name="password" type="password" onBlur={handleBlur} />
-                <FieldError name="password" clientErrors={fieldErrors} serverErrors={state?.error} />
+                <FieldError name="password" clientErrors={fieldErrors} serverErrors={serverErrors} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="passwordConfirm">パスワード確認 *</Label>
                 <Input id="passwordConfirm" name="passwordConfirm" type="password" onBlur={handleBlur} />
-                <FieldError name="passwordConfirm" clientErrors={fieldErrors} serverErrors={state?.error} />
+                <FieldError name="passwordConfirm" clientErrors={fieldErrors} serverErrors={serverErrors} />
               </div>
             </div>
           </section>
@@ -684,8 +750,8 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
               <ChevronRight className="h-4 w-4 ml-1" />
             </Button>
           ) : (
-            <Button type="submit" disabled={isPending} size="lg" className="flex-1">
-              {isPending ? "登録中..." : "プロフィールを登録してはじめる"}
+            <Button type="button" disabled={isSubmitting} size="lg" className="flex-1" onClick={handleSubmit}>
+              {isSubmitting ? "登録中..." : "プロフィールを登録してはじめる"}
             </Button>
           )}
         </div>
