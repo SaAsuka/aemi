@@ -30,12 +30,38 @@ export default async function TalentJobDetailPage({
   }
 
   const displayName = talent.name
-  const [job, talentResume] = await Promise.all([
+  const [job, talentResume, activeApps] = await Promise.all([
     getOpenJob(id),
     prisma.talent.findUnique({ where: { id: talent.id }, select: { resume: true } }),
+    prisma.application.findMany({
+      where: {
+        talentId: talent.id,
+        status: { in: ["APPLIED", "RESUME_SENT", "ACCEPTED"] },
+      },
+      select: {
+        job: { select: { title: true, dates: { select: { date: true, type: true } } } },
+      },
+    }),
   ])
   const hasResume = !!talentResume?.resume
   if (!job) redirect("/jobs")
+
+  const typeLabels: Record<string, string> = { AUDITION: "オーディション", SHOOTING: "撮影", OTHER: "予定" }
+  let dateConflict: string | null = null
+  if (job.dates.length > 0) {
+    const jobDateStrings = new Set(job.dates.map((d) => d.date.toISOString().split("T")[0]))
+    for (const app of activeApps) {
+      for (const d of app.job.dates) {
+        const dateStr = d.date.toISOString().split("T")[0]
+        if (jobDateStrings.has(dateStr)) {
+          const dt = new Date(dateStr)
+          dateConflict = `${dt.getMonth() + 1}月${dt.getDate()}日に別の案件（${app.job.title}）の${typeLabels[d.type] ?? "予定"}があります`
+          break
+        }
+      }
+      if (dateConflict) break
+    }
+  }
 
   const backHref = t ? `/jobs?t=${t}` : "/jobs"
 
@@ -113,7 +139,7 @@ export default async function TalentJobDetailPage({
         </div>
       )}
 
-      <JobApplicationForm jobId={job.id} talentId={talent.id} talentName={talent.name} requirements={job.requirements} hasResume={hasResume} />
+      <JobApplicationForm jobId={job.id} talentId={talent.id} talentName={talent.name} requirements={job.requirements} hasResume={hasResume} dateConflict={dateConflict} />
     </div>
     </>
   )

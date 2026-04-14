@@ -113,6 +113,53 @@ export async function createApplication(formData: FormData) {
     return { error: { jobId: ["このタレントは既にこの案件に応募済みです"] } }
   }
 
+  const jobDates = await prisma.jobDate.findMany({
+    where: { jobId: data.jobId },
+    select: { date: true, type: true },
+  })
+
+  if (jobDates.length > 0) {
+    const jobDateStrings = new Set(jobDates.map((d) => d.date.toISOString().split("T")[0]))
+
+    const activeApps = await prisma.application.findMany({
+      where: {
+        talentId: data.talentId,
+        status: { in: ["APPLIED", "RESUME_SENT", "ACCEPTED"] },
+        jobId: { not: data.jobId },
+      },
+      select: {
+        job: {
+          select: {
+            title: true,
+            dates: { select: { date: true, type: true } },
+          },
+        },
+      },
+    })
+
+    const typeLabels: Record<string, string> = {
+      AUDITION: "オーディション",
+      SHOOTING: "撮影",
+      OTHER: "予定",
+    }
+
+    for (const app of activeApps) {
+      for (const existingDate of app.job.dates) {
+        const dateStr = existingDate.date.toISOString().split("T")[0]
+        if (jobDateStrings.has(dateStr)) {
+          const d = new Date(dateStr)
+          const label = `${d.getMonth() + 1}月${d.getDate()}日`
+          const typeLabel = typeLabels[existingDate.type] ?? "予定"
+          return {
+            error: {
+              jobId: [`${label}に別の案件（${app.job.title}）の${typeLabel}があるため応募できません`],
+            },
+          }
+        }
+      }
+    }
+  }
+
   const requirements = await prisma.jobRequirement.findMany({
     where: { jobId: data.jobId },
   })

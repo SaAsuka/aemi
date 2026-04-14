@@ -30,12 +30,14 @@ export function JobApplicationForm({
   talentName,
   requirements,
   hasResume = true,
+  dateConflict = null,
 }: {
   jobId: string
   talentId: string
   talentName: string
   requirements?: Requirement[]
   hasResume?: boolean
+  dateConflict?: string | null
 }) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [message, setMessage] = useState("")
@@ -243,6 +245,12 @@ export function JobApplicationForm({
         </div>
       )}
 
+      {dateConflict && (
+        <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800">
+          ⚠ {dateConflict}
+        </div>
+      )}
+
       {!hasResume && (
         <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
           コンポジPDFが未登録のため応募できません。先に設定画面から宣材写真をアップロードし、コンポジPDFを生成してください。
@@ -255,11 +263,11 @@ export function JobApplicationForm({
         <div className="mx-auto max-w-4xl">
           <Button
             onClick={handleApply}
-            disabled={status === "loading" || !allSubmitted || anyUploading || !hasResume}
+            disabled={status === "loading" || !allSubmitted || anyUploading || !hasResume || !!dateConflict}
             className="w-full"
             size="lg"
           >
-            {status === "loading" ? "送信中..." : !hasResume ? "コンポジPDF未登録" : anyUploading ? "アップロード中..." : !allSubmitted ? "提出物を入力してください" : "この案件に応募する"}
+            {status === "loading" ? "送信中..." : dateConflict ? "日程が重複しています" : !hasResume ? "コンポジPDF未登録" : anyUploading ? "アップロード中..." : !allSubmitted ? "提出物を入力してください" : "この案件に応募する"}
           </Button>
         </div>
       </div>
