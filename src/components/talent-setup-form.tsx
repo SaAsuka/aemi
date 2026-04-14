@@ -371,7 +371,7 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
       const next = Math.min(step + 1, TOTAL_STEPS)
       setStep(next)
       history.pushState({ setupStep: next }, "")
-      window.scrollTo({ top: 0, behavior: "smooth" })
+      window.scrollTo(0, 0)
     }
   }, [validateCurrentStep, saveDraft, step])
 
@@ -379,7 +379,7 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
     const prev = Math.max(step - 1, 1)
     setStep(prev)
     history.pushState({ setupStep: prev }, "")
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    window.scrollTo(0, 0)
   }, [step])
 
   const FIELD_TO_STEP: Record<string, number> = {
@@ -395,7 +395,7 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
       if (s && s < minStep) minStep = s
     }
     setStep(minStep)
-    window.scrollTo({ top: 0, behavior: "smooth" })
+    window.scrollTo(0, 0)
   }, [])
 
   const validateAllSteps = useCallback((): boolean => {
@@ -435,7 +435,7 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
     setFieldErrors(errors)
     if (firstErrorStep) {
       setStep(firstErrorStep)
-      window.scrollTo({ top: 0, behavior: "smooth" })
+      window.scrollTo(0, 0)
       return false
     }
     return true
