@@ -249,14 +249,20 @@ export function JobApplicationForm({
         </div>
       )}
 
-      <Button
-        onClick={handleApply}
-        disabled={status === "loading" || !allSubmitted || anyUploading || !hasResume}
-        className="w-full"
-        size="lg"
-      >
-        {status === "loading" ? "送信中..." : !hasResume ? "コンポジPDF未登録" : anyUploading ? "アップロード中..." : !allSubmitted ? "提出物を入力してください" : "応募する"}
-      </Button>
+      <div className="h-20" />
+
+      <div className="fixed bottom-0 inset-x-0 z-30 border-t bg-background p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="mx-auto max-w-4xl">
+          <Button
+            onClick={handleApply}
+            disabled={status === "loading" || !allSubmitted || anyUploading || !hasResume}
+            className="w-full"
+            size="lg"
+          >
+            {status === "loading" ? "送信中..." : !hasResume ? "コンポジPDF未登録" : anyUploading ? "アップロード中..." : !allSubmitted ? "提出物を入力してください" : "この案件に応募する"}
+          </Button>
+        </div>
+      </div>
     </div>
   )
 }

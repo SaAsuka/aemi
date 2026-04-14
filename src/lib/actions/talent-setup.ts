@@ -59,5 +59,5 @@ export async function setupTalent(formData: FormData) {
   await upsertBankAccount(session.talentId, data)
 
   revalidatePath("/mypage")
-  return { success: true, redirect: "/mypage" }
+  return { success: true, redirect: "/welcome" }
 }

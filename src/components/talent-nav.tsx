@@ -19,7 +19,7 @@ export function TalentNav({ talentName }: { talentName: string }) {
     href === "/mypage" ? pathname === href : pathname === href || pathname.startsWith(href + "/")
 
   return (
-    <nav className="border-b bg-background sticky top-0 z-40">
+    <nav className="border-b bg-background sticky top-0 z-40 pt-[env(safe-area-inset-top)]">
       <div className="mx-auto max-w-7xl px-3 sm:px-4 flex items-center justify-between h-12 sm:h-14">
         <span className="font-semibold text-sm truncate max-w-[150px]">{talentName}</span>
 

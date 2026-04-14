@@ -1,3 +1,5 @@
+import { OfflineBanner } from "@/components/offline-banner"
+
 export const dynamic = "force-dynamic"
 
 export default function TalentLayout({
@@ -5,5 +7,10 @@ export default function TalentLayout({
 }: {
   children: React.ReactNode
 }) {
-  return <>{children}</>
+  return (
+    <>
+      <OfflineBanner />
+      {children}
+    </>
+  )
 }

@@ -1,8 +1,10 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
+import { RefreshCw } from "lucide-react"
 import { GENDER_LABELS } from "@/types"
 import type { JobWithMatch } from "@/app/(talent)/jobs/page"
 
@@ -37,8 +39,10 @@ export function TalentJobList({
   token: string
   matchCount: number
 }) {
+  const router = useRouter()
   const [filter, setFilter] = useState<FilterType>("all")
   const [sort, setSort] = useState<SortType>("newest")
+  const [refreshing, setRefreshing] = useState(false)
 
   const filtered = useMemo(() => {
     let result = jobs
@@ -89,9 +93,23 @@ export function TalentJobList({
           <option value="deadline">締切が近い順</option>
           <option value="fee">報酬が高い順</option>
         </select>
-        <span className="ml-auto text-sm text-muted-foreground">
-          {matchCount}件マッチ / 全{jobs.length}件
-        </span>
+        <div className="ml-auto flex items-center gap-2">
+          <button
+            type="button"
+            onClick={async () => {
+              setRefreshing(true)
+              router.refresh()
+              setTimeout(() => setRefreshing(false), 1000)
+            }}
+            className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
+            title="最新情報に更新"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? "animate-spin" : ""}`} />
+          </button>
+          <span className="text-sm text-muted-foreground">
+            {matchCount}件マッチ / 全{jobs.length}件
+          </span>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -99,7 +117,7 @@ export function TalentJobList({
           <Link
             key={job.id}
             href={`/jobs/${job.id}?t=${token}`}
-            className="block rounded-xl border bg-card p-4 shadow-sm hover:shadow-md transition-shadow"
+            className="block rounded-xl border bg-card p-4 shadow-sm hover:shadow-md active:scale-[0.98] transition-all cursor-pointer"
           >
             <div className="flex items-start justify-between gap-2">
               <div className="flex items-center gap-2 flex-wrap min-w-0">
@@ -166,11 +184,11 @@ function JobConditions({ job }: { job: JobWithMatch }) {
         <p className="text-muted-foreground">条件: {parts.join(" / ")}</p>
       )}
       {job.unmatchReasons.length > 0 && (
-        <div className="mt-1 flex flex-wrap gap-1">
+        <div className="mt-1 space-y-0.5">
           {job.unmatchReasons.map((r) => (
-            <span key={r.field} className="text-red-600 text-xs">
-              ⚠ {r.label}
-            </span>
+            <p key={r.field} className="text-red-600 text-xs">
+              ⚠ {r.detail}
+            </p>
           ))}
         </div>
       )}

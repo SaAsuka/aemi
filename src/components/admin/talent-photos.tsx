@@ -10,21 +10,31 @@ import type { TalentPhoto } from "@/generated/prisma/client"
 
 export function TalentPhotos({ talentId, photos: initialPhotos }: { talentId: string; photos: TalentPhoto[] }) {
   const [photos, setPhotos] = useState(initialPhotos)
-  const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
   const [dragIdx, setDragIdx] = useState<number | null>(null)
 
   const [error, setError] = useState<string | null>(null)
 
+  const uploading = Object.keys(uploadProgress).length > 0
+
   const handleUpload = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files
     if (!files?.length) return
-    setUploading(true)
     setError(null)
     try {
       for (const file of Array.from(files)) {
+        setUploadProgress((prev) => ({ ...prev, [file.name]: 0 }))
         const blob = await upload(file.name, file, {
           access: "private",
           handleUploadUrl: "/api/upload",
+          onUploadProgress: ({ percentage }) => {
+            setUploadProgress((prev) => ({ ...prev, [file.name]: percentage }))
+          },
+        })
+        setUploadProgress((prev) => {
+          const next = { ...prev }
+          delete next[file.name]
+          return next
         })
         await addTalentPhoto(talentId, blob.url)
       }
@@ -33,8 +43,7 @@ export function TalentPhotos({ talentId, photos: initialPhotos }: { talentId: st
       const msg = err instanceof Error ? err.message : "アップロードに失敗しました"
       setError(msg)
       console.error("写真アップロードエラー:", err)
-    } finally {
-      setUploading(false)
+      setUploadProgress({})
     }
   }, [talentId])
 
@@ -73,6 +82,17 @@ export function TalentPhotos({ talentId, photos: initialPhotos }: { talentId: st
         />
         <p className="text-xs text-muted-foreground">先頭2枚がプロフィール1ページ目、残りはギャラリーページに表示</p>
       </div>
+      {Object.entries(uploadProgress).map(([name, pct]) => (
+        <div key={name} className="space-y-1">
+          <p className="text-xs text-muted-foreground truncate">{name}</p>
+          <div className="h-2 rounded-full bg-muted overflow-hidden">
+            <div
+              className="h-full bg-primary rounded-full transition-all duration-300"
+              style={{ width: `${pct}%` }}
+            />
+          </div>
+        </div>
+      ))}
       {error && (
         <p className="text-sm text-red-500">{error}</p>
       )}

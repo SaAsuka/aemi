@@ -261,6 +261,22 @@ export async function getTalentApplications(talentId: string) {
   })
 }
 
+export async function getTalentForProfile(talentId: string) {
+  return prisma.talent.findUnique({
+    where: { id: talentId },
+    select: {
+      lastName: true, firstName: true, lastNameKana: true, firstNameKana: true,
+      stageName: true, phone: true, gender: true, birthDate: true,
+      height: true, bust: true, waist: true, hip: true,
+      skills: true, career: true, category: true,
+      birthplace: true, address: true, nearestStation: true,
+      photos: { select: { id: true } },
+      socialLinks: { select: { platform: true, url: true } },
+      bankAccount: { select: { bankName: true } },
+    },
+  })
+}
+
 export async function getTalentForSettings(talentId: string) {
   return prisma.talent.findUnique({
     where: { id: talentId },
