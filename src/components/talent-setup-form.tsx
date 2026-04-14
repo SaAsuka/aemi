@@ -216,6 +216,7 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
   const [step, setStep] = useState(1)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string | undefined>>({})
   const [serverErrors, setServerErrors] = useState<Record<string, string[]> | null>(null)
+  const [stepError, setStepError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
   const [restored, setRestored] = useState(false)
@@ -362,11 +363,19 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
       for (const key of Object.keys(cleared)) delete next[key]
       return { ...next, ...errors }
     })
+    if (!valid) {
+      const count = Object.keys(errors).length
+      setStepError(`未入力の項目が${count}件あります`)
+      window.scrollTo(0, 0)
+    } else {
+      setStepError(null)
+    }
     return valid
   }, [step])
 
   const goNext = useCallback(() => {
     if (validateCurrentStep()) {
+      setStepError(null)
       saveDraft()
       const next = Math.min(step + 1, TOTAL_STEPS)
       setStep(next)
@@ -394,6 +403,8 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
       const s = FIELD_TO_STEP[key]
       if (s && s < minStep) minStep = s
     }
+    const count = Object.keys(errors).length
+    setStepError(`入力内容にエラーが${count}件あります`)
     setStep(minStep)
     window.scrollTo(0, 0)
   }, [])
@@ -433,10 +444,13 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
 
     setFieldErrors(errors)
     if (firstErrorStep) {
+      const count = Object.keys(errors).length
+      setStepError(`未入力の項目が${count}件あります`)
       setStep(firstErrorStep)
       window.scrollTo(0, 0)
       return false
     }
+    setStepError(null)
     return true
   }, [])
 
@@ -485,6 +499,12 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
       {restored && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
           前回の入力データを復元しました
+        </div>
+      )}
+
+      {stepError && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          {stepError}
         </div>
       )}
 
