@@ -11,7 +11,7 @@ export const talentBaseSchema = z.object({
   nameRomaji: optionalString,
   email: z.string().email("メールアドレスの形式が不正です").optional().or(z.literal("")),
   phone: optionalString,
-  gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional(),
+  gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().or(z.literal("")),
   birthDate: optionalString,
   height: z.coerce.number().int().positive().optional().or(z.literal("")),
   bust: z.coerce.number().int().positive().optional().or(z.literal("")),
