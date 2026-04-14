@@ -430,12 +430,12 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="lastName">姓 *</Label>
-                <Input id="lastName" name="lastName" required onBlur={handleBlur} />
+                <Input id="lastName" name="lastName" onBlur={handleBlur} />
                 <FieldError name="lastName" clientErrors={fieldErrors} serverErrors={state?.error} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="firstName">名 *</Label>
-                <Input id="firstName" name="firstName" required onBlur={handleBlur} />
+                <Input id="firstName" name="firstName" onBlur={handleBlur} />
                 <FieldError name="firstName" clientErrors={fieldErrors} serverErrors={state?.error} />
               </div>
             </div>
@@ -443,12 +443,12 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="lastNameKana">セイ *</Label>
-                <Input id="lastNameKana" name="lastNameKana" required onBlur={handleBlur} />
+                <Input id="lastNameKana" name="lastNameKana" onBlur={handleBlur} />
                 <FieldError name="lastNameKana" clientErrors={fieldErrors} serverErrors={state?.error} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="firstNameKana">メイ *</Label>
-                <Input id="firstNameKana" name="firstNameKana" required onBlur={handleBlur} />
+                <Input id="firstNameKana" name="firstNameKana" onBlur={handleBlur} />
                 <FieldError name="firstNameKana" clientErrors={fieldErrors} serverErrors={state?.error} />
               </div>
             </div>
@@ -610,12 +610,12 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
               <div className="space-y-2">
                 <Label htmlFor="bankName">銀行名 *</Label>
-                <Input id="bankName" name="bankName" required onBlur={handleBlur} />
+                <Input id="bankName" name="bankName" onBlur={handleBlur} />
                 <FieldError name="bankName" clientErrors={fieldErrors} serverErrors={state?.error} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="bankBranch">支店名 *</Label>
-                <Input id="bankBranch" name="bankBranch" required onBlur={handleBlur} />
+                <Input id="bankBranch" name="bankBranch" onBlur={handleBlur} />
                 <FieldError name="bankBranch" clientErrors={fieldErrors} serverErrors={state?.error} />
               </div>
               <div className="space-y-2">
@@ -633,12 +633,12 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
               </div>
               <div className="space-y-2">
                 <Label htmlFor="bankAccountNumber">口座番号 *</Label>
-                <Input id="bankAccountNumber" name="bankAccountNumber" required onBlur={handleBlur} />
+                <Input id="bankAccountNumber" name="bankAccountNumber" onBlur={handleBlur} />
                 <FieldError name="bankAccountNumber" clientErrors={fieldErrors} serverErrors={state?.error} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="bankAccountHolder">口座名義 *</Label>
-                <Input id="bankAccountHolder" name="bankAccountHolder" required onBlur={handleBlur} />
+                <Input id="bankAccountHolder" name="bankAccountHolder" onBlur={handleBlur} />
                 <FieldError name="bankAccountHolder" clientErrors={fieldErrors} serverErrors={state?.error} />
               </div>
             </div>
@@ -658,12 +658,12 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <div className="space-y-2">
                 <Label htmlFor="password">パスワード *</Label>
-                <Input id="password" name="password" type="password" required minLength={8} onBlur={handleBlur} />
+                <Input id="password" name="password" type="password" onBlur={handleBlur} />
                 <FieldError name="password" clientErrors={fieldErrors} serverErrors={state?.error} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="passwordConfirm">パスワード確認 *</Label>
-                <Input id="passwordConfirm" name="passwordConfirm" type="password" required minLength={8} onBlur={handleBlur} />
+                <Input id="passwordConfirm" name="passwordConfirm" type="password" onBlur={handleBlur} />
                 <FieldError name="passwordConfirm" clientErrors={fieldErrors} serverErrors={state?.error} />
               </div>
             </div>
