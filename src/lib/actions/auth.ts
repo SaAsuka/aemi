@@ -24,7 +24,7 @@ export async function inviteTalent(email: string) {
   return { success: true }
 }
 
-export async function passwordLogin(email: string, password: string) {
+export async function passwordLogin(email: string, password: string, redirectTo?: string) {
   const talent = await prisma.talent.findFirst({
     where: { email, emailVerified: true },
     select: { id: true, passwordHash: true, nameKana: true, mustChangePassword: true },
@@ -48,7 +48,7 @@ export async function passwordLogin(email: string, password: string) {
     ? "/setup"
     : talent.mustChangePassword
       ? "/mypage/settings"
-      : "/mypage"
+      : redirectTo && redirectTo.startsWith("/") ? redirectTo : "/mypage"
 
   return { success: true, redirect }
 }

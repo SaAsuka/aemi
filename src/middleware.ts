@@ -23,13 +23,17 @@ export async function middleware(request: NextRequest) {
     if (t) return response
 
     if (!session.talentId || session.role !== "talent") {
-      return NextResponse.redirect(new URL("/auth/login", request.url))
+      const loginUrl = new URL("/auth/login", request.url)
+      loginUrl.searchParams.set("redirect", pathname)
+      return NextResponse.redirect(loginUrl)
     }
   }
 
-  if (pathname === "/subscribe" || pathname === "/setup" || pathname.startsWith("/mypage")) {
+  if (pathname === "/subscribe" || pathname === "/setup" || pathname.startsWith("/mypage") || pathname === "/welcome") {
     if (!session.talentId || session.role !== "talent") {
-      return NextResponse.redirect(new URL("/auth/login", request.url))
+      const loginUrl = new URL("/auth/login", request.url)
+      loginUrl.searchParams.set("redirect", pathname)
+      return NextResponse.redirect(loginUrl)
     }
   }
 
@@ -37,5 +41,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/jobs/:path*", "/subscribe", "/setup", "/mypage/:path*"],
+  matcher: ["/admin/:path*", "/jobs/:path*", "/subscribe", "/setup", "/mypage/:path*", "/welcome"],
 }

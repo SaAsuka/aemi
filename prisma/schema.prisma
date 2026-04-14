@@ -102,7 +102,8 @@ model Talent {
   birthplace   String?
   address      String?
   representativeWork String? @db.Text
-  lineUserId   String?
+  lineUserId        String?
+  lineNotifyEnabled Boolean  @default(true)
   profileImage String?
   resume         String?
   resumeSource   String?            @default("auto")
@@ -116,12 +117,13 @@ model Talent {
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
-  applications  Application[]
-  photos        TalentPhoto[]
-  works         TalentWork[]
-  bankAccount   TalentBankAccount?
-  socialLinks   TalentSocialLink[]
-  subscription  TalentSubscription?
+  applications      Application[]
+  photos            TalentPhoto[]
+  works             TalentWork[]
+  bankAccount       TalentBankAccount?
+  socialLinks       TalentSocialLink[]
+  subscription      TalentSubscription?
+  deadlineReminders DeadlineReminder[]
 
   @@map("talents")
 }
@@ -224,9 +226,10 @@ model Job {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
-  applications Application[]
-  requirements JobRequirement[]
-  dates        JobDate[]
+  applications      Application[]
+  requirements      JobRequirement[]
+  dates             JobDate[]
+  deadlineReminders DeadlineReminder[]
 
   @@index([clientId])
   @@index([status])
@@ -329,4 +332,18 @@ model ApplicationSubmission {
   @@unique([applicationId, category])
   @@index([applicationId])
   @@map("application_submissions")
+}
+
+model DeadlineReminder {
+  id       String   @id @default(cuid())
+  jobId    String
+  job      Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  talentId String
+  talent   Talent   @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  sentAt   DateTime @default(now())
+
+  @@unique([jobId, talentId])
+  @@index([jobId])
+  @@index([talentId])
+  @@map("deadline_reminders")
 }

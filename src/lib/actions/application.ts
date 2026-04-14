@@ -3,6 +3,7 @@
 import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
 import { applicationSchema } from "@/lib/validations/application"
+import { sendLinePush, buildStatusMessage } from "@/lib/line"
 
 function buildAppWhere(status?: string, jobId?: string) {
   const where: Record<string, unknown> = {}
@@ -159,6 +160,8 @@ export async function createApplication(formData: FormData) {
   return { success: true }
 }
 
+const NOTIFY_STATUSES = new Set(["RESUME_SENT", "ACCEPTED", "REJECTED"])
+
 export async function updateApplicationStatus(id: string, status: string) {
   const validStatuses = ["APPLIED", "RESUME_SENT", "ACCEPTED", "REJECTED", "AUTO_REJECTED", "CANCELLED"]
   if (!validStatuses.includes(status)) {
@@ -167,13 +170,25 @@ export async function updateApplicationStatus(id: string, status: string) {
 
   const decidedStatuses = ["ACCEPTED", "REJECTED", "AUTO_REJECTED", "CANCELLED"]
 
-  await prisma.application.update({
+  const application = await prisma.application.update({
     where: { id },
     data: {
       status: status as "APPLIED" | "RESUME_SENT" | "ACCEPTED" | "REJECTED" | "AUTO_REJECTED" | "CANCELLED",
       decidedAt: decidedStatuses.includes(status) ? new Date() : null,
     },
+    select: {
+      talent: { select: { lineUserId: true, lineNotifyEnabled: true } },
+      job: { select: { id: true, title: true } },
+      schedule: { select: { date: true, startTime: true, endTime: true, location: true } },
+    },
   })
+
+  if (NOTIFY_STATUSES.has(status) && application.talent.lineUserId && application.talent.lineNotifyEnabled) {
+    const message = buildStatusMessage(status, application.job.title, application.job.id, application.schedule)
+    sendLinePush(application.talent.lineUserId, message).catch((err) => {
+      console.error("[LINE] ステータス通知送信エラー:", err)
+    })
+  }
 
   revalidatePath("/admin/applications")
   updateTag("talents")

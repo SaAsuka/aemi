@@ -1,11 +1,21 @@
 "use client"
 
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, Suspense } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import { passwordLogin, requestPasswordReset } from "@/lib/actions/auth"
 
 export default function TalentLoginPage() {
+  return (
+    <Suspense>
+      <LoginContent />
+    </Suspense>
+  )
+}
+
+function LoginContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectTo = searchParams.get("redirect") || undefined
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState("")
@@ -17,7 +27,7 @@ export default function TalentLoginPage() {
     setLoading(true)
     setError("")
 
-    const result = await passwordLogin(email, password)
+    const result = await passwordLogin(email, password, redirectTo)
     setLoading(false)
 
     if (result.error === "NO_PASSWORD") {

@@ -18,3 +18,18 @@ export async function disconnectLine() {
   revalidatePath("/mypage/settings")
   return { success: true }
 }
+
+export async function updateLineNotifySetting(enabled: boolean) {
+  const session = await getSession()
+  if (!session.talentId || session.role !== "talent") {
+    return { error: "認証エラー" }
+  }
+
+  await prisma.talent.update({
+    where: { id: session.talentId },
+    data: { lineNotifyEnabled: enabled },
+  })
+
+  revalidatePath("/mypage/settings")
+  return { success: true }
+}

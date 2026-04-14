@@ -52,7 +52,7 @@ export default async function SettingsPage() {
             <MessageCircle className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-semibold">LINE通知</h2>
           </div>
-          <LineConnectSection connected={!!talent.lineUserId} />
+          <LineConnectSection connected={!!talent.lineUserId} notifyEnabled={talent.lineNotifyEnabled} />
         </section>
 
         <section className="space-y-4">

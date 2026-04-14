@@ -1,16 +1,24 @@
 "use client"
 
 import { useSearchParams } from "next/navigation"
-import { MessageCircle, Check, ExternalLink } from "lucide-react"
+import { MessageCircle, Check, ExternalLink, Bell, BellOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { disconnectLine } from "@/lib/actions/line"
+import { disconnectLine, updateLineNotifySetting } from "@/lib/actions/line"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
-export function LineConnectSection({ connected }: { connected: boolean }) {
+export function LineConnectSection({
+  connected,
+  notifyEnabled = true,
+}: {
+  connected: boolean
+  notifyEnabled?: boolean
+}) {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [toast, setToast] = useState<string | null>(null)
+  const [notify, setNotify] = useState(notifyEnabled)
+  const [toggling, setToggling] = useState(false)
 
   useEffect(() => {
     const lineStatus = searchParams.get("line")
@@ -23,11 +31,19 @@ export function LineConnectSection({ connected }: { connected: boolean }) {
     }
   }, [searchParams, router])
 
+  const handleToggleNotify = async () => {
+    setToggling(true)
+    const newValue = !notify
+    setNotify(newValue)
+    await updateLineNotifySetting(newValue)
+    setToggling(false)
+  }
+
   if (connected) {
     return (
-      <div className="rounded-lg border border-green-200 bg-green-50 p-5">
+      <div className="rounded-lg border border-green-200 bg-green-50 p-5 space-y-4">
         {toast && (
-          <div className="mb-3 rounded-md bg-green-100 px-3 py-2 text-sm text-green-800">
+          <div className="rounded-md bg-green-100 px-3 py-2 text-sm text-green-800">
             {toast}
           </div>
         )}
@@ -40,10 +56,34 @@ export function LineConnectSection({ connected }: { connected: boolean }) {
             <p className="text-sm text-green-600">新しい案件が登録されるとLINEで通知が届きます</p>
           </div>
         </div>
+
+        <div className="flex items-center justify-between rounded-md border border-green-200 bg-white p-3">
+          <div className="flex items-center gap-2">
+            {notify ? <Bell className="h-4 w-4 text-green-600" /> : <BellOff className="h-4 w-4 text-muted-foreground" />}
+            <span className="text-sm">LINE通知</span>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={notify}
+            disabled={toggling}
+            onClick={handleToggleNotify}
+            className={`relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors disabled:opacity-50 ${
+              notify ? "bg-green-500" : "bg-gray-200"
+            }`}
+          >
+            <span
+              className={`pointer-events-none inline-block h-5 w-5 rounded-full bg-white shadow transform transition-transform ${
+                notify ? "translate-x-5" : "translate-x-0"
+              }`}
+            />
+          </button>
+        </div>
+
         <Button
           variant="ghost"
           size="sm"
-          className="mt-3 text-green-700 hover:text-red-600"
+          className="text-green-700 hover:text-red-600"
           onClick={async () => {
             if (!confirm("LINE連携を解除しますか？案件の通知が届かなくなります。")) return
             await disconnectLine()
@@ -59,7 +99,7 @@ export function LineConnectSection({ connected }: { connected: boolean }) {
   return (
     <div className="rounded-lg border border-dashed border-gray-300 p-5">
       {toast && (
-        <div className="mb-3 rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
+        <div className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-800">
           {toast}
         </div>
       )}
