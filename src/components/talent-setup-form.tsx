@@ -447,16 +447,35 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
 
     setIsSubmitting(true)
     setServerErrors(null)
-    const formData = new FormData(formRef.current)
-    const result = await setupTalent(formData)
-    setIsSubmitting(false)
+    try {
+      const formData = new FormData(formRef.current)
 
-    if (result?.success && result.redirect) {
-      sessionStorage.removeItem(STORAGE_KEY)
-      router.push(result.redirect)
-    } else if (result?.error) {
-      setServerErrors(result.error)
-      navigateToErrorStep(result.error)
+      // Base UI Selectの値がFormDataに含まれない場合を補完
+      const selects = formRef.current.querySelectorAll("[data-slot='select-trigger']")
+      selects.forEach((trigger) => {
+        const root = trigger.closest("[data-select]") || trigger.parentElement
+        const hiddenInput = root?.querySelector("input[type='hidden']") as HTMLInputElement | null
+        if (hiddenInput?.name && hiddenInput.value && !formData.get(hiddenInput.name)) {
+          formData.set(hiddenInput.name, hiddenInput.value)
+        }
+      })
+
+      const result = await setupTalent(formData)
+
+      if (result?.success && result.redirect) {
+        sessionStorage.removeItem(STORAGE_KEY)
+        router.push(result.redirect)
+        return
+      }
+      if (result?.error) {
+        setServerErrors(result.error)
+        navigateToErrorStep(result.error)
+      }
+    } catch (err) {
+      console.error("セットアップ送信エラー:", err)
+      setServerErrors({ _form: ["送信中にエラーが発生しました。もう一度お試しください。"] })
+    } finally {
+      setIsSubmitting(false)
     }
   }, [validateAllSteps, navigateToErrorStep, router])
 
@@ -467,6 +486,12 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
       {restored && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
           前回の入力データを復元しました
+        </div>
+      )}
+
+      {serverErrors?._form && (
+        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+          {serverErrors._form[0]}
         </div>
       )}
 
