@@ -327,9 +327,9 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
     const errors: Record<string, string | undefined> = {}
     let valid = true
 
+    const formData = new FormData(form)
     for (const name of fields) {
-      const el = form.elements.namedItem(name)
-      const value = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement ? el.value : ""
+      const value = (formData.get(name) as string) ?? ""
       if (!value.trim()) {
         errors[name] = "この項目は必須です"
         valid = false
@@ -337,8 +337,8 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
     }
 
     if (step === 4) {
-      const pw = (form.elements.namedItem("password") as HTMLInputElement)?.value ?? ""
-      const confirm = (form.elements.namedItem("passwordConfirm") as HTMLInputElement)?.value ?? ""
+      const pw = (formData.get("password") as string) ?? ""
+      const confirm = (formData.get("passwordConfirm") as string) ?? ""
       if (pw && pw.length < 8) {
         errors["password"] = "パスワードは8文字以上で入力してください"
         valid = false
@@ -400,7 +400,7 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
 
   const validateAllSteps = useCallback((): boolean => {
     if (!formRef.current) return false
-    const form = formRef.current
+    const formData = new FormData(formRef.current)
     const allRequired: Record<number, string[]> = {
       1: ["lastName", "firstName", "lastNameKana", "firstNameKana"],
       3: ["bankName", "bankBranch", "bankAccountType", "bankAccountNumber", "bankAccountHolder"],
@@ -412,8 +412,7 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
     for (const [stepStr, fields] of Object.entries(allRequired)) {
       const s = Number(stepStr)
       for (const name of fields) {
-        const el = form.elements.namedItem(name)
-        const value = el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement ? el.value : ""
+        const value = (formData.get(name) as string) ?? ""
         if (!value.trim()) {
           errors[name] = "この項目は必須です"
           if (!firstErrorStep) firstErrorStep = s
@@ -421,8 +420,8 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
       }
     }
 
-    const pw = (form.elements.namedItem("password") as HTMLInputElement)?.value ?? ""
-    const confirm = (form.elements.namedItem("passwordConfirm") as HTMLInputElement)?.value ?? ""
+    const pw = (formData.get("password") as string) ?? ""
+    const confirm = (formData.get("passwordConfirm") as string) ?? ""
     if (pw && pw.length < 8) {
       errors["password"] = "パスワードは8文字以上で入力してください"
       if (!firstErrorStep) firstErrorStep = 4
