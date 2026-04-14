@@ -204,7 +204,10 @@ function FieldError({ name, clientErrors, serverErrors }: {
   serverErrors?: Record<string, string[]> | null
 }) {
   const clientErr = clientErrors[name]
-  const serverErr = serverErrors?.[name]?.[0]
+  let serverErr = serverErrors?.[name]?.[0]
+  if (serverErr && !/[\u3000-\u9fff]/.test(serverErr)) {
+    serverErr = "入力内容を確認してください"
+  }
   const msg = clientErr || serverErr
   if (!msg) return null
   return <p className="text-sm text-destructive">{msg}</p>
@@ -393,8 +396,20 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
 
   const FIELD_TO_STEP: Record<string, number> = {
     lastName: 1, firstName: 1, lastNameKana: 1, firstNameKana: 1,
+    gender: 1, birthDate: 1, category: 1, phone: 1,
+    height: 2, bust: 2, waist: 2, hip: 2, shoeSize: 2,
     bankName: 3, bankBranch: 3, bankAccountType: 3, bankAccountNumber: 3, bankAccountHolder: 3,
+    instagramUrl: 3, xUrl: 3, tiktokUrl: 3, websiteUrl: 3,
     password: 4, passwordConfirm: 4,
+  }
+
+  const FIELD_LABELS: Record<string, string> = {
+    lastName: "姓", firstName: "名", lastNameKana: "セイ", firstNameKana: "メイ",
+    gender: "性別", birthDate: "生年月日", category: "カテゴリ", phone: "電話番号",
+    height: "身長", bust: "B", waist: "W", hip: "H", shoeSize: "靴サイズ",
+    bankName: "銀行名", bankBranch: "支店名", bankAccountType: "種別",
+    bankAccountNumber: "口座番号", bankAccountHolder: "口座名義",
+    password: "パスワード", passwordConfirm: "パスワード確認",
   }
 
   const navigateToErrorStep = useCallback((errors: Record<string, string[]>) => {
@@ -403,8 +418,13 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
     for (const [key, msgs] of Object.entries(errors)) {
       if (key === "_form") continue
       const s = FIELD_TO_STEP[key]
-      if (s && s < minStep) minStep = s
-      if (msgs[0]) messages.push(msgs[0])
+      if (s != null && s < minStep) minStep = s
+      const label = FIELD_LABELS[key] || key
+      const msg = msgs[0]
+      if (msg) {
+        const isJapanese = /[\u3000-\u9fff]/.test(msg)
+        messages.push(isJapanese ? msg : `${label}の入力内容を確認してください`)
+      }
     }
     setStepError(messages.length > 0 ? messages.join("、") : "入力内容にエラーがあります")
     setStep(minStep)
