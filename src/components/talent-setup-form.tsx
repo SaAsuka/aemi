@@ -233,6 +233,18 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
     }
   }, [state, router])
 
+  // ブラウザ戻るボタンでステップを戻す
+  useEffect(() => {
+    const handler = (e: PopStateEvent) => {
+      const s = e.state?.setupStep as number | undefined
+      if (s && s >= 1 && s <= TOTAL_STEPS) {
+        setStep(s)
+      }
+    }
+    window.addEventListener("popstate", handler)
+    return () => window.removeEventListener("popstate", handler)
+  }, [])
+
   // セッションストレージからの復元
   useEffect(() => {
     try {
@@ -282,23 +294,30 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
     saveDraft()
   }, [saveDraft])
 
-  // リアルタイムバリデーション（onBlur）
+  // リアルタイムバリデーション（onBlur）— フィールド単体で検証
   const validateField = useCallback((name: string, value: string) => {
-    const result = setupSchema.safeParse({ [name]: value })
-    if (result.success) {
-      setFieldErrors((prev) => {
-        if (!prev[name]) return prev
-        const next = { ...prev }
-        delete next[name]
-        return next
-      })
-    } else {
-      const fieldErrors = result.error.flatten().fieldErrors as Record<string, string[] | undefined>
-      const fieldError = fieldErrors[name]
-      if (fieldError?.[0]) {
-        setFieldErrors((prev) => ({ ...prev, [name]: fieldError[0] }))
-      }
+    const rules: Record<string, (v: string) => string | null> = {
+      lastName: (v) => v.trim() ? null : "姓は必須です",
+      firstName: (v) => v.trim() ? null : "名は必須です",
+      lastNameKana: (v) => v.trim() ? null : "セイは必須です",
+      firstNameKana: (v) => v.trim() ? null : "メイは必須です",
+      bankName: (v) => v.trim() ? null : "銀行名は必須です",
+      bankBranch: (v) => v.trim() ? null : "支店名は必須です",
+      bankAccountNumber: (v) => v.trim() ? null : "口座番号は必須です",
+      bankAccountHolder: (v) => v.trim() ? null : "口座名義は必須です",
+      password: (v) => v.length >= 8 ? null : "パスワードは8文字以上で入力してください",
     }
+    const rule = rules[name]
+    if (!rule) return
+
+    const error = rule(value)
+    setFieldErrors((prev) => {
+      if (error) return { ...prev, [name]: error }
+      if (!prev[name]) return prev
+      const next = { ...prev }
+      delete next[name]
+      return next
+    })
   }, [])
 
   const handleBlur = useCallback((e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -342,22 +361,38 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
       }
     }
 
-    setFieldErrors((prev) => ({ ...prev, ...errors }))
+    const cleared: Record<string, string | undefined> = {}
+    for (const name of fields) {
+      if (!errors[name]) cleared[name] = undefined
+    }
+    if (step === 4) {
+      if (!errors["password"]) cleared["password"] = undefined
+      if (!errors["passwordConfirm"]) cleared["passwordConfirm"] = undefined
+    }
+    setFieldErrors((prev) => {
+      const next = { ...prev }
+      for (const key of Object.keys(cleared)) delete next[key]
+      return { ...next, ...errors }
+    })
     return valid
   }, [step])
 
   const goNext = useCallback(() => {
     if (validateCurrentStep()) {
       saveDraft()
-      setStep((s) => Math.min(s + 1, TOTAL_STEPS))
+      const next = Math.min(step + 1, TOTAL_STEPS)
+      setStep(next)
+      history.pushState({ setupStep: next }, "")
       window.scrollTo({ top: 0, behavior: "smooth" })
     }
-  }, [validateCurrentStep, saveDraft])
+  }, [validateCurrentStep, saveDraft, step])
 
   const goPrev = useCallback(() => {
-    setStep((s) => Math.max(s - 1, 1))
+    const prev = Math.max(step - 1, 1)
+    setStep(prev)
+    history.pushState({ setupStep: prev }, "")
     window.scrollTo({ top: 0, behavior: "smooth" })
-  }, [])
+  }, [step])
 
   return (
     <div className="space-y-6">
