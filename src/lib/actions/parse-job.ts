@@ -87,6 +87,7 @@ const SYSTEM_PROMPT = `あなたはキャスティング案件のテキストを
 - テキストから読み取れない項目はnullにする
 - タレント名はテキストに書かれたまま出力する
 - 日付は可能な限りYYYY-MM-DD形式に変換する。年が省略されている場合（例: "4/13"）は現在の年（${new Date().getFullYear()}年）を使用する
+- 締切(deadline)の時間: 締切時間が明示されている場合（例: "12時まで"、"15:00締切"、"正午"）はその時間を設定する。時間が明示されていない場合はT23:59:00とする
 - 金額は数値に変換する（文字列ではなく数値型で出力）
 
 具体例:
@@ -97,7 +98,7 @@ const SYSTEM_PROMPT = `あなたはキャスティング案件のテキストを
     "clientCompanyName": null,
     "clientContactName": null,
     "location": "渋谷スタジオ",
-    "deadline": "2026-04-05T00:00:00",
+    "deadline": "2026-04-05T23:59:00",
     "dates": [
       { "type": "SHOOTING", "date": "2026-04-10", "startTime": null, "endTime": null, "location": null, "note": null }
     ],

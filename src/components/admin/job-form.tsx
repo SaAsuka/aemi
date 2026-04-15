@@ -200,10 +200,17 @@ export function JobForm({
             <Input
               id="deadline"
               name="deadline"
-              type="date"
+              type="datetime-local"
               defaultValue={
                 job?.deadline
-                  ? new Date(job.deadline).toISOString().split("T")[0]
+                  ? (() => {
+                      const d = new Date(job.deadline)
+                      const pad = (n: number) => String(n).padStart(2, "0")
+                      if (d.getHours() === 23 && d.getMinutes() === 59) {
+                        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+                      }
+                      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+                    })()
                   : ""
               }
             />

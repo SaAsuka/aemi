@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { formatDate } from "@/lib/utils/date"
+import { formatDate, formatDeadline } from "@/lib/utils/date"
 import { firstDateByType } from "@/lib/utils/job-dates"
 import { ApplicationStatusSelect } from "@/components/admin/application-status-select"
 import { LineCopyButton } from "@/components/admin/line-copy-button"
@@ -147,7 +147,7 @@ export function ApplicationTable({
                   <SubmissionLinks submissions={app.submissions} />
                 </TableCell>
                 <TableCell className="hidden sm:table-cell">
-                  {app.job.deadline ? formatDate(app.job.deadline) : "−"}
+                  {app.job.deadline ? formatDeadline(app.job.deadline) : "−"}
                 </TableCell>
                 <TableCell className="hidden md:table-cell">
                   {firstDateByType(app.job.dates, "AUDITION") ?? "−"}

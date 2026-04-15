@@ -1,3 +1,5 @@
+import { formatShortDeadline } from "@/lib/utils/date"
+
 const LINE_API = "https://api.line.me/v2/bot/message/push"
 const TOKEN = process.env.LINE_CHANNEL_ACCESS_TOKEN
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "https://app.vozel.jp"
@@ -87,7 +89,7 @@ export function buildStatusMessage(
 }
 
 export function buildDeadlineReminderMessage(jobTitle: string, jobId: string, deadlineDate: Date): string {
-  const deadline = new Date(deadlineDate).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })
+  const deadline = formatShortDeadline(deadlineDate)
   const jobUrl = `${BASE_URL}/jobs/${jobId}`
 
   return [

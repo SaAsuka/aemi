@@ -3,6 +3,7 @@
 import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
 import { getDefaultClientId } from "@/lib/queries"
+import { normalizeDeadline } from "@/lib/utils/date"
 
 type Gender = "MALE" | "FEMALE" | "OTHER"
 
@@ -53,7 +54,7 @@ export async function applyParsedJob(input: ApplyInput): Promise<
       ageMax: input.ageMax ?? null,
       heightMin: input.heightMin ?? null,
       heightMax: input.heightMax ?? null,
-      deadline: input.deadline ? new Date(input.deadline) : null,
+      deadline: input.deadline ? normalizeDeadline(input.deadline) : null,
       capacity: input.capacity ?? null,
       note: input.note || null,
     }
@@ -112,7 +113,7 @@ export async function applyParsedJobs(inputs: ApplyInput[]): Promise<
         ageMax: input.ageMax ?? null,
         heightMin: input.heightMin ?? null,
         heightMax: input.heightMax ?? null,
-        deadline: input.deadline ? new Date(input.deadline) : null,
+        deadline: input.deadline ? normalizeDeadline(input.deadline) : null,
         capacity: input.capacity ?? null,
         note: input.note || null,
       }

@@ -6,7 +6,7 @@ import { jobSchema } from "@/lib/validations/job"
 import { getDefaultClientId } from "@/lib/queries"
 import { matchTalentToJob } from "@/lib/utils/job-matching"
 import { sendLinePush } from "@/lib/line"
-import { formatDate } from "@/lib/utils/date"
+import { formatDate, normalizeDeadline } from "@/lib/utils/date"
 
 const JOB_SORT_FIELDS = ["title", "fee", "deadline", "status", "createdAt"] as const
 
@@ -22,10 +22,9 @@ export async function getJobCount(search?: string, status?: string) {
 }
 
 export async function getJobs(search?: string, status?: string, talentId?: string, sort?: string, order?: string, page?: number) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const now = new Date()
   await prisma.job.updateMany({
-    where: { status: "CLOSED", deadline: { gte: today } },
+    where: { status: "CLOSED", deadline: { gte: now } },
     data: { status: "OPEN" },
   })
 
@@ -93,14 +92,13 @@ export async function getJob(id: string) {
 }
 
 export async function getOpenJobs() {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const now = new Date()
   return prisma.job.findMany({
     where: {
       status: "OPEN",
       OR: [
         { deadline: null },
-        { deadline: { gte: today } },
+        { deadline: { gte: now } },
       ],
     },
     orderBy: { createdAt: "desc" },
@@ -115,15 +113,14 @@ export async function getOpenJobs() {
 }
 
 export async function getOpenJob(id: string) {
-  const today = new Date()
-  today.setHours(0, 0, 0, 0)
+  const now = new Date()
   return prisma.job.findUnique({
     where: {
       id,
       status: "OPEN",
       OR: [
         { deadline: null },
-        { deadline: { gte: today } },
+        { deadline: { gte: now } },
       ],
     },
     select: {
@@ -188,7 +185,7 @@ export async function createJob(formData: FormData) {
       ageMax: typeof data.ageMax === "number" ? data.ageMax : null,
       heightMin: typeof data.heightMin === "number" ? data.heightMin : null,
       heightMax: typeof data.heightMax === "number" ? data.heightMax : null,
-      deadline: data.deadline ? new Date(data.deadline) : null,
+      deadline: data.deadline ? normalizeDeadline(data.deadline) : null,
       capacity: typeof data.capacity === "number" ? data.capacity : null,
       status: data.status,
       note: data.note || null,
@@ -259,7 +256,7 @@ export async function updateJob(id: string, formData: FormData) {
         ageMax: typeof data.ageMax === "number" ? data.ageMax : null,
         heightMin: typeof data.heightMin === "number" ? data.heightMin : null,
         heightMax: typeof data.heightMax === "number" ? data.heightMax : null,
-        deadline: data.deadline ? new Date(data.deadline) : null,
+        deadline: data.deadline ? normalizeDeadline(data.deadline) : null,
         capacity: typeof data.capacity === "number" ? data.capacity : null,
         status: data.status,
         note: data.note || null,

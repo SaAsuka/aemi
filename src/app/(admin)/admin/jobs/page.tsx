@@ -18,7 +18,7 @@ import { JOB_STATUS_LABELS } from "@/types"
 import { SearchForm } from "@/components/admin/search-form"
 import { StatusFilter } from "@/components/admin/status-filter"
 import { matchTalentToJob } from "@/lib/utils/job-matching"
-import { formatDate } from "@/lib/utils/date"
+import { formatDate, formatDeadline } from "@/lib/utils/date"
 import { firstDateByType } from "@/lib/utils/job-dates"
 import { Pagination } from "@/components/admin/pagination"
 import { SortableHeader } from "@/components/admin/sortable-header"
@@ -103,7 +103,7 @@ export default async function JobsPage({
                       {job.fee ? `¥${job.fee.toLocaleString()}` : "−"}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
-                      {job.deadline ? formatDate(job.deadline) : "−"}
+                      {job.deadline ? formatDeadline(job.deadline) : "−"}
                     </TableCell>
                     <TableCell className="hidden md:table-cell">
                       {firstDateByType(job.dates, "AUDITION") ?? "−"}

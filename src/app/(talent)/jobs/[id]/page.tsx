@@ -4,7 +4,7 @@ import { requireTalent } from "@/lib/auth"
 import { getTalentByToken } from "@/lib/actions/talent"
 import { getOpenJob } from "@/lib/actions/job"
 import { prisma } from "@/lib/db"
-import { formatDate } from "@/lib/utils/date"
+import { formatDate, formatDeadline } from "@/lib/utils/date"
 import { GENDER_LABELS } from "@/types"
 import { JobApplicationForm } from "@/components/job-application-form"
 import { TalentNav } from "@/components/talent-nav"
@@ -105,7 +105,7 @@ export default async function TalentJobDetailPage({
         )}
         {job.deadline && (
           <div>
-            <span className="text-muted-foreground">締切: </span>{formatDate(job.deadline)}
+            <span className="text-muted-foreground">締切: </span>{formatDeadline(job.deadline)}
           </div>
         )}
         {job.capacity != null && (

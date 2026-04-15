@@ -11,10 +11,7 @@ import type { JobWithMatch } from "@/app/(talent)/jobs/page"
 type FilterType = "all" | "match" | "unmatch"
 type SortType = "newest" | "deadline" | "fee"
 
-function formatShortDate(date: Date | string): string {
-  const d = typeof date === "string" ? new Date(date) : date
-  return `${d.getMonth() + 1}/${d.getDate()}`
-}
+import { formatShortDeadline } from "@/lib/utils/date"
 
 function isWithinDays(date: Date | string, days: number): boolean {
   const d = typeof date === "string" ? new Date(date) : date
@@ -136,7 +133,7 @@ export function TalentJobList({
               {job.fee != null && <span>💰 ¥{job.fee.toLocaleString()}</span>}
               {job.deadline && (
                 <span>
-                  📅 締切: {formatShortDate(job.deadline)}
+                  📅 締切: {formatShortDeadline(job.deadline)}
                   {isWithinDays(job.deadline, 3) && (
                     <Badge variant="destructive" className="ml-1 text-xs">まもなく</Badge>
                   )}

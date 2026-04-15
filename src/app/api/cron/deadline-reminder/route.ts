@@ -10,18 +10,12 @@ export async function GET(request: Request) {
   }
 
   const now = new Date()
-  const threeDaysLater = new Date(now)
-  threeDaysLater.setDate(threeDaysLater.getDate() + 3)
-
-  const startOfDay = new Date(threeDaysLater)
-  startOfDay.setHours(0, 0, 0, 0)
-  const endOfDay = new Date(threeDaysLater)
-  endOfDay.setHours(23, 59, 59, 999)
+  const threeDaysLater = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000)
 
   const jobs = await prisma.job.findMany({
     where: {
       status: "OPEN",
-      deadline: { gte: startOfDay, lte: endOfDay },
+      deadline: { gte: now, lte: threeDaysLater },
     },
     select: {
       id: true,
