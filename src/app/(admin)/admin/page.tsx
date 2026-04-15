@@ -2,22 +2,45 @@ import { Suspense } from "react"
 import Link from "next/link"
 import { prisma } from "@/lib/db"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { MonthlyApplicationChart } from "@/components/admin/monthly-application-chart"
+import { MonthlyJobChart } from "@/components/admin/monthly-job-chart"
+import { MonthlyAcceptRateChart } from "@/components/admin/monthly-accept-rate-chart"
+
+function getJstNow() {
+  return new Date(new Date().toLocaleString("en-US", { timeZone: "Asia/Tokyo" }))
+}
+
+function getMonthRange(year: number, month: number) {
+  const start = new Date(`${year}-${String(month).padStart(2, "0")}-01T00:00:00+09:00`)
+  const nextMonth = month === 12 ? 1 : month + 1
+  const nextYear = month === 12 ? year + 1 : year
+  const end = new Date(`${nextYear}-${String(nextMonth).padStart(2, "0")}-01T00:00:00+09:00`)
+  return { start, end }
+}
 
 async function DashboardStats() {
-  const [talentCount, jobCount, applicationCount, openJobs, scheduleCount] =
+  const jstNow = getJstNow()
+  const { start: monthStart, end: monthEnd } = getMonthRange(jstNow.getFullYear(), jstNow.getMonth() + 1)
+
+  const [talentCount, jobCount, applicationCount, openJobs, monthlyAccepted] =
     await Promise.all([
       prisma.talent.count(),
       prisma.job.count(),
       prisma.application.count(),
       prisma.job.count({ where: { status: "OPEN" } }),
-      prisma.schedule.count(),
+      prisma.application.count({
+        where: {
+          status: "ACCEPTED",
+          decidedAt: { gte: monthStart, lt: monthEnd },
+        },
+      }),
     ])
 
   const stats = [
     { label: "タレント", value: talentCount, href: "/admin/talents" },
     { label: "案件（募集中）", value: `${openJobs} / ${jobCount}`, href: "/admin/jobs" },
     { label: "応募", value: applicationCount, href: "/admin/applications" },
-    { label: "スケジュール", value: scheduleCount, href: "/admin/schedule" },
+    { label: "今月の合格", value: monthlyAccepted, href: "/admin/applications?status=ACCEPTED" },
   ]
 
   return (
@@ -40,6 +63,88 @@ async function DashboardStats() {
   )
 }
 
+async function MonthlyCharts() {
+  const jstNow = getJstNow()
+  const months: { year: number; month: number; label: string; start: Date; end: Date }[] = []
+
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date(jstNow.getFullYear(), jstNow.getMonth() - i, 1)
+    const y = d.getFullYear()
+    const m = d.getMonth() + 1
+    const { start, end } = getMonthRange(y, m)
+    months.push({ year: y, month: m, label: `${m}月`, start, end })
+  }
+
+  const [applicationsByMonth, jobsByMonth, acceptedByMonth, totalByMonth] = await Promise.all([
+    Promise.all(
+      months.map(async (m) => {
+        const [applied, resumeSent, accepted, rejected] = await Promise.all([
+          prisma.application.count({ where: { appliedAt: { gte: m.start, lt: m.end }, status: "APPLIED" } }),
+          prisma.application.count({ where: { appliedAt: { gte: m.start, lt: m.end }, status: "RESUME_SENT" } }),
+          prisma.application.count({ where: { appliedAt: { gte: m.start, lt: m.end }, status: "ACCEPTED" } }),
+          prisma.application.count({ where: { appliedAt: { gte: m.start, lt: m.end }, status: { in: ["REJECTED", "AUTO_REJECTED"] } } }),
+        ])
+        return { label: m.label, 応募中: applied, 書類送付済: resumeSent, 合格: accepted, 不合格: rejected }
+      })
+    ),
+    Promise.all(
+      months.map(async (m) => {
+        const count = await prisma.job.count({ where: { createdAt: { gte: m.start, lt: m.end } } })
+        return { label: m.label, 案件数: count }
+      })
+    ),
+    Promise.all(
+      months.map(async (m) => {
+        const accepted = await prisma.application.count({ where: { decidedAt: { gte: m.start, lt: m.end }, status: "ACCEPTED" } })
+        const decided = await prisma.application.count({ where: { decidedAt: { gte: m.start, lt: m.end }, status: { in: ["ACCEPTED", "REJECTED", "AUTO_REJECTED"] } } })
+        return { label: m.label, 合格率: decided > 0 ? Math.round((accepted / decided) * 100) : 0 }
+      })
+    ),
+    Promise.all(
+      months.map(async (m) => {
+        const count = await prisma.application.count({ where: { appliedAt: { gte: m.start, lt: m.end } } })
+        return { label: m.label, total: count }
+      })
+    ),
+  ])
+
+  const applicationData = applicationsByMonth.map((d, i) => ({
+    ...d,
+    合計: totalByMonth[i].total,
+  }))
+
+  return (
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm font-medium">月別応募推移</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <MonthlyApplicationChart data={applicationData} />
+        </CardContent>
+      </Card>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">月別新規案件数</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MonthlyJobChart data={jobsByMonth} />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">月別合格率</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MonthlyAcceptRateChart data={acceptedByMonth} />
+          </CardContent>
+        </Card>
+      </div>
+    </>
+  )
+}
+
 async function RecentApplications() {
   const recentApplications = await prisma.application.findMany({
     take: 5,
@@ -55,7 +160,7 @@ async function RecentApplications() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>最近の応募</CardTitle>
+        <CardTitle className="text-sm font-medium">最近の応募</CardTitle>
       </CardHeader>
       <CardContent>
         {recentApplications.length === 0 ? (
@@ -68,8 +173,8 @@ async function RecentApplications() {
                 className="flex flex-wrap items-start justify-between gap-1 border-b pb-3 last:border-0"
               >
                 <div>
-                  <p className="font-medium">{app.talent.name}</p>
-                  <p className="text-sm text-muted-foreground">
+                  <p className="font-medium text-sm">{app.talent.name}</p>
+                  <p className="text-xs text-muted-foreground">
                     {app.job.title}
                   </p>
                 </div>
@@ -152,6 +257,23 @@ async function PendingActions() {
   )
 }
 
+function StatsSkeleton() {
+  return (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <Card key={i}>
+          <CardHeader className="pb-2">
+            <div className="h-4 w-24 animate-pulse rounded bg-muted" />
+          </CardHeader>
+          <CardContent>
+            <div className="h-8 w-16 animate-pulse rounded bg-muted" />
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+  )
+}
+
 function PendingSkeleton() {
   return (
     <div className="grid gap-4 sm:grid-cols-3">
@@ -169,19 +291,23 @@ function PendingSkeleton() {
   )
 }
 
-function StatsSkeleton() {
+function ChartSkeleton() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <Card key={i}>
-          <CardHeader className="pb-2">
-            <div className="h-4 w-24 animate-pulse rounded bg-muted" />
-          </CardHeader>
-          <CardContent>
-            <div className="h-8 w-16 animate-pulse rounded bg-muted" />
-          </CardContent>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader><div className="h-4 w-32 animate-pulse rounded bg-muted" /></CardHeader>
+        <CardContent><div className="h-[250px] animate-pulse rounded bg-muted" /></CardContent>
+      </Card>
+      <div className="grid gap-4 sm:grid-cols-2">
+        <Card>
+          <CardHeader><div className="h-4 w-32 animate-pulse rounded bg-muted" /></CardHeader>
+          <CardContent><div className="h-[200px] animate-pulse rounded bg-muted" /></CardContent>
         </Card>
-      ))}
+        <Card>
+          <CardHeader><div className="h-4 w-32 animate-pulse rounded bg-muted" /></CardHeader>
+          <CardContent><div className="h-[200px] animate-pulse rounded bg-muted" /></CardContent>
+        </Card>
+      </div>
     </div>
   )
 }
@@ -216,6 +342,9 @@ export default function AdminDashboard() {
       </Suspense>
       <Suspense fallback={<PendingSkeleton />}>
         <PendingActions />
+      </Suspense>
+      <Suspense fallback={<ChartSkeleton />}>
+        <MonthlyCharts />
       </Suspense>
       <Suspense fallback={<RecentSkeleton />}>
         <RecentApplications />
