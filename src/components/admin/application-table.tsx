@@ -10,8 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { formatDate, formatDeadline } from "@/lib/utils/date"
-import { firstDateByType } from "@/lib/utils/job-dates"
+import { formatShortDeadline } from "@/lib/utils/date"
+import { firstShortDateByType } from "@/lib/utils/job-dates"
 import { ApplicationStatusSelect } from "@/components/admin/application-status-select"
 import { ApplicationRowActions } from "@/components/admin/application-row-actions"
 import { SubmissionLinks } from "@/components/admin/submission-links"
@@ -96,10 +96,10 @@ export function ApplicationTable({
             </TableHead>
             <SortableHeader column="talent" label="タレント" className="w-[90px] px-2" />
             <SortableHeader column="job" label="案件" className="px-2" />
-            <TableHead className="hidden sm:table-cell w-[56px] px-2">提出物</TableHead>
-            <TableHead className="hidden sm:table-cell w-[72px] px-2">締切日</TableHead>
-            <TableHead className="hidden md:table-cell w-[72px] px-2">オーディション</TableHead>
-            <TableHead className="hidden md:table-cell w-[72px] px-2">撮影</TableHead>
+            <TableHead className="hidden sm:table-cell w-[52px] px-2">提出物</TableHead>
+            <TableHead className="hidden sm:table-cell w-[52px] px-2">締切日</TableHead>
+            <TableHead className="hidden md:table-cell w-[52px] px-2">オーディション</TableHead>
+            <TableHead className="hidden md:table-cell w-[52px] px-2">撮影</TableHead>
             <SortableHeader column="status" label="ステータス" className="w-[108px] px-2" />
             <TableHead className="w-9 px-1" />
           </TableRow>
@@ -147,13 +147,13 @@ export function ApplicationTable({
                   <SubmissionLinks submissions={app.submissions} />
                 </TableCell>
                 <TableCell className="hidden sm:table-cell px-2 py-1.5 whitespace-nowrap">
-                  {app.job.deadline ? formatDeadline(app.job.deadline) : "−"}
+                  {app.job.deadline ? formatShortDeadline(app.job.deadline) : "−"}
                 </TableCell>
                 <TableCell className="hidden md:table-cell px-2 py-1.5 whitespace-nowrap">
-                  {firstDateByType(app.job.dates, "AUDITION") ?? "−"}
+                  {firstShortDateByType(app.job.dates, "AUDITION") ?? "−"}
                 </TableCell>
                 <TableCell className="hidden md:table-cell px-2 py-1.5 whitespace-nowrap">
-                  {firstDateByType(app.job.dates, "SHOOTING") ?? "−"}
+                  {firstShortDateByType(app.job.dates, "SHOOTING") ?? "−"}
                 </TableCell>
                 <TableCell className="px-2 py-1.5">
                   <ApplicationStatusSelect

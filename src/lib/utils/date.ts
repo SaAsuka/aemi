@@ -45,6 +45,15 @@ export function formatShortDeadline(date: Date | string): string {
   return `${base} ${String(jst.getUTCHours()).padStart(2, "0")}:${String(jst.getUTCMinutes()).padStart(2, "0")}`
 }
 
+export function formatShortDate(date: Date | string): string {
+  const d = typeof date === "string" ? new Date(date) : date
+  return d.toLocaleDateString("ja-JP", {
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Asia/Tokyo",
+  })
+}
+
 export function normalizeDeadline(value: string): Date {
   if (value.length === 10) {
     return new Date(`${value}T23:59:59+09:00`)
