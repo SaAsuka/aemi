@@ -204,12 +204,13 @@ export function JobForm({
               defaultValue={
                 job?.deadline
                   ? (() => {
-                      const d = new Date(job.deadline)
+                      const jst = new Date(new Date(job.deadline).getTime() + 9 * 60 * 60 * 1000)
                       const pad = (n: number) => String(n).padStart(2, "0")
-                      if (d.getHours() === 23 && d.getMinutes() === 59) {
-                        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+                      const datePart = `${jst.getUTCFullYear()}-${pad(jst.getUTCMonth() + 1)}-${pad(jst.getUTCDate())}`
+                      if (jst.getUTCHours() === 23 && jst.getUTCMinutes() === 59) {
+                        return datePart
                       }
-                      return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+                      return `${datePart}T${pad(jst.getUTCHours())}:${pad(jst.getUTCMinutes())}`
                     })()
                   : ""
               }

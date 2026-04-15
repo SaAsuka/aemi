@@ -10,6 +10,7 @@ export function formatDate(date: Date | string): string {
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
+    timeZone: "Asia/Tokyo",
   })
 }
 
@@ -21,11 +22,14 @@ export function formatDateTime(date: Date | string): string {
     day: "2-digit",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Asia/Tokyo",
   })
 }
 
 function isEndOfDay(d: Date): boolean {
-  return d.getHours() === 23 && d.getMinutes() === 59
+  const h = d.getUTCHours()
+  const m = d.getUTCMinutes()
+  return h === 14 && m === 59
 }
 
 export function formatDeadline(date: Date | string): string {
@@ -35,14 +39,18 @@ export function formatDeadline(date: Date | string): string {
 
 export function formatShortDeadline(date: Date | string): string {
   const d = typeof date === "string" ? new Date(date) : date
-  const base = `${d.getMonth() + 1}/${d.getDate()}`
+  const jst = new Date(d.getTime() + 9 * 60 * 60 * 1000)
+  const base = `${jst.getUTCMonth() + 1}/${jst.getUTCDate()}`
   if (isEndOfDay(d)) return base
-  return `${base} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`
+  return `${base} ${String(jst.getUTCHours()).padStart(2, "0")}:${String(jst.getUTCMinutes()).padStart(2, "0")}`
 }
 
 export function normalizeDeadline(value: string): Date {
   if (value.length === 10) {
-    return new Date(`${value}T23:59:59`)
+    return new Date(`${value}T23:59:59+09:00`)
+  }
+  if (!value.includes("+") && !value.includes("Z")) {
+    return new Date(`${value}+09:00`)
   }
   return new Date(value)
 }
