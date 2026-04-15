@@ -84,11 +84,10 @@ export function ApplicationTable({
         selectedIds={Array.from(selectedIds)}
         onClear={() => setSelectedIds(new Set())}
       />
-      <div className="overflow-x-auto">
-      <Table>
+      <Table className="table-fixed w-full">
         <TableHeader>
           <TableRow>
-            <TableHead className="w-10">
+            <TableHead className="w-8">
               <input
                 type="checkbox"
                 checked={allChecked}
@@ -96,13 +95,13 @@ export function ApplicationTable({
                 className="h-4 w-4 rounded border-gray-300"
               />
             </TableHead>
-            <SortableHeader column="talent" label="タレント" />
+            <SortableHeader column="talent" label="タレント" className="w-[100px]" />
             <SortableHeader column="job" label="案件" />
-            <TableHead className="hidden sm:table-cell">提出物</TableHead>
-            <TableHead className="hidden sm:table-cell">締切日</TableHead>
-            <TableHead className="hidden md:table-cell">オーディション</TableHead>
-            <TableHead className="hidden md:table-cell">撮影</TableHead>
-            <SortableHeader column="status" label="ステータス" />
+            <TableHead className="hidden sm:table-cell w-[60px]">提出物</TableHead>
+            <TableHead className="hidden sm:table-cell w-[90px]">締切日</TableHead>
+            <TableHead className="hidden md:table-cell w-[90px]">オーディション</TableHead>
+            <TableHead className="hidden md:table-cell w-[90px]">撮影</TableHead>
+            <SortableHeader column="status" label="ステータス" className="w-[220px]" />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -123,20 +122,20 @@ export function ApplicationTable({
                     className="h-4 w-4 rounded border-gray-300"
                   />
                 </TableCell>
-                <TableCell>
+                <TableCell className="truncate">
                   <Link
                     href={`/admin/talents/${app.talent.id}`}
-                    className="inline-flex items-center gap-2 hover:underline"
+                    className="inline-flex items-center gap-1.5 hover:underline min-w-0"
                   >
                     {app.talent.profileImage ? (
-                      <img src={blobProxyUrl(app.talent.profileImage)} alt="" className="h-7 w-7 rounded-full object-cover" />
+                      <img src={blobProxyUrl(app.talent.profileImage)} alt="" className="h-6 w-6 shrink-0 rounded-full object-cover" />
                     ) : (
-                      <span className="inline-flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs">{app.talent.name.charAt(0)}</span>
+                      <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs">{app.talent.name.charAt(0)}</span>
                     )}
-                    {app.talent.name}
+                    <span className="truncate">{app.talent.name}</span>
                   </Link>
                 </TableCell>
-                <TableCell>
+                <TableCell className="truncate" title={app.job.title}>
                   <Link
                     href={`/admin/jobs/${app.job.id}`}
                     className="hover:underline"
@@ -157,7 +156,7 @@ export function ApplicationTable({
                   {firstDateByType(app.job.dates, "SHOOTING") ?? "−"}
                 </TableCell>
                 <TableCell>
-                  <div className="flex items-center gap-1">
+                  <div className="flex flex-wrap items-center gap-1">
                     <LineCopyButton talent={app.talent} />
                     <ApplicationStatusSelect
                       applicationId={app.id}
@@ -173,7 +172,6 @@ export function ApplicationTable({
           )}
         </TableBody>
       </Table>
-      </div>
       <Pagination total={totalCount} />
     </>
   )
