@@ -84,24 +84,24 @@ export function ApplicationTable({
         selectedIds={Array.from(selectedIds)}
         onClear={() => setSelectedIds(new Set())}
       />
-      <Table className="table-fixed w-full">
+      <Table className="table-fixed w-full text-xs">
         <TableHeader>
           <TableRow>
-            <TableHead className="w-8">
+            <TableHead className="w-7 px-1">
               <input
                 type="checkbox"
                 checked={allChecked}
                 onChange={toggleAll}
-                className="h-4 w-4 rounded border-gray-300"
+                className="h-3.5 w-3.5 rounded border-gray-300"
               />
             </TableHead>
-            <SortableHeader column="talent" label="タレント" className="w-[100px]" />
-            <SortableHeader column="job" label="案件" />
-            <TableHead className="hidden sm:table-cell w-[60px]">提出物</TableHead>
-            <TableHead className="hidden sm:table-cell w-[90px]">締切日</TableHead>
-            <TableHead className="hidden md:table-cell w-[90px]">オーディション</TableHead>
-            <TableHead className="hidden md:table-cell w-[90px]">撮影</TableHead>
-            <SortableHeader column="status" label="ステータス" className="w-[220px]" />
+            <SortableHeader column="talent" label="タレント" className="w-[90px] px-2" />
+            <SortableHeader column="job" label="案件" className="px-2" />
+            <TableHead className="hidden sm:table-cell w-[50px] px-2">提出物</TableHead>
+            <TableHead className="hidden sm:table-cell w-[80px] px-2">締切日</TableHead>
+            <TableHead className="hidden md:table-cell w-[80px] px-2">オーディション</TableHead>
+            <TableHead className="hidden md:table-cell w-[80px] px-2">撮影</TableHead>
+            <SortableHeader column="status" label="ステータス" className="w-[200px] px-2" />
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -114,28 +114,28 @@ export function ApplicationTable({
           ) : (
             applications.map((app) => (
               <TableRow key={app.id} className={selectedIds.has(app.id) ? "bg-primary/5" : ""}>
-                <TableCell>
+                <TableCell className="px-1 py-1.5">
                   <input
                     type="checkbox"
                     checked={selectedIds.has(app.id)}
                     onChange={() => toggleOne(app.id)}
-                    className="h-4 w-4 rounded border-gray-300"
+                    className="h-3.5 w-3.5 rounded border-gray-300"
                   />
                 </TableCell>
-                <TableCell className="truncate">
+                <TableCell className="truncate px-2 py-1.5">
                   <Link
                     href={`/admin/talents/${app.talent.id}`}
-                    className="inline-flex items-center gap-1.5 hover:underline min-w-0"
+                    className="inline-flex items-center gap-1 hover:underline min-w-0"
                   >
                     {app.talent.profileImage ? (
-                      <img src={blobProxyUrl(app.talent.profileImage)} alt="" className="h-6 w-6 shrink-0 rounded-full object-cover" />
+                      <img src={blobProxyUrl(app.talent.profileImage)} alt="" className="h-5 w-5 shrink-0 rounded-full object-cover" />
                     ) : (
-                      <span className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-muted text-xs">{app.talent.name.charAt(0)}</span>
+                      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px]">{app.talent.name.charAt(0)}</span>
                     )}
                     <span className="truncate">{app.talent.name}</span>
                   </Link>
                 </TableCell>
-                <TableCell className="truncate" title={app.job.title}>
+                <TableCell className="truncate px-2 py-1.5" title={app.job.title}>
                   <Link
                     href={`/admin/jobs/${app.job.id}`}
                     className="hover:underline"
@@ -143,20 +143,20 @@ export function ApplicationTable({
                     {app.job.title}
                   </Link>
                 </TableCell>
-                <TableCell className="hidden sm:table-cell">
+                <TableCell className="hidden sm:table-cell px-2 py-1.5">
                   <SubmissionLinks submissions={app.submissions} />
                 </TableCell>
-                <TableCell className="hidden sm:table-cell">
+                <TableCell className="hidden sm:table-cell px-2 py-1.5 whitespace-nowrap">
                   {app.job.deadline ? formatDeadline(app.job.deadline) : "−"}
                 </TableCell>
-                <TableCell className="hidden md:table-cell">
+                <TableCell className="hidden md:table-cell px-2 py-1.5 whitespace-nowrap">
                   {firstDateByType(app.job.dates, "AUDITION") ?? "−"}
                 </TableCell>
-                <TableCell className="hidden md:table-cell">
+                <TableCell className="hidden md:table-cell px-2 py-1.5 whitespace-nowrap">
                   {firstDateByType(app.job.dates, "SHOOTING") ?? "−"}
                 </TableCell>
-                <TableCell>
-                  <div className="flex flex-wrap items-center gap-1">
+                <TableCell className="px-2 py-1.5">
+                  <div className="flex flex-wrap items-center gap-0.5">
                     <LineCopyButton talent={app.talent} />
                     <ApplicationStatusSelect
                       applicationId={app.id}
