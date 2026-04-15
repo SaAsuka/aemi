@@ -13,9 +13,8 @@ import {
 import { formatDate, formatDeadline } from "@/lib/utils/date"
 import { firstDateByType } from "@/lib/utils/job-dates"
 import { ApplicationStatusSelect } from "@/components/admin/application-status-select"
-import { LineCopyButton } from "@/components/admin/line-copy-button"
+import { ApplicationRowActions } from "@/components/admin/application-row-actions"
 import { SubmissionLinks } from "@/components/admin/submission-links"
-import { DeleteApplicationButton } from "@/components/admin/delete-application-button"
 import { BulkActionsBar } from "@/components/admin/bulk-actions-bar"
 import { SortableHeader } from "@/components/admin/sortable-header"
 import { Pagination } from "@/components/admin/pagination"
@@ -97,17 +96,18 @@ export function ApplicationTable({
             </TableHead>
             <SortableHeader column="talent" label="タレント" className="w-[90px] px-2" />
             <SortableHeader column="job" label="案件" className="px-2" />
-            <TableHead className="hidden sm:table-cell w-[50px] px-2">提出物</TableHead>
-            <TableHead className="hidden sm:table-cell w-[80px] px-2">締切日</TableHead>
-            <TableHead className="hidden md:table-cell w-[80px] px-2">オーディション</TableHead>
-            <TableHead className="hidden md:table-cell w-[80px] px-2">撮影</TableHead>
-            <SortableHeader column="status" label="ステータス" className="w-[200px] px-2" />
+            <TableHead className="hidden sm:table-cell w-[56px] px-2">提出物</TableHead>
+            <TableHead className="hidden sm:table-cell w-[72px] px-2">締切日</TableHead>
+            <TableHead className="hidden md:table-cell w-[72px] px-2">オーディション</TableHead>
+            <TableHead className="hidden md:table-cell w-[72px] px-2">撮影</TableHead>
+            <SortableHeader column="status" label="ステータス" className="w-[108px] px-2" />
+            <TableHead className="w-9 px-1" />
           </TableRow>
         </TableHeader>
         <TableBody>
           {applications.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={8} className="text-center text-muted-foreground">
+              <TableCell colSpan={9} className="text-center text-muted-foreground">
                 データがありません
               </TableCell>
             </TableRow>
@@ -156,16 +156,18 @@ export function ApplicationTable({
                   {firstDateByType(app.job.dates, "SHOOTING") ?? "−"}
                 </TableCell>
                 <TableCell className="px-2 py-1.5">
-                  <div className="flex flex-wrap items-center gap-0.5">
-                    <LineCopyButton talent={app.talent} />
-                    <ApplicationStatusSelect
-                      applicationId={app.id}
-                      currentStatus={app.status}
-                      talentName={app.talent.name}
-                      jobTitle={app.job.title}
-                    />
-                    <DeleteApplicationButton applicationId={app.id} />
-                  </div>
+                  <ApplicationStatusSelect
+                    applicationId={app.id}
+                    currentStatus={app.status}
+                    talentName={app.talent.name}
+                    jobTitle={app.job.title}
+                  />
+                </TableCell>
+                <TableCell className="px-1 py-1.5">
+                  <ApplicationRowActions
+                    applicationId={app.id}
+                    talent={app.talent}
+                  />
                 </TableCell>
               </TableRow>
             ))
