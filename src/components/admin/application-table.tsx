@@ -84,6 +84,7 @@ export function ApplicationTable({
         selectedIds={Array.from(selectedIds)}
         onClear={() => setSelectedIds(new Set())}
       />
+      <div className="overflow-x-auto">
       <Table>
         <TableHeader>
           <TableRow>
@@ -172,6 +173,7 @@ export function ApplicationTable({
           )}
         </TableBody>
       </Table>
+      </div>
       <Pagination total={totalCount} />
     </>
   )
