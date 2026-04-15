@@ -95,7 +95,7 @@ export function ApplicationTable({
               />
             </TableHead>
             <SortableHeader column="talent" label="タレント" className="w-[90px] px-2" />
-            <SortableHeader column="job" label="案件" className="px-2" />
+            <SortableHeader column="job" label="案件" className="w-[280px] px-2" />
             <TableHead className="hidden sm:table-cell w-[52px] px-2">提出物</TableHead>
             <TableHead className="hidden sm:table-cell w-[52px] px-2">締切日</TableHead>
             <TableHead className="hidden md:table-cell w-[52px] px-2">オーディション</TableHead>
