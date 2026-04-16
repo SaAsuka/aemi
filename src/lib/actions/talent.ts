@@ -81,8 +81,8 @@ function buildTalentWhere(filters: TalentFilters) {
   if (filters.subscription) {
     if (filters.subscription === "NONE") {
       const subConditions = [
-        { subscription: null },
-        { subscription: { status: "NONE" as const } },
+        { subscription: { is: null } },
+        { subscription: { status: "NONE" } },
       ]
       if (where.OR) {
         where.AND = [{ OR: where.OR as Record<string, unknown>[] }, { OR: subConditions }]
