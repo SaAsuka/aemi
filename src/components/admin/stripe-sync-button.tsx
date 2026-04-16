@@ -7,17 +7,20 @@ import { RefreshCw } from "lucide-react"
 
 export function StripeSyncButton() {
   const [loading, setLoading] = useState(false)
-  const [result, setResult] = useState<{ totalCustomers: number; matched: number; updated: number } | null>(null)
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null)
 
   async function handleSync() {
     setLoading(true)
-    setResult(null)
+    setMessage(null)
     try {
       const res = await syncStripeCustomers()
-      setResult(res)
+      if ("error" in res) {
+        setMessage({ type: "error", text: res.error })
+      } else {
+        setMessage({ type: "success", text: `${res.totalCustomers}顧客中 ${res.matched}名マッチ / ${res.updated}件更新` })
+      }
     } catch (e) {
-      console.error("Stripe同期エラー:", e)
-      alert("Stripe同期に失敗しました")
+      setMessage({ type: "error", text: e instanceof Error ? e.message : "不明なエラー" })
     } finally {
       setLoading(false)
     }
@@ -29,9 +32,9 @@ export function StripeSyncButton() {
         <RefreshCw className={`h-4 w-4 mr-1 ${loading ? "animate-spin" : ""}`} />
         {loading ? "同期中..." : "Stripe同期"}
       </Button>
-      {result && (
-        <span className="text-xs text-muted-foreground">
-          {result.totalCustomers}顧客中 {result.matched}名マッチ / {result.updated}件更新
+      {message && (
+        <span className={`text-xs ${message.type === "error" ? "text-red-600" : "text-muted-foreground"}`}>
+          {message.text}
         </span>
       )}
     </div>
