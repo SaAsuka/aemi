@@ -22,10 +22,17 @@ export async function syncStripeCustomers(): Promise<{ totalCustomers: number; m
     const stripe = getStripe()
 
     const customers: Stripe.Customer[] = []
-    for await (const customer of stripe.customers.list({ limit: 100, expand: ["data.subscriptions"] })) {
-      if (!customer.deleted) {
-        customers.push(customer as Stripe.Customer)
+    let hasMore = true
+    let startingAfter: string | undefined
+    while (hasMore) {
+      const params: Stripe.CustomerListParams = { limit: 100, expand: ["data.subscriptions"] }
+      if (startingAfter) params.starting_after = startingAfter
+      const list = await stripe.customers.list(params)
+      for (const c of list.data) {
+        if (!c.deleted) customers.push(c as Stripe.Customer)
       }
+      hasMore = list.has_more
+      if (list.data.length > 0) startingAfter = list.data[list.data.length - 1].id
     }
 
     const talents = await prisma.talent.findMany({
