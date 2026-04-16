@@ -94,7 +94,7 @@ export default async function TalentsPage({
         </div>
       </div>
 
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center gap-3">
         <SearchForm placeholder="名前・フリガナ・メールで検索" defaultValue={params.q} />
         <StripeSyncButton />
       </div>
