@@ -20,6 +20,7 @@ import { ExternalLink, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { RegisterLinkCopy } from "@/components/admin/register-link-copy"
 import { InviteTalentButton } from "@/components/admin/invite-talent-button"
+import { StripeSyncButton } from "@/components/admin/stripe-sync-button"
 import { ClickableRow } from "@/components/admin/clickable-row"
 import { Pagination } from "@/components/admin/pagination"
 import { SortableHeader } from "@/components/admin/sortable-header"
@@ -89,7 +90,10 @@ export default async function TalentsPage({
         </div>
       </div>
 
-      <SearchForm placeholder="名前・フリガナ・メールで検索" defaultValue={params.q} />
+      <div className="flex items-center justify-between">
+        <SearchForm placeholder="名前・フリガナ・メールで検索" defaultValue={params.q} />
+        <StripeSyncButton />
+      </div>
 
       <TalentFilters />
 

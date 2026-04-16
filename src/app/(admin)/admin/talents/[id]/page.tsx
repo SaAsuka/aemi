@@ -71,9 +71,30 @@ export default async function TalentDetailPage({
         </div>
         <div className="rounded-lg border p-3 text-center">
           <p className="text-xs text-muted-foreground">サブスク</p>
-          <p className="text-sm font-medium">
-            {SUBSCRIPTION_STATUS_LABELS[talent.subscription?.status ?? "NONE"] ?? "未契約"}
-          </p>
+          {(() => {
+            const subStatus = talent.subscription?.status ?? "NONE"
+            const colorClass = STATUS_COLORS[`SUB_${subStatus}`] ?? "bg-gray-100 text-gray-800"
+            return (
+              <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium ${colorClass}`}>
+                {SUBSCRIPTION_STATUS_LABELS[subStatus] ?? "未契約"}
+              </span>
+            )
+          })()}
+          {talent.subscription?.currentPeriodEnd && (
+            <p className="text-[10px] text-muted-foreground mt-1">
+              〜{formatDate(talent.subscription.currentPeriodEnd)}
+            </p>
+          )}
+          {talent.subscription?.stripeCustomerId && (
+            <a
+              href={`https://dashboard.stripe.com/customers/${talent.subscription.stripeCustomerId}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[10px] text-blue-600 hover:underline mt-0.5 block"
+            >
+              Stripe →
+            </a>
+          )}
         </div>
         <div className="rounded-lg border p-3 text-center">
           <p className="text-xs text-muted-foreground">登録日</p>
