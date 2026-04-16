@@ -17,6 +17,8 @@ type TalentFilters = {
   hipMax?: number
   shoeMin?: number
   shoeMax?: number
+  line?: string
+  subscription?: string
   sort?: string
   order?: "asc" | "desc"
   page?: number
@@ -69,6 +71,27 @@ function buildTalentWhere(filters: TalentFilters) {
       if (min !== undefined) cond.gte = min
       if (max !== undefined) cond.lte = max
       where[field] = cond
+    }
+  }
+  if (filters.line === "connected") {
+    where.lineUserId = { not: null }
+  } else if (filters.line === "not_connected") {
+    where.lineUserId = null
+  }
+  if (filters.subscription) {
+    if (filters.subscription === "NONE") {
+      const subConditions = [
+        { subscription: null },
+        { subscription: { status: "NONE" as const } },
+      ]
+      if (where.OR) {
+        where.AND = [{ OR: where.OR as Record<string, unknown>[] }, { OR: subConditions }]
+        delete where.OR
+      } else {
+        where.OR = subConditions
+      }
+    } else {
+      where.subscription = { status: filters.subscription }
     }
   }
   return where

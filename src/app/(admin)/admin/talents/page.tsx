@@ -39,6 +39,8 @@ type TalentSearchParams = {
   hipMax?: string
   shoeMin?: string
   shoeMax?: string
+  line?: string
+  subscription?: string
   sort?: string
   order?: string
   page?: string
@@ -68,6 +70,8 @@ export default async function TalentsPage({
     hipMax: toNum(params.hipMax),
     shoeMin: toNum(params.shoeMin),
     shoeMax: toNum(params.shoeMax),
+    line: params.line,
+    subscription: params.subscription,
     sort: params.sort,
     order: (params.order === "asc" ? "asc" : "desc") as "asc" | "desc",
     page: toNum(params.page) ?? 1,

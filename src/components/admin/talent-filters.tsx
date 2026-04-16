@@ -16,6 +16,23 @@ const filterFields = [
 type FilterKey = (typeof filterFields)[number]["minKey"] | (typeof filterFields)[number]["maxKey"]
 const allKeys: FilterKey[] = filterFields.flatMap((f) => [f.minKey, f.maxKey])
 
+const selectKeys = ["line", "subscription"] as const
+
+const lineOptions = [
+  { value: "", label: "すべて" },
+  { value: "connected", label: "連携済" },
+  { value: "not_connected", label: "未連携" },
+]
+
+const subscriptionOptions = [
+  { value: "", label: "すべて" },
+  { value: "ACTIVE", label: "契約中" },
+  { value: "NONE", label: "未契約" },
+  { value: "PAST_DUE", label: "支払遅延" },
+  { value: "CANCELED", label: "解約済" },
+  { value: "UNPAID", label: "未払い" },
+]
+
 export function TalentFilters() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -25,6 +42,10 @@ export function TalentFilters() {
     const q = searchParams.get("q")
     if (q) params.set("q", q)
     for (const key of allKeys) {
+      const val = formData.get(key)
+      if (val && String(val).trim()) params.set(key, String(val).trim())
+    }
+    for (const key of selectKeys) {
       const val = formData.get(key)
       if (val && String(val).trim()) params.set(key, String(val).trim())
     }
@@ -38,10 +59,36 @@ export function TalentFilters() {
     router.push(`?${params.toString()}`)
   }
 
-  const hasActive = allKeys.some((k) => searchParams.get(k))
+  const hasActive = allKeys.some((k) => searchParams.get(k)) || selectKeys.some((k) => searchParams.get(k))
 
   return (
     <form action={handleApply} className="rounded-lg border p-4 space-y-4">
+      <div className="flex flex-wrap gap-4">
+        <div className="space-y-1">
+          <Label className="text-xs">LINE</Label>
+          <select
+            name="line"
+            defaultValue={searchParams.get("line") ?? ""}
+            className="h-8 rounded-md border bg-background px-2 text-sm"
+          >
+            {lineOptions.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs">決済</Label>
+          <select
+            name="subscription"
+            defaultValue={searchParams.get("subscription") ?? ""}
+            className="h-8 rounded-md border bg-background px-2 text-sm"
+          >
+            {subscriptionOptions.map((o) => (
+              <option key={o.value} value={o.value}>{o.label}</option>
+            ))}
+          </select>
+        </div>
+      </div>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
         {filterFields.map((field) => (
           <div key={field.minKey} className="space-y-1">
