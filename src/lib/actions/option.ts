@@ -2,7 +2,6 @@
 
 import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
-import { getStripe } from "@/lib/stripe"
 import { optionSchema } from "@/lib/validations/option"
 import { normalizeDeadline } from "@/lib/utils/date"
 
@@ -47,30 +46,64 @@ export async function getOption(id: string) {
   })
 }
 
-async function ensureStripeProduct(optionId: string, name: string, description: string | null, price: number) {
-  const stripe = getStripe()
-  const product = await stripe.products.create({
-    name,
-    description: description || undefined,
-    metadata: { optionId },
+async function stripePost(path: string, body: Record<string, string>) {
+  const key = process.env.STRIPE_SECRET_KEY
+  if (!key) throw new Error("STRIPE_SECRET_KEY が未設定")
+
+  const res = await fetch(`https://api.stripe.com/v1${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams(body).toString(),
+    signal: AbortSignal.timeout(15000),
   })
-  const stripePrice = await stripe.prices.create({
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Stripe API ${res.status}: ${text.slice(0, 200)}`)
+  }
+  return res.json()
+}
+
+async function ensureStripeProduct(optionId: string, name: string, description: string | null, price: number) {
+  const productBody: Record<string, string> = {
+    name,
+    "metadata[optionId]": optionId,
+  }
+  if (description) productBody.description = description
+
+  const product = await stripePost("/products", productBody)
+
+  const stripePrice = await stripePost("/prices", {
     product: product.id,
-    unit_amount: price,
+    unit_amount: String(price),
     currency: "jpy",
   })
-  return { stripeProductId: product.id, stripePriceId: stripePrice.id }
+
+  return { stripeProductId: product.id as string, stripePriceId: stripePrice.id as string }
 }
 
 async function updateStripePrice(existingProductId: string, existingPriceId: string, newAmount: number) {
-  const stripe = getStripe()
-  await stripe.prices.update(existingPriceId, { active: false })
-  const newPrice = await stripe.prices.create({
+  await stripePost(`/prices/${existingPriceId}`, { active: "false" })
+
+  const newPrice = await stripePost("/prices", {
     product: existingProductId,
-    unit_amount: newAmount,
+    unit_amount: String(newAmount),
     currency: "jpy",
   })
-  return newPrice.id
+
+  return newPrice.id as string
+}
+
+async function updateStripeProduct(productId: string, name: string, description: string | null) {
+  const body: Record<string, string> = { name }
+  if (description) body.description = description
+  await stripePost(`/products/${productId}`, body)
+}
+
+async function archiveStripeProduct(productId: string) {
+  await stripePost(`/products/${productId}`, { active: "false" })
 }
 
 export async function createOption(formData: FormData) {
@@ -111,10 +144,13 @@ export async function createOption(formData: FormData) {
   })
 
   if (stripeData) {
-    const stripe = getStripe()
-    await stripe.products.update(stripeData.stripeProductId, {
-      metadata: { optionId: option.id },
-    })
+    try {
+      await stripePost(`/products/${stripeData.stripeProductId}`, {
+        "metadata[optionId]": option.id,
+      })
+    } catch (e) {
+      console.error("Stripe metadata更新エラー:", e)
+    }
   }
 
   revalidatePath("/admin/options")
@@ -157,11 +193,7 @@ export async function updateOption(id: string, formData: FormData) {
 
   if (stripeProductId) {
     try {
-      const stripe = getStripe()
-      await stripe.products.update(stripeProductId, {
-        name: data.name,
-        description: data.description || undefined,
-      })
+      await updateStripeProduct(stripeProductId, data.name, data.description || null)
     } catch (e) {
       console.error("Stripe商品更新エラー:", e)
     }
@@ -200,8 +232,7 @@ export async function deleteOption(id: string) {
   const option = await prisma.option.findUnique({ where: { id } })
   if (option?.stripeProductId) {
     try {
-      const stripe = getStripe()
-      await stripe.products.update(option.stripeProductId, { active: false })
+      await archiveStripeProduct(option.stripeProductId)
     } catch (e) {
       console.error("Stripe商品アーカイブエラー:", e)
     }
