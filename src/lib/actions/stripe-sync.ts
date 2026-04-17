@@ -13,14 +13,43 @@ const STATUS_MAP: Record<string, SubscriptionStatus> = {
   unpaid: "UNPAID",
 }
 
-export async function syncStripeCustomers(): Promise<{ totalCustomers: number; matched: number; updated: number } | { error: string }> {
+type SyncResult = {
+  step1?: string
+  step2?: string
+  step3?: string
+  error?: string
+  totalCustomers?: number
+  matched?: number
+  updated?: number
+}
+
+export async function syncStripeCustomers(): Promise<SyncResult> {
+  const key = process.env.STRIPE_SECRET_KEY
+  if (!key) {
+    return { error: "STRIPE_SECRET_KEY が未設定", step1: "FAIL" }
+  }
+  const keyPrefix = key.slice(0, 10) + "..."
+  const step1 = `OK (${keyPrefix})`
+
+  let stripe: Stripe
   try {
-    if (!process.env.STRIPE_SECRET_KEY) {
-      return { error: "STRIPE_SECRET_KEY が未設定です" }
+    stripe = getStripe()
+  } catch (e) {
+    return { step1, step2: `FAIL: Stripe初期化エラー - ${e instanceof Error ? e.message : String(e)}`, error: "Step2で失敗" }
+  }
+
+  let testCustomer: Stripe.ApiList<Stripe.Customer>
+  try {
+    testCustomer = await stripe.customers.list({ limit: 1 })
+    if (!testCustomer) {
+      return { step1, step2: "FAIL: レスポンスが空", error: "Step2で失敗" }
     }
+  } catch (e) {
+    return { step1, step2: `FAIL: ${e instanceof Error ? e.message : String(e)}`, error: "Step2で失敗" }
+  }
+  const step2 = `OK (テスト取得: ${testCustomer.data.length}件)`
 
-    const stripe = getStripe()
-
+  try {
     const customers: Stripe.Customer[] = []
     let hasMore = true
     let startingAfter: string | undefined
@@ -83,10 +112,15 @@ export async function syncStripeCustomers(): Promise<{ totalCustomers: number; m
     revalidatePath("/admin/talents")
     updateTag("talents")
 
-    return { totalCustomers: customers.length, matched, updated }
+    return {
+      step1,
+      step2,
+      step3: "OK",
+      totalCustomers: customers.length,
+      matched,
+      updated,
+    }
   } catch (e) {
-    const msg = e instanceof Error ? e.message : String(e)
-    console.error("Stripe同期エラー:", msg)
-    return { error: msg }
+    return { step1, step2, step3: `FAIL: ${e instanceof Error ? e.message : String(e)}`, error: "Step3で失敗" }
   }
 }
