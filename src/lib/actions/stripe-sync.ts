@@ -11,16 +11,6 @@ const STATUS_MAP: Record<string, SubscriptionStatus> = {
   unpaid: "UNPAID",
 }
 
-type SyncResult = {
-  step1?: string
-  step2?: string
-  step3?: string
-  error?: string
-  totalCustomers?: number
-  matched?: number
-  updated?: number
-}
-
 async function stripeFetch(path: string, key: string) {
   const res = await fetch(`https://api.stripe.com/v1${path}`, {
     headers: { Authorization: `Bearer ${key}` },
@@ -33,21 +23,11 @@ async function stripeFetch(path: string, key: string) {
   return res.json()
 }
 
-export async function syncStripeCustomers(): Promise<SyncResult> {
-  const key = process.env.STRIPE_SECRET_KEY
-  if (!key) {
-    return { error: "STRIPE_SECRET_KEY が未設定", step1: "FAIL" }
-  }
-  const step1 = `OK (${key.slice(0, 10)}...)`
-
+export async function syncStripeCustomers(): Promise<{ totalCustomers: number; matched: number; updated: number } | { error: string }> {
   try {
-    await stripeFetch("/balance", key)
-  } catch (e) {
-    return { step1, step2: `FAIL: ${e instanceof Error ? e.message : String(e)}`, error: "Step2で失敗" }
-  }
-  const step2 = "OK"
+    const key = process.env.STRIPE_SECRET_KEY
+    if (!key) return { error: "STRIPE_SECRET_KEY が未設定" }
 
-  try {
     const subs: Array<{ id: string; status: string; customer: string; current_period_end: number }> = []
     let startingAfter = ""
     let hasMore = true
@@ -97,19 +77,8 @@ export async function syncStripeCustomers(): Promise<SyncResult> {
 
       await prisma.talentSubscription.upsert({
         where: { talentId },
-        create: {
-          talentId,
-          stripeCustomerId: sub.customer,
-          subscriptionId: sub.id,
-          status,
-          currentPeriodEnd: periodEnd,
-        },
-        update: {
-          stripeCustomerId: sub.customer,
-          subscriptionId: sub.id,
-          status,
-          currentPeriodEnd: periodEnd,
-        },
+        create: { talentId, stripeCustomerId: sub.customer, subscriptionId: sub.id, status, currentPeriodEnd: periodEnd },
+        update: { stripeCustomerId: sub.customer, subscriptionId: sub.id, status, currentPeriodEnd: periodEnd },
       })
       updated++
     }
@@ -117,15 +86,10 @@ export async function syncStripeCustomers(): Promise<SyncResult> {
     revalidatePath("/admin/talents")
     updateTag("talents")
 
-    return {
-      step1,
-      step2,
-      step3: "OK",
-      totalCustomers: customerIds.length,
-      matched,
-      updated,
-    }
+    return { totalCustomers: customerIds.length, matched, updated }
   } catch (e) {
-    return { step1, step2, step3: `FAIL: ${e instanceof Error ? e.message : String(e)}`, error: "Step3で失敗" }
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error("Stripe同期エラー:", msg)
+    return { error: msg }
   }
 }
