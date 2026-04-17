@@ -1,15 +1,18 @@
 import Stripe from "stripe"
 
-let _stripe: Stripe | null = null
+const globalForStripe = globalThis as unknown as { _stripe: Stripe | undefined }
 
 export function getStripe() {
-  if (!_stripe) {
-    _stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
+  if (!globalForStripe._stripe) {
+    if (!process.env.STRIPE_SECRET_KEY) {
+      throw new Error("STRIPE_SECRET_KEY is not set")
+    }
+    globalForStripe._stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
       timeout: 30000,
       maxNetworkRetries: 1,
     })
   }
-  return _stripe
+  return globalForStripe._stripe
 }
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"

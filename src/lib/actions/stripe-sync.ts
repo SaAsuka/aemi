@@ -38,16 +38,21 @@ export async function syncStripeCustomers(): Promise<SyncResult> {
     return { step1, step2: `FAIL: Stripe初期化エラー - ${e instanceof Error ? e.message : String(e)}`, error: "Step2で失敗" }
   }
 
-  let testCustomer: Stripe.ApiList<Stripe.Customer>
   try {
-    testCustomer = await stripe.customers.list({ limit: 1 })
-    if (!testCustomer) {
-      return { step1, step2: "FAIL: レスポンスが空", error: "Step2で失敗" }
-    }
+    const bal = await stripe.balance.retrieve()
+    void bal
   } catch (e) {
-    return { step1, step2: `FAIL: ${e instanceof Error ? e.message : String(e)}`, error: "Step2で失敗" }
+    return { step1, step2: `FAIL(balance): ${e instanceof Error ? e.message : String(e)}`, error: "Step2で失敗" }
   }
-  const step2 = `OK (テスト取得: ${testCustomer.data.length}件)`
+
+  let testCount = 0
+  try {
+    const testCustomer = await stripe.customers.list({ limit: 1 })
+    testCount = testCustomer.data.length
+  } catch (e) {
+    return { step1, step2: `FAIL(customers): ${e instanceof Error ? e.message : String(e)}`, error: "Step2で失敗" }
+  }
+  const step2 = `OK (balance+customers: ${testCount}件)`
 
   try {
     const customers: Stripe.Customer[] = []
