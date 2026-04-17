@@ -54,6 +54,26 @@ export const SUBSCRIPTION_STATUS_LABELS: Record<string, string> = {
   UNPAID: "未払い",
 }
 
+export const OPTION_STATUS_LABELS: Record<string, string> = {
+  DRAFT: "下書き",
+  ACTIVE: "公開中",
+  CLOSED: "終了",
+}
+
+export const OPTION_CATEGORY_LABELS: Record<string, string> = {
+  PHOTOGRAPHY: "撮影",
+  STYLING: "スタイリング",
+  LESSON: "レッスン",
+  OTHER: "その他",
+}
+
+export const OPTION_PURCHASE_STATUS_LABELS: Record<string, string> = {
+  PENDING: "未払い",
+  PAID: "支払済",
+  FAILED: "失敗",
+  REFUNDED: "返金済",
+}
+
 export const STATUS_COLORS: Record<string, string> = {
   ACTIVE: "bg-green-100 text-green-800",
   INACTIVE: "bg-gray-100 text-gray-800",
@@ -78,4 +98,11 @@ export const STATUS_COLORS: Record<string, string> = {
   MALE: "bg-blue-100 text-blue-800",
   FEMALE: "bg-pink-100 text-pink-800",
   OTHER: "bg-gray-100 text-gray-800",
+  PAID: "bg-green-100 text-green-800",
+  PENDING: "bg-yellow-100 text-yellow-800",
+  FAILED: "bg-red-100 text-red-800",
+  REFUNDED: "bg-orange-100 text-orange-800",
+  PHOTOGRAPHY: "bg-purple-100 text-purple-800",
+  STYLING: "bg-pink-100 text-pink-800",
+  LESSON: "bg-blue-100 text-blue-800",
 }

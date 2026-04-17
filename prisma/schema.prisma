@@ -75,6 +75,26 @@ enum SubmissionCategory {
   PROFILE_PHOTO
 }
 
+enum OptionStatus {
+  DRAFT
+  ACTIVE
+  CLOSED
+}
+
+enum OptionCategory {
+  PHOTOGRAPHY
+  STYLING
+  LESSON
+  OTHER
+}
+
+enum OptionPurchaseStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
 model Talent {
   id             String       @id @default(cuid())
   lastName       String       @default("")
@@ -124,6 +144,7 @@ model Talent {
   socialLinks       TalentSocialLink[]
   subscription      TalentSubscription?
   deadlineReminders DeadlineReminder[]
+  optionPurchases   OptionPurchase[]
 
   @@map("talents")
 }
@@ -346,4 +367,42 @@ model DeadlineReminder {
   @@index([jobId])
   @@index([talentId])
   @@map("deadline_reminders")
+}
+
+model Option {
+  id              String         @id @default(cuid())
+  name            String
+  description     String?        @db.Text
+  category        OptionCategory @default(OTHER)
+  price           Int
+  imageUrl        String?
+  deadline        DateTime?
+  sortOrder       Int            @default(0)
+  status          OptionStatus   @default(DRAFT)
+  stripeProductId String?        @unique
+  stripePriceId   String?        @unique
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  purchases OptionPurchase[]
+
+  @@map("options")
+}
+
+model OptionPurchase {
+  id                    String               @id @default(cuid())
+  optionId              String
+  option                Option               @relation(fields: [optionId], references: [id])
+  talentId              String
+  talent                Talent               @relation(fields: [talentId], references: [id])
+  status                OptionPurchaseStatus @default(PENDING)
+  stripeSessionId       String?              @unique
+  stripePaymentIntentId String?              @unique
+  paidAt                DateTime?
+  createdAt             DateTime             @default(now())
+
+  @@unique([optionId, talentId])
+  @@index([optionId])
+  @@index([talentId])
+  @@map("option_purchases")
 }

@@ -8,6 +8,7 @@ import { deleteClient } from "@/lib/actions/client"
 import { deleteJob } from "@/lib/actions/job"
 import { deleteApplication } from "@/lib/actions/application"
 import { deleteSchedule } from "@/lib/actions/schedule"
+import { deleteOption } from "@/lib/actions/option"
 
 const deleteActions = {
   talent: deleteTalent,
@@ -15,6 +16,7 @@ const deleteActions = {
   job: deleteJob,
   application: deleteApplication,
   schedule: deleteSchedule,
+  option: deleteOption,
 } as const
 
 export function DeleteButton({
@@ -32,7 +34,11 @@ export function DeleteButton({
   function handleDelete() {
     if (!confirm("本当に削除しますか？")) return
     startTransition(async () => {
-      await deleteActions[type](id)
+      const result = await deleteActions[type](id)
+      if (result && "error" in result && typeof result.error === "string") {
+        alert(result.error)
+        return
+      }
       router.push(redirectTo ?? `/admin/${type}s`)
     })
   }

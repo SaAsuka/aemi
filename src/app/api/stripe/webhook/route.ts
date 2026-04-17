@@ -26,6 +26,27 @@ export async function POST(request: NextRequest) {
   switch (event.type) {
     case "checkout.session.completed": {
       const session = event.data.object as Stripe.Checkout.Session
+
+      if (session.mode === "payment" && session.id) {
+        const purchase = await prisma.optionPurchase.findUnique({
+          where: { stripeSessionId: session.id },
+        })
+        if (purchase) {
+          const paymentIntentId = typeof session.payment_intent === "string"
+            ? session.payment_intent
+            : session.payment_intent?.id ?? null
+          await prisma.optionPurchase.update({
+            where: { id: purchase.id },
+            data: {
+              status: "PAID",
+              paidAt: new Date(),
+              ...(paymentIntentId && { stripePaymentIntentId: paymentIntentId }),
+            },
+          })
+        }
+        break
+      }
+
       const talentId = session.metadata?.talentId
       if (talentId && session.subscription) {
         const subscriptionId = typeof session.subscription === "string" ? session.subscription : session.subscription.id
