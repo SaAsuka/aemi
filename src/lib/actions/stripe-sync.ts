@@ -32,15 +32,16 @@ export async function syncStripeCustomers(): Promise<{ totalCustomers: number; m
     let startingAfter = ""
     let hasMore = true
     while (hasMore) {
-      const params = new URLSearchParams({ limit: "100", status: "all" })
+      const params = new URLSearchParams({ limit: "100", status: "all", "expand[]": "data.items" })
       if (startingAfter) params.set("starting_after", startingAfter)
       const data = await stripeFetch(`/subscriptions?${params}`, key)
       for (const s of data.data) {
+        const periodEnd = s.items?.data?.[0]?.current_period_end ?? s.current_period_end ?? 0
         subs.push({
           id: s.id,
           status: s.status,
           customer: typeof s.customer === "string" ? s.customer : s.customer.id,
-          current_period_end: s.current_period_end,
+          current_period_end: periodEnd,
         })
       }
       hasMore = data.has_more
