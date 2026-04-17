@@ -2,8 +2,6 @@
 
 import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
-import { getStripe } from "@/lib/stripe"
-import type Stripe from "stripe"
 import type { SubscriptionStatus } from "@/generated/prisma/client"
 
 const STATUS_MAP: Record<string, SubscriptionStatus> = {
@@ -23,52 +21,57 @@ type SyncResult = {
   updated?: number
 }
 
+async function stripeFetch(path: string, key: string) {
+  const res = await fetch(`https://api.stripe.com/v1${path}`, {
+    headers: { Authorization: `Bearer ${key}` },
+    signal: AbortSignal.timeout(15000),
+  })
+  if (!res.ok) {
+    const body = await res.text()
+    throw new Error(`Stripe API ${res.status}: ${body.slice(0, 200)}`)
+  }
+  return res.json()
+}
+
 export async function syncStripeCustomers(): Promise<SyncResult> {
   const key = process.env.STRIPE_SECRET_KEY
   if (!key) {
     return { error: "STRIPE_SECRET_KEY が未設定", step1: "FAIL" }
   }
-  const keyPrefix = key.slice(0, 10) + "..."
-  const step1 = `OK (${keyPrefix})`
+  const step1 = `OK (${key.slice(0, 10)}...)`
 
-  let stripe: Stripe
   try {
-    stripe = getStripe()
+    await stripeFetch("/balance", key)
   } catch (e) {
-    return { step1, step2: `FAIL: Stripe初期化エラー - ${e instanceof Error ? e.message : String(e)}`, error: "Step2で失敗" }
+    return { step1, step2: `FAIL: ${e instanceof Error ? e.message : String(e)}`, error: "Step2で失敗" }
   }
-
-  let step2 = ""
-  try {
-    const res = await fetch("https://api.stripe.com/v1/balance", {
-      headers: { Authorization: `Bearer ${key}` },
-      signal: AbortSignal.timeout(10000),
-    })
-    const status = res.status
-    const body = await res.text()
-    if (status === 200) {
-      step2 = `OK (fetch balance: ${status})`
-    } else {
-      return { step1, step2: `FAIL(fetch ${status}): ${body.slice(0, 200)}`, error: "Step2で失敗" }
-    }
-  } catch (e) {
-    const msg = e instanceof Error ? `${e.name}: ${e.message}` : String(e)
-    return { step1, step2: `FAIL(fetch): ${msg}`, error: "Step2で失敗" }
-  }
+  const step2 = "OK"
 
   try {
-    const customers: Stripe.Customer[] = []
+    const subs: Array<{ id: string; status: string; customer: string; current_period_end: number }> = []
+    let startingAfter = ""
     let hasMore = true
-    let startingAfter: string | undefined
     while (hasMore) {
-      const params: Stripe.CustomerListParams = { limit: 100, expand: ["data.subscriptions"] }
-      if (startingAfter) params.starting_after = startingAfter
-      const list = await stripe.customers.list(params)
-      for (const c of list.data) {
-        if (!c.deleted) customers.push(c as Stripe.Customer)
+      const params = new URLSearchParams({ limit: "100", status: "all" })
+      if (startingAfter) params.set("starting_after", startingAfter)
+      const data = await stripeFetch(`/subscriptions?${params}`, key)
+      for (const s of data.data) {
+        subs.push({
+          id: s.id,
+          status: s.status,
+          customer: typeof s.customer === "string" ? s.customer : s.customer.id,
+          current_period_end: s.current_period_end,
+        })
       }
-      hasMore = list.has_more
-      if (list.data.length > 0) startingAfter = list.data[list.data.length - 1].id
+      hasMore = data.has_more
+      if (data.data.length > 0) startingAfter = data.data[data.data.length - 1].id
+    }
+
+    const customerIds = [...new Set(subs.map(s => s.customer))]
+    const customerEmailMap = new Map<string, string>()
+    for (const cid of customerIds) {
+      const c = await stripeFetch(`/customers/${cid}`, key)
+      if (c.email) customerEmailMap.set(cid, c.email.toLowerCase())
     }
 
     const talents = await prisma.talent.findMany({
@@ -76,39 +79,34 @@ export async function syncStripeCustomers(): Promise<SyncResult> {
       select: { id: true, email: true },
     })
     const emailToTalent = new Map(
-      talents.filter((t) => t.email).map((t) => [t.email!.toLowerCase(), t.id])
+      talents.filter(t => t.email).map(t => [t.email!.toLowerCase(), t.id])
     )
 
     let matched = 0
     let updated = 0
 
-    for (const customer of customers) {
-      const email = customer.email?.toLowerCase()
+    for (const sub of subs) {
+      const email = customerEmailMap.get(sub.customer)
       if (!email) continue
-
       const talentId = emailToTalent.get(email)
       if (!talentId) continue
 
       matched++
-
-      const sub = customer.subscriptions?.data?.[0]
-      const status: SubscriptionStatus = sub ? (STATUS_MAP[sub.status] ?? "NONE") : "NONE"
-      const periodEnd = sub?.items?.data?.[0]?.current_period_end
-        ? new Date(sub.items.data[0].current_period_end * 1000)
-        : null
+      const status: SubscriptionStatus = STATUS_MAP[sub.status] ?? "NONE"
+      const periodEnd = sub.current_period_end ? new Date(sub.current_period_end * 1000) : null
 
       await prisma.talentSubscription.upsert({
         where: { talentId },
         create: {
           talentId,
-          stripeCustomerId: customer.id,
-          subscriptionId: sub?.id ?? null,
+          stripeCustomerId: sub.customer,
+          subscriptionId: sub.id,
           status,
           currentPeriodEnd: periodEnd,
         },
         update: {
-          stripeCustomerId: customer.id,
-          subscriptionId: sub?.id ?? null,
+          stripeCustomerId: sub.customer,
+          subscriptionId: sub.id,
           status,
           currentPeriodEnd: periodEnd,
         },
@@ -123,7 +121,7 @@ export async function syncStripeCustomers(): Promise<SyncResult> {
       step1,
       step2,
       step3: "OK",
-      totalCustomers: customers.length,
+      totalCustomers: customerIds.length,
       matched,
       updated,
     }
