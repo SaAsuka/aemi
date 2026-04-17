@@ -19,7 +19,7 @@ import {
 import { BarChart3, Users, Briefcase, FileText, CalendarDays, ShoppingBag } from "lucide-react"
 
 const navItems = [
-  { title: "ダッシュボー��", href: "/admin", icon: BarChart3 },
+  { title: "ダッシュボード", href: "/admin", icon: BarChart3 },
   { title: "タレント管理", href: "/admin/talents", icon: Users },
   { title: "案件管理", href: "/admin/jobs", icon: Briefcase },
   { title: "応募管理", href: "/admin/applications", icon: FileText },
