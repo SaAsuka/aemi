@@ -3,6 +3,7 @@ import { getApplications, getApplicationCount } from "@/lib/actions/application"
 import { getActiveTalentOptions, getOpenJobOptions } from "@/lib/queries"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatusFilter } from "@/components/admin/status-filter"
+import { TalentFilter } from "@/components/admin/talent-filter"
 import { NewApplicationDialog } from "@/components/admin/new-application-dialog"
 import { Button } from "@/components/ui/button"
 import { CsvExportButton } from "@/components/admin/csv-export-button"
@@ -20,12 +21,13 @@ async function ApplicationDialogData() {
 export default async function ApplicationsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; sort?: string; order?: string; page?: string }>
+  searchParams: Promise<{ status?: string; sort?: string; order?: string; page?: string; talentId?: string }>
 }) {
-  const { status, sort, order, page } = await searchParams
-  const [applications, totalCount] = await Promise.all([
-    getApplications(status, undefined, sort, order, page ? Number(page) : 1),
-    getApplicationCount(status),
+  const { status, sort, order, page, talentId } = await searchParams
+  const [applications, totalCount, talents] = await Promise.all([
+    getApplications(status, undefined, sort, order, page ? Number(page) : 1, talentId),
+    getApplicationCount(status, undefined, talentId),
+    getActiveTalentOptions(),
   ])
 
   return (
@@ -40,18 +42,21 @@ export default async function ApplicationsPage({
         </div>
       </div>
 
-      <StatusFilter
-        options={[
-          { value: "ALL", label: "すべて" },
-          { value: "APPLIED", label: "応募済み" },
-          { value: "RESUME_SENT", label: "書類送付済" },
-          { value: "ACCEPTED", label: "合格" },
-          { value: "REJECTED", label: "不合格" },
-          { value: "AUTO_REJECTED", label: "自動不合格" },
-          { value: "CANCELLED", label: "キャンセル" },
-        ]}
-        defaultValue={status}
-      />
+      <div className="flex flex-wrap gap-2">
+        <StatusFilter
+          options={[
+            { value: "ALL", label: "すべて" },
+            { value: "APPLIED", label: "応募済み" },
+            { value: "RESUME_SENT", label: "書類送付済" },
+            { value: "ACCEPTED", label: "合格" },
+            { value: "REJECTED", label: "不合格" },
+            { value: "AUTO_REJECTED", label: "自動不合格" },
+            { value: "CANCELLED", label: "キャンセル" },
+          ]}
+          defaultValue={status}
+        />
+        <TalentFilter talents={talents} defaultValue={talentId} />
+      </div>
 
       <Card>
         <CardHeader>

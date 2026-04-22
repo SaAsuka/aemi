@@ -23,11 +23,11 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 
 const statuses = [
-  { value: "APPLIED", label: "応募済み" },
-  { value: "RESUME_SENT", label: "書類送付済" },
-  { value: "ACCEPTED", label: "合格" },
-  { value: "REJECTED", label: "不合格" },
-  { value: "CANCELLED", label: "キャンセル" },
+  { value: "APPLIED", label: "応募済み", className: "bg-gray-100 text-gray-700 border-gray-200" },
+  { value: "RESUME_SENT", label: "書類送付済", className: "bg-blue-100 text-blue-700 border-blue-200" },
+  { value: "ACCEPTED", label: "合格", className: "bg-green-100 text-green-700 border-green-200" },
+  { value: "REJECTED", label: "不合格", className: "bg-red-100 text-red-700 border-red-200" },
+  { value: "CANCELLED", label: "キャンセル", className: "bg-gray-50 text-gray-400 border-gray-100" },
 ]
 
 export function ApplicationStatusSelect({
@@ -73,20 +73,22 @@ export function ApplicationStatusSelect({
     router.refresh()
   }
 
+  const currentConfig = statuses.find((s) => s.value === currentStatus)
+
   if (currentStatus === "AUTO_REJECTED") {
-    return <span className="text-sm text-muted-foreground">自動不合格</span>
+    return <span className="inline-block rounded px-1.5 py-0.5 text-xs bg-orange-100 text-orange-700 border border-orange-200">自動不合格</span>
   }
 
   return (
     <>
       <Select defaultValue={currentStatus} onValueChange={handleChange}>
-        <SelectTrigger className={`w-full h-7 text-xs ${isPending ? "opacity-50" : ""}`}>
+        <SelectTrigger className={`w-full h-7 text-xs border ${isPending ? "opacity-50" : ""} ${currentConfig?.className ?? ""}`}>
           <SelectValue>{(v) => statuses.find((s) => s.value === v)?.label ?? v}</SelectValue>
         </SelectTrigger>
         <SelectContent>
           {statuses.map((s) => (
             <SelectItem key={s.value} value={s.value}>
-              {s.label}
+              <span className={`inline-block rounded px-1.5 py-0.5 text-xs ${s.className}`}>{s.label}</span>
             </SelectItem>
           ))}
         </SelectContent>
