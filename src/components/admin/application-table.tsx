@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { formatShortDeadline } from "@/lib/utils/date"
+import { formatShortDeadline, deadlineStatus } from "@/lib/utils/date"
 import { firstShortDateByType } from "@/lib/utils/job-dates"
 import { ApplicationStatusSelect } from "@/components/admin/application-status-select"
 import { ApplicationRowActions } from "@/components/admin/application-row-actions"
@@ -147,7 +147,15 @@ export function ApplicationTable({
                   <SubmissionLinks submissions={app.submissions} />
                 </TableCell>
                 <TableCell className="hidden sm:table-cell px-2 py-1.5 whitespace-nowrap">
-                  {app.job.deadline ? formatShortDeadline(app.job.deadline) : "−"}
+                  {app.job.deadline ? (
+                    <div className="flex flex-col gap-0.5">
+                      <span>{formatShortDeadline(app.job.deadline)}</span>
+                      {(() => {
+                        const ds = deadlineStatus(app.job.deadline)
+                        return ds ? <span className={`text-[10px] ${ds.className}`}>{ds.label}</span> : null
+                      })()}
+                    </div>
+                  ) : "−"}
                 </TableCell>
                 <TableCell className="hidden md:table-cell px-2 py-1.5 whitespace-nowrap">
                   {firstShortDateByType(app.job.dates, "AUDITION") ?? "−"}
