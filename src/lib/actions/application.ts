@@ -5,15 +5,16 @@ import { prisma } from "@/lib/db"
 import { applicationSchema } from "@/lib/validations/application"
 import { sendLinePush, buildStatusMessage } from "@/lib/line"
 
-function buildAppWhere(status?: string, jobId?: string) {
+function buildAppWhere(status?: string, jobId?: string, talentId?: string) {
   const where: Record<string, unknown> = {}
   if (status && status !== "ALL") where.status = status
   if (jobId) where.jobId = jobId
+  if (talentId) where.talentId = talentId
   return where
 }
 
-export async function getApplicationCount(status?: string, jobId?: string) {
-  return prisma.application.count({ where: buildAppWhere(status, jobId) })
+export async function getApplicationCount(status?: string, jobId?: string, talentId?: string) {
+  return prisma.application.count({ where: buildAppWhere(status, jobId, talentId) })
 }
 
 const APP_SELECT = {
@@ -41,8 +42,8 @@ const APP_SELECT = {
   },
 } as const
 
-export async function getApplications(status?: string, jobId?: string, sort?: string, order?: string, page?: number) {
-  const where = buildAppWhere(status, jobId)
+export async function getApplications(status?: string, jobId?: string, sort?: string, order?: string, page?: number, talentId?: string) {
+  const where = buildAppWhere(status, jobId, talentId)
   const sortOrder: "asc" | "desc" = order === "asc" ? "asc" : "desc"
   const pageSize = 50
   const currentPage = page ?? 1

@@ -33,6 +33,7 @@ export function TalentFilter({
     } else {
       params.delete("talentId")
     }
+    params.delete("page")
     startTransition(() => {
       router.push(`?${params.toString()}`)
     })
