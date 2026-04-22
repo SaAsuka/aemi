@@ -10,8 +10,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { formatShortDeadline, deadlineStatus } from "@/lib/utils/date"
-import { firstShortDateByType } from "@/lib/utils/job-dates"
+import { formatShortDeadline, dateCountdown } from "@/lib/utils/date"
+import { firstShortDateByType, firstRawDateByType } from "@/lib/utils/job-dates"
 import { ApplicationStatusSelect } from "@/components/admin/application-status-select"
 import { ApplicationRowActions } from "@/components/admin/application-row-actions"
 import { SubmissionLinks } from "@/components/admin/submission-links"
@@ -147,21 +147,33 @@ export function ApplicationTable({
                   <SubmissionLinks submissions={app.submissions} />
                 </TableCell>
                 <TableCell className="hidden sm:table-cell px-2 py-1.5 whitespace-nowrap">
-                  {app.job.deadline ? (
-                    <div className="flex flex-col gap-0.5">
-                      <span>{formatShortDeadline(app.job.deadline)}</span>
-                      {(() => {
-                        const ds = deadlineStatus(app.job.deadline)
-                        return ds ? <span className={`text-[10px] ${ds.className}`}>{ds.label}</span> : null
-                      })()}
-                    </div>
-                  ) : "−"}
+                  {app.job.deadline ? formatShortDeadline(app.job.deadline) : "−"}
                 </TableCell>
                 <TableCell className="hidden md:table-cell px-2 py-1.5 whitespace-nowrap">
-                  {firstShortDateByType(app.job.dates, "AUDITION") ?? "−"}
+                  {(() => {
+                    const label = firstShortDateByType(app.job.dates, "AUDITION")
+                    if (!label) return "−"
+                    const cd = dateCountdown(firstRawDateByType(app.job.dates, "AUDITION"))
+                    return (
+                      <div className="flex flex-col gap-0.5">
+                        <span>{label}</span>
+                        {cd && <span className={`text-[10px] ${cd.className}`}>{cd.label}</span>}
+                      </div>
+                    )
+                  })()}
                 </TableCell>
                 <TableCell className="hidden md:table-cell px-2 py-1.5 whitespace-nowrap">
-                  {firstShortDateByType(app.job.dates, "SHOOTING") ?? "−"}
+                  {(() => {
+                    const label = firstShortDateByType(app.job.dates, "SHOOTING")
+                    if (!label) return "−"
+                    const cd = dateCountdown(firstRawDateByType(app.job.dates, "SHOOTING"))
+                    return (
+                      <div className="flex flex-col gap-0.5">
+                        <span>{label}</span>
+                        {cd && <span className={`text-[10px] ${cd.className}`}>{cd.label}</span>}
+                      </div>
+                    )
+                  })()}
                 </TableCell>
                 <TableCell className="px-2 py-1.5">
                   <ApplicationStatusSelect
