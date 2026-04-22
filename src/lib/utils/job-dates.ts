@@ -18,3 +18,9 @@ export function firstShortDateByType(dates: JobDateRecord[], type: string): stri
   const d = dates.find((d) => d.type === type)
   return d ? formatShortDate(d.date) : null
 }
+
+export function firstRawDateByType(dates: JobDateRecord[], type: string): Date | null {
+  const d = dates.find((d) => d.type === type)
+  if (!d) return null
+  return typeof d.date === "string" ? new Date(d.date) : d.date
+}

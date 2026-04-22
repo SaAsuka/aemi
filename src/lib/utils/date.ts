@@ -54,18 +54,15 @@ export function formatShortDate(date: Date | string): string {
   })
 }
 
-export function deadlineStatus(deadline: Date | null): { label: string; className: string } | null {
-  if (!deadline) return null
+export function dateCountdown(date: Date | null): { label: string; className: string } | null {
+  if (!date) return null
   const now = new Date()
-  const diffMs = deadline.getTime() - now.getTime()
+  const diffMs = date.getTime() - now.getTime()
+  if (diffMs < 0) return null
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
-  if (diffDays > 7) return null
   if (diffDays >= 1) return { label: `残${diffDays}日`, className: diffDays <= 3 ? "text-orange-500" : "text-yellow-500" }
-  if (diffDays === 0) {
-    const hours = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60)))
-    return { label: `残${hours}h`, className: "text-orange-500 font-medium" }
-  }
-  return { label: `${-diffDays}日超過`, className: "text-red-500 font-medium" }
+  const hours = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60)))
+  return { label: `残${hours}h`, className: "text-orange-500 font-medium" }
 }
 
 export function normalizeDeadline(value: string): Date {
