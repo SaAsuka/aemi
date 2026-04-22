@@ -64,9 +64,7 @@ export function deadlineStatus(deadline: Date | null): { label: string; classNam
     const hours = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60)))
     return { label: `残${hours}h`, className: "text-yellow-500" }
   }
-  const remaining = 7 + diffDays
-  if (remaining > 0) return { label: `残${remaining}日`, className: "text-orange-500" }
-  return { label: "期限切れ", className: "text-red-500 font-medium" }
+  return { label: `${-diffDays}日超過`, className: "text-red-500 font-medium" }
 }
 
 export function normalizeDeadline(value: string): Date {
