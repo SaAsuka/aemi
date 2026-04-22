@@ -62,8 +62,7 @@ export function dateCountdown(date: Date | null): { label: string; className: st
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
   if (diffDays > 7) return null
   if (diffDays >= 1) return { label: `残${diffDays}日`, className: diffDays <= 3 ? "text-orange-500" : "text-yellow-500" }
-  const hours = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60)))
-  return { label: `残${hours}h`, className: "text-orange-500 font-medium" }
+  return { label: "残0日", className: "text-orange-500 font-medium" }
 }
 
 export function normalizeDeadline(value: string): Date {
