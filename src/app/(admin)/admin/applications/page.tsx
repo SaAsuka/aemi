@@ -1,6 +1,7 @@
 import { Suspense } from "react"
 import { getApplications, getApplicationCount } from "@/lib/actions/application"
 import { getActiveTalentOptions, getOpenJobOptions } from "@/lib/queries"
+import { getProductionCompanyList } from "@/lib/actions/production-company"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { StatusFilter } from "@/components/admin/status-filter"
 import { TalentFilter } from "@/components/admin/talent-filter"
@@ -24,10 +25,11 @@ export default async function ApplicationsPage({
   searchParams: Promise<{ status?: string; sort?: string; order?: string; page?: string; talentId?: string }>
 }) {
   const { status, sort, order, page, talentId } = await searchParams
-  const [applications, totalCount, talents] = await Promise.all([
+  const [applications, totalCount, talents, productionCompanies] = await Promise.all([
     getApplications(status, undefined, sort, order, page ? Number(page) : 1, talentId),
     getApplicationCount(status, undefined, talentId),
     getActiveTalentOptions(),
+    getProductionCompanyList(),
   ])
 
   return (
@@ -63,7 +65,7 @@ export default async function ApplicationsPage({
           <CardTitle>応募一覧（{totalCount}件）</CardTitle>
         </CardHeader>
         <CardContent>
-          <ApplicationTable applications={applications} totalCount={totalCount} />
+          <ApplicationTable applications={applications} totalCount={totalCount} productionCompanies={productionCompanies} />
         </CardContent>
       </Card>
     </div>

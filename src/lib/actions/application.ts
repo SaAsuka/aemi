@@ -31,7 +31,7 @@ const APP_SELECT = {
   },
   job: {
     select: {
-      id: true, title: true, deadline: true,
+      id: true, title: true, deadline: true, fee: true,
       dates: { orderBy: { date: "asc" as const } },
     },
   },
@@ -39,6 +39,11 @@ const APP_SELECT = {
     select: {
       id: true, category: true, fileUrl: true, externalUrl: true, fileName: true,
     },
+  },
+  invoices: {
+    select: { id: true, status: true },
+    where: { status: { not: "CANCELLED" } },
+    take: 1,
   },
 } as const
 

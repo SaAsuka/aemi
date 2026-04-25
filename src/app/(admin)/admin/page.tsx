@@ -22,7 +22,7 @@ async function DashboardStats() {
   const jstNow = getJstNow()
   const { start: monthStart, end: monthEnd } = getMonthRange(jstNow.getFullYear(), jstNow.getMonth() + 1)
 
-  const [talentCount, jobCount, applicationCount, openJobs, monthlyAccepted] =
+  const [talentCount, jobCount, applicationCount, openJobs, monthlyAccepted, monthlyInvoices] =
     await Promise.all([
       prisma.talent.count(),
       prisma.job.count(),
@@ -34,17 +34,30 @@ async function DashboardStats() {
           decidedAt: { gte: monthStart, lt: monthEnd },
         },
       }),
+      prisma.invoice.findMany({
+        where: {
+          status: { not: "CANCELLED" },
+          issueDate: { gte: monthStart, lt: monthEnd },
+        },
+        select: { amount: true, taxRate: true },
+      }),
     ])
+
+  const monthlyInvoiceTotal = monthlyInvoices.reduce(
+    (sum, inv) => sum + inv.amount + Math.floor(inv.amount * inv.taxRate / 100),
+    0
+  )
 
   const stats = [
     { label: "タレント", value: talentCount, href: "/admin/talents" },
     { label: "案件（募集中）", value: `${openJobs} / ${jobCount}`, href: "/admin/jobs" },
     { label: "応募", value: applicationCount, href: "/admin/applications" },
     { label: "今月の合格", value: monthlyAccepted, href: "/admin/applications?status=ACCEPTED" },
+    { label: "今月の請求額", value: `\u00a5${monthlyInvoiceTotal.toLocaleString()}`, href: "/admin/invoices" },
   ]
 
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
       {stats.map((stat) => (
         <Link key={stat.label} href={stat.href}>
           <Card className="hover:shadow-md transition-shadow">
@@ -259,8 +272,8 @@ async function PendingActions() {
 
 function StatsSkeleton() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-      {Array.from({ length: 4 }).map((_, i) => (
+    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      {Array.from({ length: 5 }).map((_, i) => (
         <Card key={i}>
           <CardHeader className="pb-2">
             <div className="h-4 w-24 animate-pulse rounded bg-muted" />
