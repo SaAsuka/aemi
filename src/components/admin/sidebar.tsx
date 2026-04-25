@@ -16,7 +16,7 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { BarChart3, Users, Briefcase, FileText, CalendarDays, ShoppingBag } from "lucide-react"
+import { BarChart3, Users, Briefcase, FileText, CalendarDays, ShoppingBag, Building2, Receipt } from "lucide-react"
 
 const navItems = [
   { title: "ダッシュボード", href: "/admin", icon: BarChart3 },
@@ -25,6 +25,8 @@ const navItems = [
   { title: "応募管理", href: "/admin/applications", icon: FileText },
   { title: "スケジュール", href: "/admin/schedule", icon: CalendarDays },
   { title: "オプション管理", href: "/admin/options", icon: ShoppingBag },
+  { title: "制作会社", href: "/admin/production-companies", icon: Building2 },
+  { title: "請求書", href: "/admin/invoices", icon: Receipt },
 ]
 
 export function AdminSidebar() {
