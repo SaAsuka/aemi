@@ -16,7 +16,7 @@ import {
   SidebarFooter,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { BarChart3, Users, Briefcase, FileText, CalendarDays, ShoppingBag, Building2, Receipt } from "lucide-react"
+import { BarChart3, Users, Briefcase, FileText, CalendarDays, ShoppingBag, Building2, Receipt, Settings } from "lucide-react"
 
 const navItems = [
   { title: "ダッシュボード", href: "/admin", icon: BarChart3 },
@@ -85,6 +85,10 @@ export function AdminSidebar() {
             </SidebarGroup>
           </SidebarContent>
       <SidebarFooter className="border-t p-4 space-y-2 group-data-[collapsible=icon]:p-2">
+        <Link href="/admin/settings" className="text-sm text-muted-foreground hover:underline flex items-center gap-2 group-data-[collapsible=icon]:justify-center">
+          <Settings className="h-4 w-4 shrink-0" />
+          <span className="group-data-[collapsible=icon]:hidden">設定</span>
+        </Link>
         <Link href="/" className="text-sm text-muted-foreground hover:underline block group-data-[collapsible=icon]:hidden">
           LP を表示
         </Link>
