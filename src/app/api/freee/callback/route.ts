@@ -55,12 +55,16 @@ export async function GET(req: NextRequest) {
       })
       if (meRes.ok) {
         const meData = await meRes.json()
+        console.log("[FREEE] /users/me レスポンス:", JSON.stringify(meData))
         companyId = meData.user?.companies?.[0]?.id as number | undefined
+      } else {
+        const errBody = await meRes.text()
+        console.error("[FREEE] /users/me 失敗:", meRes.status, errBody)
       }
     }
 
     if (!companyId) {
-      console.error("[FREEE] company_id を取得できませんでした")
+      console.error("[FREEE] company_id を取得できませんでした (token response:", JSON.stringify(data), ")")
       return NextResponse.redirect(`${BASE_URL}/admin/settings?freee=error`)
     }
 
