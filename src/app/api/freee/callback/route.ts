@@ -47,7 +47,22 @@ export async function GET(req: NextRequest) {
     }
 
     const data = await tokenRes.json()
-    const companyId = data.company_id as number
+    let companyId = data.company_id as number | undefined
+
+    if (!companyId) {
+      const meRes = await fetch("https://api.freee.co.jp/api/1/users/me", {
+        headers: { Authorization: `Bearer ${data.access_token}` },
+      })
+      if (meRes.ok) {
+        const meData = await meRes.json()
+        companyId = meData.user?.companies?.[0]?.id as number | undefined
+      }
+    }
+
+    if (!companyId) {
+      console.error("[FREEE] company_id を取得できませんでした")
+      return NextResponse.redirect(`${BASE_URL}/admin/settings?freee=error`)
+    }
 
     await prisma.freeeToken.upsert({
       where: { companyId },
