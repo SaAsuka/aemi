@@ -10,6 +10,8 @@ export async function GET(req: NextRequest) {
   const state = req.nextUrl.searchParams.get("state")
   const error = req.nextUrl.searchParams.get("error")
 
+  console.log("[FREEE] コールバック受信:", { code: code?.slice(0, 10) + "...", state, error, BASE_URL, REDIRECT_URI })
+
   if (error) {
     console.error("[FREEE] 認証エラー:", error)
     return NextResponse.redirect(`${BASE_URL}/admin/settings?freee=error`)
@@ -20,7 +22,7 @@ export async function GET(req: NextRequest) {
   cookieStore.delete("freee_state")
 
   if (!code || !state || state !== savedState) {
-    console.error("[FREEE] state不一致またはcode未取得")
+    console.error("[FREEE] state不一致またはcode未取得:", { code: !!code, state, savedState })
     return NextResponse.redirect(`${BASE_URL}/admin/settings?freee=error`)
   }
 
@@ -28,6 +30,7 @@ export async function GET(req: NextRequest) {
   const clientSecret = process.env.FREEE_CLIENT_SECRET!
 
   try {
+    console.log("[FREEE] トークン取得開始...")
     const tokenRes = await fetch("https://accounts.secure.freee.co.jp/public_api/token", {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -42,32 +45,52 @@ export async function GET(req: NextRequest) {
 
     if (!tokenRes.ok) {
       const err = await tokenRes.text()
-      console.error("[FREEE] トークン取得失敗:", err)
+      console.error("[FREEE] トークン取得失敗:", tokenRes.status, err)
       return NextResponse.redirect(`${BASE_URL}/admin/settings?freee=error`)
     }
 
     const data = await tokenRes.json()
+    console.log("[FREEE] トークン取得成功:", {
+      hasAccessToken: !!data.access_token,
+      hasRefreshToken: !!data.refresh_token,
+      expiresIn: data.expires_in,
+      companyId: data.company_id,
+      scope: data.scope,
+    })
+
     let companyId = data.company_id as number | undefined
 
     if (!companyId) {
-      const meRes = await fetch("https://api.freee.co.jp/api/1/users/me", {
-        headers: { Authorization: `Bearer ${data.access_token}` },
+      console.log("[FREEE] token responseにcompany_id無し → /api/1/companies で取得...")
+      const companiesRes = await fetch("https://api.freee.co.jp/api/1/companies", {
+        headers: {
+          Authorization: `Bearer ${data.access_token}`,
+          "Content-Type": "application/json",
+        },
       })
-      if (meRes.ok) {
-        const meData = await meRes.json()
-        console.log("[FREEE] /users/me レスポンス:", JSON.stringify(meData))
-        companyId = meData.user?.companies?.[0]?.id as number | undefined
+
+      if (companiesRes.ok) {
+        const companiesData = await companiesRes.json()
+        console.log("[FREEE] /companies レスポンス:", JSON.stringify(companiesData))
+
+        if (companiesData.companies && companiesData.companies.length > 0) {
+          companyId = companiesData.companies[0].id as number
+          console.log("[FREEE] 会社取得成功:", { companyId, name: companiesData.companies[0].display_name })
+        } else {
+          console.error("[FREEE] 会社一覧が空です")
+        }
       } else {
-        const errBody = await meRes.text()
-        console.error("[FREEE] /users/me 失敗:", meRes.status, errBody)
+        const errBody = await companiesRes.text()
+        console.error("[FREEE] /companies 失敗:", companiesRes.status, errBody)
       }
     }
 
     if (!companyId) {
-      console.error("[FREEE] company_id を取得できませんでした (token response:", JSON.stringify(data), ")")
+      console.error("[FREEE] company_id を取得できませんでした")
       return NextResponse.redirect(`${BASE_URL}/admin/settings?freee=error`)
     }
 
+    console.log("[FREEE] DB保存開始:", { companyId })
     await prisma.freeeToken.upsert({
       where: { companyId },
       create: {

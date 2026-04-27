@@ -19,6 +19,7 @@ async function refreshAccessToken(token: {
 }): Promise<string> {
   const { clientId, clientSecret } = getFreeeCredentials()
 
+  console.log("[Freee] トークンリフレッシュ開始:", { companyId: token.companyId })
   const res = await fetch(FREEE_TOKEN_URL, {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
@@ -34,10 +35,12 @@ async function refreshAccessToken(token: {
   if (!res.ok) {
     const body = await res.text()
     console.error("[Freee] トークンリフレッシュ失敗:", res.status, body)
-    throw new Error("Freeeトークンのリフレッシュに失敗しました。再連携してください。")
+    throw new Error("Freeeトークンのリフレッシュに失敗しました。設定画面から再連携してください。")
   }
 
   const data = await res.json()
+  console.log("[Freee] トークンリフレッシュ成功:", { expiresIn: data.expires_in })
+
   await prisma.freeeToken.update({
     where: { id: token.id },
     data: {
@@ -58,6 +61,7 @@ export async function getFreeeAccessToken(): Promise<{ accessToken: string; comp
 
   const bufferMs = 5 * 60 * 1000
   if (token.expiresAt.getTime() < Date.now() + bufferMs) {
+    console.log("[Freee] トークン期限切れ間近、リフレッシュ実行")
     const newAccessToken = await refreshAccessToken(token)
     return { accessToken: newAccessToken, companyId: token.companyId }
   }
@@ -71,6 +75,8 @@ export async function freeeFetch<T>(
 ): Promise<T> {
   const { accessToken } = await getFreeeAccessToken()
   const method = options?.method ?? "GET"
+
+  console.log(`[Freee] API呼び出し: ${method} ${path}`)
 
   const headers: Record<string, string> = {
     Authorization: `Bearer ${accessToken}`,
@@ -87,7 +93,13 @@ export async function freeeFetch<T>(
   if (!res.ok) {
     const body = await res.text()
     console.error(`[Freee] API エラー: ${method} ${path}`, res.status, body)
-    throw new Error(`Freee API エラー (${res.status})`)
+    if (res.status === 401) {
+      throw new Error("Freee認証エラー: トークンが無効です。設定画面から再連携してください。")
+    }
+    if (res.status === 403) {
+      throw new Error("Freee権限エラー: アプリのスコープが不足しています。再連携してください。")
+    }
+    throw new Error(`Freee API エラー (${res.status}): ${body}`)
   }
 
   return res.json() as Promise<T>
@@ -174,6 +186,8 @@ export async function createFreeeInvoice(params: {
 }): Promise<FreeeInvoiceResponse> {
   const { accessToken, companyId } = await getFreeeAccessToken()
 
+  console.log("[Freee] 請求書作成:", { companyId, partnerId: params.partnerId, amount: params.amount })
+
   const res = await fetch(`${FREEE_INVOICE_API}/invoices`, {
     method: "POST",
     headers: {
@@ -209,8 +223,16 @@ export async function createFreeeInvoice(params: {
   if (!res.ok) {
     const body = await res.text()
     console.error("[Freee] 請求書作成エラー:", res.status, body)
-    throw new Error(`Freee請求書作成エラー (${res.status})`)
+    if (res.status === 401) {
+      throw new Error("Freee認証エラー: トークンが無効です。設定画面から再連携してください。")
+    }
+    if (res.status === 403) {
+      throw new Error("Freee権限エラー: 請求書作成のスコープが不足しています。再連携してください。")
+    }
+    throw new Error(`Freee請求書作成エラー (${res.status}): ${body}`)
   }
 
-  return res.json() as Promise<FreeeInvoiceResponse>
+  const result = await res.json() as FreeeInvoiceResponse
+  console.log("[Freee] 請求書作成成功:", { invoiceId: result.invoice.id, invoiceNumber: result.invoice.invoice_number })
+  return result
 }
