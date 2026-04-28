@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 import { getIronSession } from "iron-session"
 import { sessionOptions, type SessionData } from "@/lib/session"
 import crypto from "crypto"
+import { lineLogger } from "@logs/line"
 
 const CHANNEL_ID = process.env.LINE_LOGIN_CHANNEL_ID
 const REDIRECT_URI = process.env.NEXT_PUBLIC_BASE_URL
@@ -37,6 +38,12 @@ export async function GET() {
     state,
     scope: "profile openid",
     bot_prompt: "aggressive",
+  })
+
+  lineLogger.info("auth_redirect", {
+    talentId: session.talentId,
+    redirectUri: REDIRECT_URI,
+    channelId: CHANNEL_ID,
   })
 
   return NextResponse.redirect(`https://access.line.me/oauth2/v2.1/authorize?${params}`)

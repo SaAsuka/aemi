@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 import { getIronSession } from "iron-session"
 import { sessionOptions, type SessionData } from "@/lib/session"
 import { prisma } from "@/lib/db"
+import { lineLogger } from "@logs/line"
 
 const CHANNEL_ID = process.env.LINE_LOGIN_CHANNEL_ID
 const CHANNEL_SECRET = process.env.LINE_LOGIN_CHANNEL_SECRET
@@ -15,7 +16,7 @@ export async function GET(req: NextRequest) {
   const error = req.nextUrl.searchParams.get("error")
 
   if (error) {
-    console.error("[LINE_LOGIN] 認証エラー:", error)
+    lineLogger.error("auth_denied", { lineError: error })
     return NextResponse.redirect(`${BASE_URL}/mypage/settings?line=error`)
   }
 
@@ -24,7 +25,7 @@ export async function GET(req: NextRequest) {
   cookieStore.delete("line_state")
 
   if (!code || !state || state !== savedState) {
-    console.error("[LINE_LOGIN] state不一致またはcode未取得")
+    lineLogger.error("state_mismatch", { hasCode: !!code, hasState: !!state })
     return NextResponse.redirect(`${BASE_URL}/mypage/settings?line=error`)
   }
 
@@ -48,7 +49,7 @@ export async function GET(req: NextRequest) {
 
     if (!tokenRes.ok) {
       const err = await tokenRes.json().catch(() => ({}))
-      console.error("[LINE_LOGIN] トークン取得失敗:", err)
+      lineLogger.error("token_fetch_failed", { talentId: session.talentId, status: tokenRes.status, detail: err })
       return NextResponse.redirect(`${BASE_URL}/mypage/settings?line=error`)
     }
 
@@ -59,7 +60,7 @@ export async function GET(req: NextRequest) {
     })
 
     if (!profileRes.ok) {
-      console.error("[LINE_LOGIN] プロフィール取得失敗")
+      lineLogger.error("profile_fetch_failed", { talentId: session.talentId, status: profileRes.status })
       return NextResponse.redirect(`${BASE_URL}/mypage/settings?line=error`)
     }
 
@@ -70,10 +71,10 @@ export async function GET(req: NextRequest) {
       data: { lineUserId: userId },
     })
 
-    console.log(`[LINE_LOGIN] 連携成功 talentId=${session.talentId} lineUserId=${userId}`)
+    lineLogger.info("connect_success", { talentId: session.talentId, lineUserId: userId })
     return NextResponse.redirect(`${BASE_URL}/mypage/settings?line=connected`)
   } catch (e) {
-    console.error("[LINE_LOGIN] エラー:", e)
+    lineLogger.error("unexpected_error", { talentId: session.talentId, error: String(e) })
     return NextResponse.redirect(`${BASE_URL}/mypage/settings?line=error`)
   }
 }
