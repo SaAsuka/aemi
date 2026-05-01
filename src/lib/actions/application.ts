@@ -4,6 +4,7 @@ import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
 import { applicationSchema } from "@/lib/validations/application"
 import { sendLinePush, buildStatusMessage } from "@/lib/line"
+import { sendSlackNotification, buildApplicationNotification } from "@/lib/slack"
 
 function buildAppWhere(status?: string, jobId?: string, talentId?: string) {
   const where: Record<string, unknown> = {}
@@ -205,6 +206,14 @@ export async function createApplication(formData: FormData) {
       },
     },
   })
+
+  const talent = await prisma.talent.findUnique({ where: { id: data.talentId }, select: { name: true } })
+  const job = await prisma.job.findUnique({ where: { id: data.jobId }, select: { title: true } })
+  if (talent && job) {
+    sendSlackNotification(buildApplicationNotification(talent.name, job.title)).catch((err) => {
+      console.error("[Slack] 応募通知送信エラー:", err)
+    })
+  }
 
   revalidatePath("/admin/applications")
   revalidatePath("/jobs")
