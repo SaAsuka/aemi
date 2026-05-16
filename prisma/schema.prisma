@@ -113,7 +113,7 @@ model Talent {
   nameKana       String
   stageName      String?
   nameRomaji   String?
-  email        String?
+  email        String?  @unique
   phone        String?
   gender       Gender?
   birthDate    DateTime?

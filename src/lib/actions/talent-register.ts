@@ -14,6 +14,13 @@ export async function registerTalent(formData: FormData) {
 
   const data = parsed.data
 
+  if (data.email) {
+    const existing = await prisma.talent.findUnique({ where: { email: data.email }, select: { id: true } })
+    if (existing) {
+      return { error: { email: ["このメールアドレスはすでに登録されています"] } }
+    }
+  }
+
   let photoUrls: string[] = []
   const photoUrlsRaw = formData.get("photoUrls")
   if (typeof photoUrlsRaw === "string" && photoUrlsRaw) {
