@@ -13,8 +13,8 @@ function getSupabaseUrl(): string {
 
 function getAdminClient() {
   const url = getSupabaseUrl()
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY
-  if (!key) throw new Error("SUPABASE_SERVICE_ROLE_KEY が設定されていません")
+  const key = process.env.SERVICE_ROLE_KEY
+  if (!key) throw new Error("SERVICE_ROLE_KEY が設定されていません")
   return createClient(url, key, { auth: { persistSession: false } })
 }
 
