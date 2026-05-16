@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { upload } from "@vercel/blob/client"
 import { Button } from "@/components/ui/button"
 import { Trash2, GripVertical, Plus, Loader2 } from "lucide-react"
 import { addTalentPhoto, deleteTalentPhoto, reorderTalentPhotos } from "@/lib/actions/talent-photo"
@@ -24,19 +23,19 @@ export function TalentPhotos({ talentId, photos: initialPhotos }: { talentId: st
     try {
       for (const file of Array.from(files)) {
         setUploadProgress((prev) => ({ ...prev, [file.name]: 0 }))
-        const blob = await upload(file.name, file, {
-          access: "private",
-          handleUploadUrl: "/api/upload",
-          onUploadProgress: ({ percentage }) => {
-            setUploadProgress((prev) => ({ ...prev, [file.name]: percentage }))
-          },
-        })
+        const formData = new FormData()
+        formData.append("file", file)
+        formData.append("category", "photos")
+        formData.append("id", talentId)
+        const res = await fetch("/api/upload", { method: "POST", body: formData })
+        if (!res.ok) throw new Error((await res.json()).error ?? "アップロードに失敗しました")
+        const { url } = await res.json()
         setUploadProgress((prev) => {
           const next = { ...prev }
           delete next[file.name]
           return next
         })
-        await addTalentPhoto(talentId, blob.url)
+        await addTalentPhoto(talentId, url)
       }
       window.location.reload()
     } catch (err) {

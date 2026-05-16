@@ -2,6 +2,7 @@
 
 import { revalidatePath, updateTag } from "next/cache"
 import { del } from "@vercel/blob"
+import { deleteFromStorage, isSupabaseStorageUrl } from "@/lib/supabase-storage"
 import { prisma } from "@/lib/db"
 import { talentBaseSchema } from "@/lib/validations/talent"
 import { upsertSocialLinks, upsertBankAccount } from "./talent-relations"
@@ -346,16 +347,18 @@ export async function deleteTalent(id: string) {
     await tx.talent.delete({ where: { id } })
   })
 
-  const blobUrls = [
+  const allUrls = [
     ...photos.map((p) => p.url),
     ...works.map((w) => w.imageUrl),
     ...applications.flatMap((a) => a.submissions.map((s) => s.fileUrl)),
     talent?.resume,
-  ].filter((url): url is string => !!url && url.includes("blob.vercel-storage.com"))
+  ].filter((url): url is string => !!url)
 
-  if (blobUrls.length > 0) {
-    await del(blobUrls).catch(() => {})
-  }
+  const vercelUrls = allUrls.filter((u) => u.includes("blob.vercel-storage.com"))
+  const supabaseUrls = allUrls.filter((u) => isSupabaseStorageUrl(u))
+
+  if (vercelUrls.length > 0) await del(vercelUrls).catch(() => {})
+  if (supabaseUrls.length > 0) await deleteFromStorage(supabaseUrls).catch(() => {})
 
   revalidatePath("/admin/talents")
   updateTag("talents")

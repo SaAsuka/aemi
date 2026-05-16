@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { upload } from "@vercel/blob/client"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Trash2, GripVertical, Plus, Loader2 } from "lucide-react"
@@ -24,11 +23,14 @@ export function TalentWorks({ talentId, works: initialWorks }: { talentId: strin
     }
     setUploading(true)
     try {
-      const blob = await upload(file.name, file, {
-        access: "private",
-        handleUploadUrl: "/api/upload",
-      })
-      await addTalentWork(talentId, blob.url, caption.trim())
+      const formData = new FormData()
+      formData.append("file", file)
+      formData.append("category", "works")
+      formData.append("id", talentId)
+      const res = await fetch("/api/upload", { method: "POST", body: formData })
+      if (!res.ok) throw new Error((await res.json()).error ?? "アップロードに失敗しました")
+      const { url } = await res.json()
+      await addTalentWork(talentId, url, caption.trim())
       setCaption("")
       window.location.reload()
     } finally {

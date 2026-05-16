@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useCallback } from "react"
-import { upload } from "@vercel/blob/client"
 import { createApplication } from "@/lib/actions/application"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -66,11 +65,13 @@ export function JobApplicationForm({
   const handleFileUpload = useCallback(async (cat: string, file: File) => {
     updateSubmission(cat, { uploading: true })
     try {
-      const blob = await upload(file.name, file, {
-        access: "private",
-        handleUploadUrl: "/api/upload",
-      })
-      updateSubmission(cat, { fileUrl: blob.url, fileName: file.name, uploading: false })
+      const fd = new FormData()
+      fd.append("file", file)
+      fd.append("category", "applications")
+      const res = await fetch("/api/upload", { method: "POST", body: fd })
+      if (!res.ok) throw new Error((await res.json()).error ?? "アップロードに失敗しました")
+      const { url } = await res.json()
+      updateSubmission(cat, { fileUrl: url, fileName: file.name, uploading: false })
     } catch {
       updateSubmission(cat, { uploading: false })
       alert("アップロードに失敗しました")

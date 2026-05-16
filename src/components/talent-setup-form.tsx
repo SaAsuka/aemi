@@ -2,7 +2,6 @@
 
 import { useRouter } from "next/navigation"
 import { useEffect, useState, useCallback, useRef } from "react"
-import { upload } from "@vercel/blob/client"
 import { setupTalent } from "@/lib/actions/talent-setup"
 import { addTalentPhoto, deleteTalentPhoto, reorderTalentPhotos } from "@/lib/actions/talent-photo"
 import { blobProxyUrl } from "@/lib/utils/blob"
@@ -83,19 +82,19 @@ function SetupPhotos({ talentId, photos: initialPhotos }: { talentId: string; ph
     try {
       for (const file of Array.from(files)) {
         setUploadProgress((prev) => ({ ...prev, [file.name]: 0 }))
-        const blob = await upload(file.name, file, {
-          access: "private",
-          handleUploadUrl: "/api/upload",
-          onUploadProgress: ({ percentage }) => {
-            setUploadProgress((prev) => ({ ...prev, [file.name]: percentage }))
-          },
-        })
+        const fd = new FormData()
+        fd.append("file", file)
+        fd.append("category", "photos")
+        fd.append("id", talentId)
+        const res = await fetch("/api/upload", { method: "POST", body: fd })
+        if (!res.ok) throw new Error((await res.json()).error ?? "アップロードに失敗しました")
+        const { url } = await res.json()
         setUploadProgress((prev) => {
           const next = { ...prev }
           delete next[file.name]
           return next
         })
-        await addTalentPhoto(talentId, blob.url)
+        await addTalentPhoto(talentId, url)
       }
       window.location.reload()
     } catch {

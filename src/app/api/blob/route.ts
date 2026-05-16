@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { get } from "@vercel/blob"
+import { isSupabaseStorageUrl, extractStoragePath, getSignedUrl } from "@/lib/supabase-storage"
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get("url")
@@ -9,6 +10,14 @@ export async function GET(request: NextRequest) {
   }
 
   try {
+    // Supabase Storage
+    if (isSupabaseStorageUrl(url)) {
+      const path = extractStoragePath(url)
+      const signedUrl = await getSignedUrl(path)
+      return NextResponse.redirect(signedUrl)
+    }
+
+    // Vercel Blob（既存ファイルの後方互換）
     const result = await get(url, {
       access: "private",
       ifNoneMatch: request.headers.get("if-none-match") ?? undefined,
