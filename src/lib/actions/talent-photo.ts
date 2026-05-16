@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { del } from "@vercel/blob"
 import { prisma } from "@/lib/db"
 import { getSession } from "@/lib/auth"
 
@@ -26,7 +27,11 @@ export async function addTalentPhoto(talentId: string, url: string) {
 
 export async function deleteTalentPhoto(id: string, talentId: string) {
   await verifyTalentAccess(talentId)
+  const photo = await prisma.talentPhoto.findUnique({ where: { id }, select: { url: true } })
   await prisma.talentPhoto.delete({ where: { id } })
+  if (photo?.url?.includes("blob.vercel-storage.com")) {
+    await del(photo.url).catch(() => {})
+  }
   revalidatePath(`/admin/talents/${talentId}`)
   revalidatePath("/mypage")
 }

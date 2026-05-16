@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath, updateTag } from "next/cache"
+import { del } from "@vercel/blob"
 import { prisma } from "@/lib/db"
 import { applicationSchema } from "@/lib/validations/application"
 import { sendLinePush, buildStatusMessage } from "@/lib/line"
@@ -279,7 +280,15 @@ export async function bulkUpdateApplicationStatus(ids: string[], status: string)
 
 export async function bulkDeleteApplications(ids: string[]) {
   if (ids.length === 0) return { error: "対象が選択されていません" }
+  const submissions = await prisma.applicationSubmission.findMany({
+    where: { applicationId: { in: ids } },
+    select: { fileUrl: true },
+  })
   await prisma.application.deleteMany({ where: { id: { in: ids } } })
+  const blobUrls = submissions
+    .map((s) => s.fileUrl)
+    .filter((url): url is string => !!url && url.includes("blob.vercel-storage.com"))
+  if (blobUrls.length > 0) await del(blobUrls).catch(() => {})
   revalidatePath("/admin/applications")
   updateTag("talents")
   updateTag("jobs")
@@ -287,7 +296,15 @@ export async function bulkDeleteApplications(ids: string[]) {
 }
 
 export async function deleteApplication(id: string) {
+  const submissions = await prisma.applicationSubmission.findMany({
+    where: { applicationId: id },
+    select: { fileUrl: true },
+  })
   await prisma.application.delete({ where: { id } })
+  const blobUrls = submissions
+    .map((s) => s.fileUrl)
+    .filter((url): url is string => !!url && url.includes("blob.vercel-storage.com"))
+  if (blobUrls.length > 0) await del(blobUrls).catch(() => {})
   revalidatePath("/admin/applications")
   updateTag("talents")
   updateTag("jobs")

@@ -1,6 +1,7 @@
 "use server"
 
 import { revalidatePath, updateTag } from "next/cache"
+import { del } from "@vercel/blob"
 import { prisma } from "@/lib/db"
 import { talentBaseSchema } from "@/lib/validations/talent"
 import { upsertSocialLinks, upsertBankAccount } from "./talent-relations"
@@ -326,18 +327,35 @@ export async function saveResumeUrl(talentId: string, url: string, source: "auto
 }
 
 export async function deleteTalent(id: string) {
-  await prisma.$transaction(async (tx) => {
-    const appIds = (
-      await tx.application.findMany({ where: { talentId: id }, select: { id: true } })
-    ).map((a) => a.id)
+  const [photos, works, applications, talent] = await Promise.all([
+    prisma.talentPhoto.findMany({ where: { talentId: id }, select: { url: true } }),
+    prisma.talentWork.findMany({ where: { talentId: id }, select: { imageUrl: true } }),
+    prisma.application.findMany({
+      where: { talentId: id },
+      select: { id: true, submissions: { select: { fileUrl: true } } },
+    }),
+    prisma.talent.findUnique({ where: { id }, select: { resume: true } }),
+  ])
 
+  await prisma.$transaction(async (tx) => {
+    const appIds = applications.map((a) => a.id)
     if (appIds.length > 0) {
       await tx.schedule.deleteMany({ where: { applicationId: { in: appIds } } })
       await tx.application.deleteMany({ where: { talentId: id } })
     }
-
     await tx.talent.delete({ where: { id } })
   })
+
+  const blobUrls = [
+    ...photos.map((p) => p.url),
+    ...works.map((w) => w.imageUrl),
+    ...applications.flatMap((a) => a.submissions.map((s) => s.fileUrl)),
+    talent?.resume,
+  ].filter((url): url is string => !!url && url.includes("blob.vercel-storage.com"))
+
+  if (blobUrls.length > 0) {
+    await del(blobUrls).catch(() => {})
+  }
 
   revalidatePath("/admin/talents")
   updateTag("talents")
