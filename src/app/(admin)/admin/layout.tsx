@@ -9,7 +9,7 @@ export default function AdminLayout({
   children: React.ReactNode
 }) {
   return (
-    <SidebarProvider defaultOpen={false}>
+    <SidebarProvider defaultOpen={true}>
       <AdminSidebar />
       <SidebarInset>
         <div className="h-dvh overflow-auto p-3 sm:p-6">{children}</div>
