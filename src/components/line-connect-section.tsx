@@ -3,7 +3,7 @@
 import { useSearchParams } from "next/navigation"
 import { MessageCircle, Check, ExternalLink, Bell, BellOff } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { disconnectLine, updateLineNotifySetting } from "@/lib/actions/line"
+import { updateLineNotifySetting } from "@/lib/actions/line"
 import { useRouter } from "next/navigation"
 import { useEffect, useState } from "react"
 
@@ -80,18 +80,6 @@ export function LineConnectSection({
           </button>
         </div>
 
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-green-700 hover:text-red-600"
-          onClick={async () => {
-            if (!confirm("LINE連携を解除しますか？案件の通知が届かなくなります。")) return
-            await disconnectLine()
-            router.refresh()
-          }}
-        >
-          連携を解除する
-        </Button>
       </div>
     )
   }
