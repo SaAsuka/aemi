@@ -124,7 +124,7 @@ export async function GET(
     let blobError: string | undefined
     try {
       stage = "BLOB_UPLOAD"
-      const path = `pdfs/${id}/${fileName}.pdf`
+      const path = `pdfs/${id}/profile-${yyyymm}.pdf`
       blobUrl = await uploadToStorage(Buffer.from(buffer), path, "application/pdf")
       console.log(`[COMPOSITE] BLOB_DONE +${Date.now() - t0}ms url=${blobUrl}`)
 
