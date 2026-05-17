@@ -4,6 +4,7 @@ import { isSupabaseStorageUrl, extractStoragePath, getSignedUrl } from "@/lib/su
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get("url")
+  const sign = request.nextUrl.searchParams.get("sign") === "true"
 
   if (!url) {
     return NextResponse.json({ error: "Missing url" }, { status: 400 })
@@ -13,7 +14,9 @@ export async function GET(request: NextRequest) {
     // Supabase Storage
     if (isSupabaseStorageUrl(url)) {
       const path = extractStoragePath(url)
-      const signedUrl = await getSignedUrl(path)
+      // sign=true のときは署名付きURLをJSONで返す（7日間有効）
+      const signedUrl = await getSignedUrl(path, sign ? 60 * 60 * 24 * 7 : 3600)
+      if (sign) return NextResponse.json({ url: signedUrl })
       return NextResponse.redirect(signedUrl)
     }
 
