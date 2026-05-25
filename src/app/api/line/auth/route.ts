@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { getIronSession } from "iron-session"
 import { sessionOptions, type SessionData } from "@/lib/session"
@@ -10,7 +10,7 @@ const REDIRECT_URI = process.env.NEXT_PUBLIC_BASE_URL
   ? `${process.env.NEXT_PUBLIC_BASE_URL}/api/line/callback`
   : "https://app.vozel.jp/api/line/callback"
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const cookieStore = await cookies()
   const session = await getIronSession<SessionData>(cookieStore, sessionOptions)
   if (!session.talentId || session.role !== "talent") {
@@ -21,6 +21,7 @@ export async function GET() {
     return NextResponse.json({ error: "LINE_LOGIN_CHANNEL_ID未設定" }, { status: 500 })
   }
 
+  const returnTo = req.nextUrl.searchParams.get("returnTo") || ""
   const state = crypto.randomBytes(16).toString("hex")
 
   cookieStore.set("line_state", state, {
@@ -30,6 +31,16 @@ export async function GET() {
     maxAge: 300,
     path: "/",
   })
+
+  if (returnTo) {
+    cookieStore.set("line_return_to", returnTo, {
+      httpOnly: true,
+      secure: true,
+      sameSite: "lax",
+      maxAge: 300,
+      path: "/",
+    })
+  }
 
   const params = new URLSearchParams({
     response_type: "code",

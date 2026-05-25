@@ -74,20 +74,19 @@ export function WelcomeTutorial({ talentName, hasLine }: { talentName: string; h
           </Button>
         ) : (
           <div className="flex-1 space-y-3">
-            {!hasLine && (
-              <Button size="lg" className="w-full bg-[#06C755] hover:bg-[#05b34d]" onClick={() => { window.location.href = "/api/line/auth" }}>
-                <MessageCircle className="h-4 w-4 mr-2" />
-                LINEで連携する
+            {!hasLine ? (
+              <>
+                <p className="text-sm text-muted-foreground">マイページに進むにはLINE連携が必要です</p>
+                <Button size="lg" className="w-full bg-[#06C755] hover:bg-[#05b34d]" onClick={() => { window.location.href = "/api/line/auth?returnTo=/welcome" }}>
+                  <MessageCircle className="h-4 w-4 mr-2" />
+                  LINEで連携する
+                </Button>
+              </>
+            ) : (
+              <Button size="lg" className="w-full" onClick={() => router.push("/mypage")}>
+                マイページへ
               </Button>
             )}
-            <Button
-              variant={hasLine ? "default" : "outline"}
-              size="lg"
-              className="w-full"
-              onClick={() => router.push("/mypage")}
-            >
-              マイページへ
-            </Button>
           </div>
         )}
       </div>
@@ -95,9 +94,9 @@ export function WelcomeTutorial({ talentName, hasLine }: { talentName: string; h
       {!isLast && (
         <button
           className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          onClick={() => router.push("/mypage")}
+          onClick={() => setCurrent(slides.length - 1)}
         >
-          スキップしてマイページへ →
+          スキップ →
         </button>
       )}
     </div>

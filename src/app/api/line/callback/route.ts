@@ -22,7 +22,9 @@ export async function GET(req: NextRequest) {
 
   const cookieStore = await cookies()
   const savedState = cookieStore.get("line_state")?.value
+  const returnTo = cookieStore.get("line_return_to")?.value || ""
   cookieStore.delete("line_state")
+  cookieStore.delete("line_return_to")
 
   if (!code || !state || state !== savedState) {
     lineLogger.error("state_mismatch", { hasCode: !!code, hasState: !!state })
@@ -72,7 +74,8 @@ export async function GET(req: NextRequest) {
     })
 
     lineLogger.info("connect_success", { talentId: session.talentId, lineUserId: userId })
-    return NextResponse.redirect(`${BASE_URL}/mypage/settings?line=connected`)
+    const successDest = returnTo ? `${BASE_URL}${returnTo}` : `${BASE_URL}/mypage/settings?line=connected`
+    return NextResponse.redirect(successDest)
   } catch (e) {
     lineLogger.error("unexpected_error", { talentId: session.talentId, error: String(e) })
     return NextResponse.redirect(`${BASE_URL}/mypage/settings?line=error`)
