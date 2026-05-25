@@ -91,14 +91,6 @@ export function WelcomeTutorial({ talentName, hasLine }: { talentName: string; h
         )}
       </div>
 
-      {!isLast && (
-        <button
-          className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-          onClick={() => setCurrent(slides.length - 1)}
-        >
-          スキップ →
-        </button>
-      )}
     </div>
   )
 }
