@@ -1,8 +1,10 @@
-import { requireTalent } from "@/lib/auth"
+import { redirect } from "next/navigation"
+import { requireTalent, isSubscriptionActive } from "@/lib/auth"
 import { WelcomeTutorial } from "@/components/welcome-tutorial"
 
 export default async function WelcomePage() {
   const talent = await requireTalent()
+  if (!isSubscriptionActive(talent)) redirect("/subscribe")
   const displayName = talent.stageName || talent.name
   const hasLine = !!talent.lineUserId
 

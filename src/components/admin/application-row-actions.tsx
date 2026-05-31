@@ -51,7 +51,15 @@ export function ApplicationRowActions({
   const copyPdf = async (e: React.MouseEvent) => {
     e.preventDefault()
     if (!talent.resume) return
-    await navigator.clipboard.writeText(talent.resume)
+    let urlToCopy = talent.resume
+    if (talent.resume.includes(".supabase.co/storage/")) {
+      const res = await fetch(`/api/blob?url=${encodeURIComponent(talent.resume)}&sign=true`)
+      if (res.ok) {
+        const json = await res.json()
+        urlToCopy = json.url
+      }
+    }
+    await navigator.clipboard.writeText(urlToCopy)
     setCopiedPdf(true)
     setTimeout(() => setCopiedPdf(false), 2000)
   }

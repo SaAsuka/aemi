@@ -79,7 +79,7 @@ function PageHeader() {
 function PageFooter() {
   return (
     <View style={s.footer} fixed>
-      <Text style={s.footerBrand}>VOZEL</Text>
+      <Text style={s.footerBrand}>Lumital</Text>
       <Text style={s.footerText}>〒162-0061 東京都新宿区市谷柳町26-1 スカイコート市谷II 503</Text>
       <Text style={s.footerText}>Tel: 070-9205-1460</Text>
       <Text style={s.footerText}>Mail: info@vozel.jp</Text>
@@ -286,7 +286,7 @@ export function CompositePDF({ talent }: { talent: TalentData }) {
   const displayName = talent.stageName || talent.name
 
   return (
-    <Document title={`${displayName} - VOZEL プロフィール`} author="VOZEL">
+    <Document title={`${displayName} - Lumital プロフィール`} author="Lumital">
       <ProfilePage talent={talent} />
       {gridPhotos.length > 0 && <PhotoGridPage photos={gridPhotos} />}
       {talent.works.length > 0 && <WorksPage talent={talent} />}

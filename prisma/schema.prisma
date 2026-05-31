@@ -95,6 +95,14 @@ enum OptionPurchaseStatus {
   REFUNDED
 }
 
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  SENT
+  PAID
+  CANCELLED
+}
+
 model Talent {
   id             String       @id @default(cuid())
   lastName       String       @default("")
@@ -105,7 +113,7 @@ model Talent {
   nameKana       String
   stageName      String?
   nameRomaji   String?
-  email        String?
+  email        String?  @unique
   phone        String?
   gender       Gender?
   birthDate    DateTime?
@@ -287,6 +295,7 @@ model Application {
 
   schedule    Schedule?
   submissions ApplicationSubmission[]
+  invoices    Invoice[]
 
   @@unique([talentId, jobId])
   @@index([talentId])
@@ -405,4 +414,58 @@ model OptionPurchase {
   @@index([optionId])
   @@index([talentId])
   @@map("option_purchases")
+}
+
+model ProductionCompany {
+  id             String   @id @default(cuid())
+  companyName    String
+  zipCode        String?
+  address        String?
+  contactName    String?
+  contactEmail   String?
+  contactPhone   String?
+  freeePartnerId Int?     @unique
+  note           String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  invoices Invoice[]
+
+  @@map("production_companies")
+}
+
+model Invoice {
+  id                  String            @id @default(cuid())
+  applicationId       String
+  application         Application       @relation(fields: [applicationId], references: [id])
+  productionCompanyId String
+  productionCompany   ProductionCompany @relation(fields: [productionCompanyId], references: [id])
+  subject             String?
+  description         String?
+  amount              Int
+  taxRate             Int               @default(10)
+  freeeInvoiceId      Int?              @unique
+  freeeInvoiceNumber  String?
+  status              InvoiceStatus     @default(DRAFT)
+  issueDate           DateTime?
+  dueDate             DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  @@index([applicationId])
+  @@index([productionCompanyId])
+  @@index([status])
+  @@map("invoices")
+}
+
+model FreeeToken {
+  id           String   @id @default(cuid())
+  companyId    Int      @unique
+  accessToken  String   @db.Text
+  refreshToken String   @db.Text
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("freee_tokens")
 }

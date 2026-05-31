@@ -7,7 +7,7 @@ export default function CheckoutSuccessPage() {
   const router = useRouter()
 
   useEffect(() => {
-    const timer = setTimeout(() => router.push("/jobs"), 3000)
+    const timer = setTimeout(() => router.push("/welcome"), 3000)
     return () => clearTimeout(timer)
   }, [router])
 

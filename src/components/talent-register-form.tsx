@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { upload } from "@vercel/blob/client"
 import { registerTalent } from "@/lib/actions/talent-register"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -80,11 +79,13 @@ export function TalentRegisterForm() {
       setUploading(true)
       const photoUrls: string[] = []
       for (const photo of photos) {
-        const blob = await upload(photo!.file.name, photo!.file, {
-          access: "private",
-          handleUploadUrl: "/api/upload",
-        })
-        photoUrls.push(blob.url)
+        const fd = new FormData()
+        fd.append("file", photo!.file)
+        fd.append("category", "photos")
+        const res = await fetch("/api/upload", { method: "POST", body: fd })
+        if (!res.ok) throw new Error((await res.json()).error ?? "アップロードに失敗しました")
+        const { url } = await res.json()
+        photoUrls.push(url)
       }
       setUploading(false)
 

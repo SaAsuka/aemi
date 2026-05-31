@@ -1,5 +1,5 @@
 export function blobProxyUrl(url: string, cacheBust = false): string {
-  if (url.includes("blob.vercel-storage.com")) {
+  if (url.includes("blob.vercel-storage.com") || url.includes(".supabase.co/storage/")) {
     const base = `/api/blob?url=${encodeURIComponent(url)}`
     return cacheBust ? `${base}&t=${Date.now()}` : base
   }

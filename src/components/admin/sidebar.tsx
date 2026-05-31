@@ -1,6 +1,5 @@
 "use client"
 
-import { useRef, useCallback } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import {
@@ -14,9 +13,8 @@ import {
   SidebarMenuItem,
   SidebarHeader,
   SidebarFooter,
-  useSidebar,
 } from "@/components/ui/sidebar"
-import { BarChart3, Users, Briefcase, FileText, CalendarDays, ShoppingBag } from "lucide-react"
+import { BarChart3, Users, Briefcase, FileText, CalendarDays, ShoppingBag, Building2, Receipt, Settings } from "lucide-react"
 
 const navItems = [
   { title: "ダッシュボード", href: "/admin", icon: BarChart3 },
@@ -25,36 +23,20 @@ const navItems = [
   { title: "応募管理", href: "/admin/applications", icon: FileText },
   { title: "スケジュール", href: "/admin/schedule", icon: CalendarDays },
   { title: "オプション管理", href: "/admin/options", icon: ShoppingBag },
+  { title: "制作会社", href: "/admin/production-companies", icon: Building2 },
+  { title: "請求書", href: "/admin/invoices", icon: Receipt },
 ]
 
 export function AdminSidebar() {
   const pathname = usePathname()
-  const { setOpen } = useSidebar()
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-
-  const handleMouseEnter = useCallback(() => {
-    if (timerRef.current) clearTimeout(timerRef.current)
-    setOpen(true)
-  }, [setOpen])
-
-  const handleMouseLeave = useCallback(() => {
-    timerRef.current = setTimeout(() => setOpen(false), 300)
-  }, [setOpen])
 
   return (
-    <Sidebar
-      collapsible="icon"
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
-    >
-      <SidebarHeader className="border-b p-4 group-data-[collapsible=icon]:p-2">
-        <Link href="/admin" className="font-bold text-xl group-data-[collapsible=icon]:hidden">
-          VOZEL
+    <Sidebar collapsible="none">
+      <SidebarHeader className="border-b p-4">
+        <Link href="/admin" className="font-bold text-xl">
+          Lumital
         </Link>
-        <Link href="/admin" className="hidden group-data-[collapsible=icon]:block font-bold text-sm text-center">
-          V
-        </Link>
-        <p className="text-xs text-muted-foreground group-data-[collapsible=icon]:hidden">案件管理システム</p>
+        <p className="text-xs text-muted-foreground">案件管理システム</p>
       </SidebarHeader>
           <SidebarContent>
             <SidebarGroup>
@@ -82,11 +64,15 @@ export function AdminSidebar() {
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
-      <SidebarFooter className="border-t p-4 space-y-2 group-data-[collapsible=icon]:p-2">
-        <Link href="/" className="text-sm text-muted-foreground hover:underline block group-data-[collapsible=icon]:hidden">
+      <SidebarFooter className="border-t p-4 space-y-2">
+        <Link href="/admin/settings" className="text-sm text-muted-foreground hover:underline flex items-center gap-2">
+          <Settings className="h-4 w-4 shrink-0" />
+          <span>設定</span>
+        </Link>
+        <Link href="/" className="text-sm text-muted-foreground hover:underline block">
           LP を表示
         </Link>
-        <a href="/auth/logout" className="text-sm text-muted-foreground hover:underline block group-data-[collapsible=icon]:hidden">
+        <a href="/auth/logout" className="text-sm text-muted-foreground hover:underline block">
           ログアウト
         </a>
       </SidebarFooter>

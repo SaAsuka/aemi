@@ -1,9 +1,12 @@
 "use server"
 
 import { revalidatePath, updateTag } from "next/cache"
+import { del } from "@vercel/blob"
+import { deleteFromStorage, isSupabaseStorageUrl } from "@/lib/supabase-storage"
 import { prisma } from "@/lib/db"
 import { applicationSchema } from "@/lib/validations/application"
 import { sendLinePush, buildStatusMessage } from "@/lib/line"
+import { sendSlackNotification, buildApplicationNotification } from "@/lib/slack"
 
 function buildAppWhere(status?: string, jobId?: string, talentId?: string) {
   const where: Record<string, unknown> = {}
@@ -31,7 +34,7 @@ const APP_SELECT = {
   },
   job: {
     select: {
-      id: true, title: true, deadline: true,
+      id: true, title: true, deadline: true, fee: true,
       dates: { orderBy: { date: "asc" as const } },
     },
   },
@@ -39,6 +42,11 @@ const APP_SELECT = {
     select: {
       id: true, category: true, fileUrl: true, externalUrl: true, fileName: true,
     },
+  },
+  invoices: {
+    select: { id: true, status: true },
+    where: { status: { not: "CANCELLED" } },
+    take: 1,
   },
 } as const
 
@@ -201,6 +209,14 @@ export async function createApplication(formData: FormData) {
     },
   })
 
+  const talent = await prisma.talent.findUnique({ where: { id: data.talentId }, select: { name: true } })
+  const job = await prisma.job.findUnique({ where: { id: data.jobId }, select: { title: true } })
+  if (talent && job) {
+    sendSlackNotification(buildApplicationNotification(talent.name, job.title)).catch((err) => {
+      console.error("[Slack] 応募通知送信エラー:", err)
+    })
+  }
+
   revalidatePath("/admin/applications")
   revalidatePath("/jobs")
   updateTag("talents")
@@ -265,7 +281,16 @@ export async function bulkUpdateApplicationStatus(ids: string[], status: string)
 
 export async function bulkDeleteApplications(ids: string[]) {
   if (ids.length === 0) return { error: "対象が選択されていません" }
+  const submissions = await prisma.applicationSubmission.findMany({
+    where: { applicationId: { in: ids } },
+    select: { fileUrl: true },
+  })
   await prisma.application.deleteMany({ where: { id: { in: ids } } })
+  const allUrls = submissions.map((s) => s.fileUrl).filter((url): url is string => !!url)
+  const vercelUrls = allUrls.filter((u) => u.includes("blob.vercel-storage.com"))
+  const supabaseUrls = allUrls.filter((u) => isSupabaseStorageUrl(u))
+  if (vercelUrls.length > 0) await del(vercelUrls).catch(() => {})
+  if (supabaseUrls.length > 0) await deleteFromStorage(supabaseUrls).catch(() => {})
   revalidatePath("/admin/applications")
   updateTag("talents")
   updateTag("jobs")
@@ -273,7 +298,16 @@ export async function bulkDeleteApplications(ids: string[]) {
 }
 
 export async function deleteApplication(id: string) {
+  const submissions = await prisma.applicationSubmission.findMany({
+    where: { applicationId: id },
+    select: { fileUrl: true },
+  })
   await prisma.application.delete({ where: { id } })
+  const allUrls = submissions.map((s) => s.fileUrl).filter((url): url is string => !!url)
+  const vercelUrls = allUrls.filter((u) => u.includes("blob.vercel-storage.com"))
+  const supabaseUrls = allUrls.filter((u) => isSupabaseStorageUrl(u))
+  if (vercelUrls.length > 0) await del(vercelUrls).catch(() => {})
+  if (supabaseUrls.length > 0) await deleteFromStorage(supabaseUrls).catch(() => {})
   revalidatePath("/admin/applications")
   updateTag("talents")
   updateTag("jobs")

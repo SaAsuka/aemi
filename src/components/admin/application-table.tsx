@@ -10,7 +10,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { formatShortDeadline, dateCountdown } from "@/lib/utils/date"
+import { formatShortDeadline, dateCountdown, deadlineFollowUpStatus } from "@/lib/utils/date"
 import { firstShortDateByType, firstRawDateByType } from "@/lib/utils/job-dates"
 import { ApplicationStatusSelect } from "@/components/admin/application-status-select"
 import { ApplicationRowActions } from "@/components/admin/application-row-actions"
@@ -19,6 +19,8 @@ import { BulkActionsBar } from "@/components/admin/bulk-actions-bar"
 import { SortableHeader } from "@/components/admin/sortable-header"
 import { Pagination } from "@/components/admin/pagination"
 import { blobProxyUrl } from "@/lib/utils/blob"
+import { InvoiceCreateDialog } from "@/components/admin/invoice-create-dialog"
+import { Badge } from "@/components/ui/badge"
 
 type AppRow = {
   id: string
@@ -38,6 +40,7 @@ type AppRow = {
     id: string
     title: string
     deadline: Date | null
+    fee: number | null
     dates: { date: Date; type: string }[]
   }
   submissions: {
@@ -47,14 +50,22 @@ type AppRow = {
     externalUrl: string | null
     fileName: string | null
   }[]
+  invoices: { id: string; status: string }[]
+}
+
+type ProductionCompanyOption = {
+  id: string
+  companyName: string
 }
 
 export function ApplicationTable({
   applications,
   totalCount,
+  productionCompanies = [],
 }: {
   applications: AppRow[]
   totalCount: number
+  productionCompanies?: ProductionCompanyOption[]
 }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
@@ -101,13 +112,14 @@ export function ApplicationTable({
             <TableHead className="hidden md:table-cell w-[52px] px-2">オーディション</TableHead>
             <TableHead className="hidden md:table-cell w-[52px] px-2">撮影</TableHead>
             <SortableHeader column="status" label="ステータス" className="w-[108px] px-2" />
+            <TableHead className="hidden lg:table-cell w-[90px] px-2">請求書</TableHead>
             <TableHead className="w-9 px-1" />
           </TableRow>
         </TableHeader>
         <TableBody>
           {applications.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={9} className="text-center text-muted-foreground">
+              <TableCell colSpan={10} className="text-center text-muted-foreground">
                 データがありません
               </TableCell>
             </TableRow>
@@ -147,7 +159,15 @@ export function ApplicationTable({
                   <SubmissionLinks submissions={app.submissions} />
                 </TableCell>
                 <TableCell className="hidden sm:table-cell px-2 py-1.5 whitespace-nowrap">
-                  {app.job.deadline ? formatShortDeadline(app.job.deadline) : "−"}
+                  {app.job.deadline ? (
+                    <div className="flex flex-col gap-0.5">
+                      <span>{formatShortDeadline(app.job.deadline)}</span>
+                      {(() => {
+                        const fs = deadlineFollowUpStatus(app.job.deadline)
+                        return fs ? <span className={`text-[10px] ${fs.className}`}>{fs.label}</span> : null
+                      })()}
+                    </div>
+                  ) : "−"}
                 </TableCell>
                 <TableCell className="hidden md:table-cell px-2 py-1.5 whitespace-nowrap">
                   {(() => {
@@ -182,6 +202,24 @@ export function ApplicationTable({
                     talentName={app.talent.name}
                     jobTitle={app.job.title}
                   />
+                </TableCell>
+                <TableCell className="hidden lg:table-cell px-2 py-1.5">
+                  {app.status === "ACCEPTED" ? (
+                    <div className="flex flex-col items-start gap-0.5">
+                      {app.invoices.length > 0 && (
+                        <Badge variant="outline" className="text-green-700 border-green-300 text-[10px]">発行済</Badge>
+                      )}
+                      <InvoiceCreateDialog
+                        applicationId={app.id}
+                        jobTitle={app.job.title}
+                        jobFee={app.job.fee}
+                        talentName={app.talent.name}
+                        productionCompanies={productionCompanies}
+                      />
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">-</span>
+                  )}
                 </TableCell>
                 <TableCell className="px-1 py-1.5">
                   <ApplicationRowActions

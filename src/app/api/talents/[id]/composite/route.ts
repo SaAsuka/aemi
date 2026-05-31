@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
 import { renderToBuffer, Font } from "@react-pdf/renderer"
-import { put, get } from "@vercel/blob"
+import { get } from "@vercel/blob"
+import { uploadToStorage, isSupabaseStorageUrl, extractStoragePath, getSignedUrl } from "@/lib/supabase-storage"
+
 import sharp from "sharp"
 import { prisma } from "@/lib/db"
 import { CompositePDF } from "@/lib/pdf/composite-pdf"
@@ -75,6 +77,11 @@ export async function GET(
           chunks.push(value)
         }
         buf = Buffer.concat(chunks)
+      } else if (isSupabaseStorageUrl(url)) {
+        const signed = await getSignedUrl(extractStoragePath(url))
+        const res = await fetch(signed)
+        if (!res.ok) return url
+        buf = Buffer.from(await res.arrayBuffer())
       } else {
         const res = await fetch(url)
         if (!res.ok) return url
@@ -117,13 +124,8 @@ export async function GET(
     let blobError: string | undefined
     try {
       stage = "BLOB_UPLOAD"
-      const blob = await put(`${fileName}.pdf`, Buffer.from(buffer), {
-        access: "private",
-        contentType: "application/pdf",
-        addRandomSuffix: false,
-        allowOverwrite: true,
-      })
-      blobUrl = blob.url
+      const path = `pdfs/${id}/profile-${yyyymm}.pdf`
+      blobUrl = await uploadToStorage(Buffer.from(buffer), path, "application/pdf")
       console.log(`[COMPOSITE] BLOB_DONE +${Date.now() - t0}ms url=${blobUrl}`)
 
       await prisma.talent.update({ where: { id }, data: { resume: blobUrl, resumeSource: "auto" } })

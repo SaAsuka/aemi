@@ -65,6 +65,18 @@ export function dateCountdown(date: Date | null): { label: string; className: st
   return { label: "残0日", className: "text-orange-500 font-medium" }
 }
 
+export function deadlineFollowUpStatus(deadline: Date | null): { label: string; className: string } | null {
+  if (!deadline) return null
+  const now = new Date()
+  const diffMs = now.getTime() - deadline.getTime()
+  if (diffMs <= 0) return null
+  const daysElapsed = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+  const remaining = 7 - daysElapsed
+  if (remaining > 0) return { label: `問合まで残${remaining}日`, className: "text-orange-500" }
+  return { label: "要問い合わせ", className: "text-red-500 font-medium" }
+}
+
+
 export function normalizeDeadline(value: string): Date {
   if (value.length === 10) {
     return new Date(`${value}T23:59:59+09:00`)

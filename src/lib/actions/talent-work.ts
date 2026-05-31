@@ -1,6 +1,8 @@
 "use server"
 
 import { revalidatePath } from "next/cache"
+import { del } from "@vercel/blob"
+import { deleteFromStorage, isSupabaseStorageUrl } from "@/lib/supabase-storage"
 import { prisma } from "@/lib/db"
 import { getSession } from "@/lib/auth"
 
@@ -33,7 +35,12 @@ export async function updateTalentWork(id: string, talentId: string, caption: st
 
 export async function deleteTalentWork(id: string, talentId: string) {
   await verifyTalentAccess(talentId)
+  const work = await prisma.talentWork.findUnique({ where: { id }, select: { imageUrl: true } })
   await prisma.talentWork.delete({ where: { id } })
+  if (work?.imageUrl) {
+    if (isSupabaseStorageUrl(work.imageUrl)) await deleteFromStorage([work.imageUrl]).catch(() => {})
+    else if (work.imageUrl.includes("blob.vercel-storage.com")) await del(work.imageUrl).catch(() => {})
+  }
   revalidatePath(`/admin/talents/${talentId}`)
   revalidatePath("/mypage")
 }

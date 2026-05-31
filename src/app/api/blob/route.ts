@@ -1,14 +1,26 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { get } from "@vercel/blob"
+import { isSupabaseStorageUrl, extractStoragePath, getSignedUrl } from "@/lib/supabase-storage"
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get("url")
+  const sign = request.nextUrl.searchParams.get("sign") === "true"
 
   if (!url) {
     return NextResponse.json({ error: "Missing url" }, { status: 400 })
   }
 
   try {
+    // Supabase Storage
+    if (isSupabaseStorageUrl(url)) {
+      const path = extractStoragePath(url)
+      // sign=true のときは署名付きURLをJSONで返す（7日間有効）
+      const signedUrl = await getSignedUrl(path, sign ? 60 * 60 * 24 * 7 : 3600)
+      if (sign) return NextResponse.json({ url: signedUrl })
+      return NextResponse.redirect(signedUrl)
+    }
+
+    // Vercel Blob（既存ファイルの後方互換）
     const result = await get(url, {
       access: "private",
       ifNoneMatch: request.headers.get("if-none-match") ?? undefined,

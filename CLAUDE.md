@@ -43,6 +43,14 @@
 - Schedule → Application: なし（手動削除）
 - deleteTalent: schedule → application → talent の順で削除
 
+## 環境構成
+- **本番環境**: `main` ブランチ
+- **テスト環境**: `vozel-test` ブランチ
+
+## 環境運用ルール
+- **本番環境（main）へのマージはユーザーの明示的な許可なく行わない**
+- 作業開始時は、本番（main）・テスト（vozel-test）両ブランチを最新に pull してから始める
+
 ## 既知の注意点
 - Vercel Blob `addRandomSuffix: false` → ブラウザキャッシュ問題 → `blobProxyUrl` にtimestamp付与
 - Route Handler内の `revalidatePath` はクライアント側に効かない → Server Action経由で呼ぶ

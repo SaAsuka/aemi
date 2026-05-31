@@ -9,6 +9,7 @@ import { deleteJob } from "@/lib/actions/job"
 import { deleteApplication } from "@/lib/actions/application"
 import { deleteSchedule } from "@/lib/actions/schedule"
 import { deleteOption } from "@/lib/actions/option"
+import { deleteProductionCompany } from "@/lib/actions/production-company"
 
 const deleteActions = {
   talent: deleteTalent,
@@ -17,6 +18,7 @@ const deleteActions = {
   application: deleteApplication,
   schedule: deleteSchedule,
   option: deleteOption,
+  "production-company": deleteProductionCompany,
 } as const
 
 export function DeleteButton({
@@ -39,7 +41,10 @@ export function DeleteButton({
         alert(result.error)
         return
       }
-      router.push(redirectTo ?? `/admin/${type}s`)
+      const defaultRedirects: Record<string, string> = {
+        "production-company": "/admin/production-companies",
+      }
+      router.push(redirectTo ?? defaultRedirects[type] ?? `/admin/${type}s`)
     })
   }
 
