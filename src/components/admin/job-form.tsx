@@ -52,7 +52,7 @@ export function JobForm({
 
   const reqMap = new Map(requirements?.map((r) => [r.category, r]))
   const [enabledCategories, setEnabledCategories] = useState<Set<string>>(
-    new Set(requirements?.map((r) => r.category) ?? [])
+    new Set(requirements?.map((r) => r.category) ?? (job ? [] : ["PROFILE_PHOTO"]))
   )
   const [refFiles, setRefFiles] = useState<Record<string, string>>(
     Object.fromEntries(requirements?.filter((r) => r.referenceFile).map((r) => [r.category, r.referenceFile!]) ?? [])
