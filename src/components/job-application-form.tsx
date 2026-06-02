@@ -149,7 +149,7 @@ export function JobApplicationForm({
             return (
               <div key={req.category} className="space-y-2 border-t pt-3 first:border-t-0 first:pt-0">
                 <div>
-                  <p className="text-sm font-medium">{SUBMISSION_CATEGORY_LABELS[req.category]}</p>
+                  <p className="text-sm font-medium">{req.category === "PROFILE_PHOTO" ? "現状写真（今のご自身の写真）" : SUBMISSION_CATEGORY_LABELS[req.category]}</p>
                   {req.description && (
                     <p className="text-xs text-muted-foreground mt-0.5">{req.description}</p>
                   )}
