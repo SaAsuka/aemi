@@ -3,7 +3,6 @@
 import { prisma } from "@/lib/db"
 import { talentBaseSchema } from "@/lib/validations/talent"
 import { upsertSocialLinks, upsertBankAccount } from "./talent-relations"
-import { getSession } from "@/lib/auth"
 
 export async function registerTalent(formData: FormData) {
   const raw = Object.fromEntries(formData)
@@ -68,10 +67,5 @@ export async function registerTalent(formData: FormData) {
   await upsertSocialLinks(talent.id, data)
   await upsertBankAccount(talent.id, data)
 
-  const session = await getSession()
-  session.talentId = talent.id
-  session.role = "talent"
-  await session.save()
-
-  return { success: true, redirect: "/subscribe" }
+  return { success: true }
 }

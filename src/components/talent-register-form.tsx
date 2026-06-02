@@ -1,7 +1,6 @@
 "use client"
 
 import { useState, useRef } from "react"
-import { useRouter } from "next/navigation"
 import { registerTalent } from "@/lib/actions/talent-register"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,7 +15,7 @@ import {
 } from "@/components/ui/select"
 import { X, ImagePlus, Loader2, RefreshCw } from "lucide-react"
 
-type ActionResult = { success?: boolean; redirect?: string; error?: Record<string, string[]> } | null
+type ActionResult = { success?: boolean; error?: Record<string, string[]> } | null
 type PhotoSlot = { file: File; preview: string } | null
 
 const PHOTO_SLOTS = [
@@ -29,7 +28,6 @@ const PHOTO_SLOTS = [
 ] as const
 
 export function TalentRegisterForm() {
-  const router = useRouter()
   const [photos, setPhotos] = useState<PhotoSlot[]>([null, null, null, null, null, null])
   const [uploading, setUploading] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -94,10 +92,6 @@ export function TalentRegisterForm() {
       const formData = new FormData(formRef.current!)
       formData.set("photoUrls", JSON.stringify(photoUrls))
       const result = await registerTalent(formData)
-      if (result?.redirect) {
-        router.push(result.redirect)
-        return
-      }
       setState(result)
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "エラーが発生しました")
