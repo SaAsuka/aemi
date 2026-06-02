@@ -59,6 +59,7 @@ export async function registerTalent(formData: FormData) {
       profileImage: photoUrls[0] || null,
       emailVerified: true,
       status: "ACTIVE",
+      mustChangePassword: true,
       photos: photoUrls.length > 0 ? {
         create: photoUrls.map((url, i) => ({ url, sortOrder: i })),
       } : undefined,

@@ -1,16 +1,16 @@
 import { redirect } from "next/navigation"
-import { requireTalent, isSubscriptionActive } from "@/lib/auth"
+import { requireTalentRaw, isSubscriptionActive } from "@/lib/auth"
 import { createCheckoutSession } from "@/lib/stripe"
 
 export default async function SubscribePage() {
-  const talent = await requireTalent()
+  const talent = await requireTalentRaw()
 
   if (isSubscriptionActive(talent)) redirect("/jobs")
   if (!talent.email) redirect("/auth/login")
 
   async function handleSubscribe() {
     "use server"
-    const t = await requireTalent()
+    const t = await requireTalentRaw()
     if (!t.email) return
     const stripeCustomerId = t.subscription?.stripeCustomerId
     const { url, customerId } = await createCheckoutSession(t.id, t.email, stripeCustomerId)
