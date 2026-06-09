@@ -159,8 +159,9 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="email">メールアドレス</Label>
-          <Input id="email" name="email" type="email" />
+          <Label htmlFor="email">メールアドレス *</Label>
+          <Input id="email" name="email" type="email" required />
+          {state?.error?.email && <p className="text-sm text-destructive">{state.error.email[0]}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="phone">電話番号</Label>
