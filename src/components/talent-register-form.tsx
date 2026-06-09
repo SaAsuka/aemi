@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { registerTalent } from "@/lib/actions/talent-register"
 import { Button } from "@/components/ui/button"
@@ -38,6 +38,19 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
   const formRef = useRef<HTMLFormElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const activeSlotRef = useRef<number>(0)
+  const submitErrorRef = useRef<HTMLParagraphElement>(null)
+
+  const FIELD_ORDER = ["lastName", "firstName", "lastNameKana", "firstNameKana", "email", "phone", "gender", "birthDate", "height"]
+
+  useEffect(() => {
+    if (!state?.error) return
+    for (const field of FIELD_ORDER) {
+      if (state.error[field]?.length) {
+        document.getElementById(field)?.scrollIntoView({ behavior: "smooth", block: "center" })
+        return
+      }
+    }
+  }, [state?.error])
 
   const openFilePicker = (slotIndex: number) => {
     activeSlotRef.current = slotIndex
@@ -72,6 +85,7 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
     e.preventDefault()
     if (filledCount < 6) {
       setSubmitError("写真を6枚以上設定してください")
+      setTimeout(() => submitErrorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 50)
       return
     }
     setIsPending(true)
@@ -353,7 +367,7 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
         onChange={handleFileChange}
       />
 
-      {submitError && <p className="text-sm text-destructive">{submitError}</p>}
+      {submitError && <p ref={submitErrorRef} className="text-sm text-destructive">{submitError}</p>}
 
       <Button type="submit" disabled={isPending || filledCount < 6} className="w-full">
         {uploading ? (
