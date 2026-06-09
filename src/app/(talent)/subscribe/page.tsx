@@ -1,6 +1,36 @@
 import { redirect } from "next/navigation"
-import { requireTalentRaw, isSubscriptionActive } from "@/lib/auth"
-import { createCheckoutSession } from "@/lib/stripe"
+import { requireTalentRaw, isSubscriptionActive, getSession } from "@/lib/auth"
+import { createCheckoutSession, getStripe } from "@/lib/stripe"
+import type Stripe from "stripe"
+
+async function getPlanInfo(priceId: string | undefined) {
+  if (!priceId) return null
+  try {
+    const stripe = getStripe()
+    const price = await stripe.prices.retrieve(priceId, { expand: ["product"] })
+    const product = price.product as Stripe.Product
+    return {
+      name: product.name,
+      amount: price.unit_amount,
+      currency: price.currency,
+      interval: price.recurring?.interval ?? "month",
+    }
+  } catch {
+    return null
+  }
+}
+
+function formatAmount(amount: number | null, currency: string) {
+  if (amount === null) return "—"
+  return new Intl.NumberFormat("ja-JP", { style: "currency", currency }).format(amount)
+}
+
+const INTERVAL_LABELS: Record<string, string> = {
+  month: "月",
+  year: "年",
+  week: "週",
+  day: "日",
+}
 
 export default async function SubscribePage() {
   const talent = await requireTalentRaw()
@@ -8,13 +38,16 @@ export default async function SubscribePage() {
   if (isSubscriptionActive(talent)) redirect("/jobs")
   if (!talent.email) redirect("/auth/login")
 
+  const session = await getSession()
+  const plan = await getPlanInfo(session.stripePriceId)
+
   async function handleSubscribe() {
     "use server"
     const t = await requireTalentRaw()
     if (!t.email) return
     const stripeCustomerId = t.subscription?.stripeCustomerId
-    const session = await import("@/lib/auth").then((m) => m.getSession())
-    const { url, customerId } = await createCheckoutSession(t.id, t.email, stripeCustomerId, session.stripePriceId)
+    const s = await getSession()
+    const { url, customerId } = await createCheckoutSession(t.id, t.email, stripeCustomerId, s.stripePriceId)
     if (customerId && !stripeCustomerId) {
       const { prisma } = await import("@/lib/db")
       await prisma.talentSubscription.upsert({
@@ -34,7 +67,17 @@ export default async function SubscribePage() {
           案件情報の閲覧にはサブスクリプションが必要です。
         </p>
         <div className="rounded-lg border p-4 space-y-2">
-          <p className="text-lg font-bold">&yen;4,000<span className="text-sm font-normal text-muted-foreground">/月</span></p>
+          {plan ? (
+            <>
+              <p className="text-sm font-medium">{plan.name}</p>
+              <p className="text-lg font-bold">
+                {formatAmount(plan.amount, plan.currency)}
+                <span className="text-sm font-normal text-muted-foreground">/{INTERVAL_LABELS[plan.interval] ?? plan.interval}</span>
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-muted-foreground">プランを確認中...</p>
+          )}
           <p className="text-sm text-muted-foreground">案件閲覧・応募が可能になります</p>
         </div>
         <form action={handleSubscribe}>
