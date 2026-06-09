@@ -28,7 +28,7 @@ const PHOTO_SLOTS = [
   { label: "コンポジ用④" },
 ] as const
 
-export function TalentRegisterForm() {
+export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
   const router = useRouter()
   const [photos, setPhotos] = useState<PhotoSlot[]>([null, null, null, null, null, null])
   const [uploading, setUploading] = useState(false)
@@ -119,6 +119,7 @@ export function TalentRegisterForm() {
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+      {priceToken && <input type="hidden" name="priceToken" value={priceToken} />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="lastName">姓 *</Label>

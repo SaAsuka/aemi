@@ -3,6 +3,7 @@ import { SessionOptions } from "iron-session"
 export type SessionData = {
   talentId?: string
   role?: "talent" | "admin"
+  stripePriceId?: string
 }
 
 export const sessionOptions: SessionOptions = {

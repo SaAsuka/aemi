@@ -4,6 +4,7 @@ import { prisma } from "@/lib/db"
 import { talentBaseSchema } from "@/lib/validations/talent"
 import { upsertSocialLinks, upsertBankAccount } from "./talent-relations"
 import { getSession } from "@/lib/auth"
+import { decryptPriceId } from "@/lib/register-token"
 
 export async function registerTalent(formData: FormData) {
   const raw = Object.fromEntries(formData)
@@ -16,7 +17,7 @@ export async function registerTalent(formData: FormData) {
   const data = parsed.data
 
   if (data.email) {
-    const existing = await prisma.talent.findUnique({ where: { email: data.email }, select: { id: true } })
+    const existing = await prisma.talent.findFirst({ where: { email: data.email }, select: { id: true } })
     if (existing) {
       return { error: { email: ["このメールアドレスはすでに登録されています"] } }
     }
@@ -72,6 +73,13 @@ export async function registerTalent(formData: FormData) {
   const session = await getSession()
   session.talentId = talent.id
   session.role = "talent"
+
+  const priceToken = formData.get("priceToken")
+  if (typeof priceToken === "string" && priceToken) {
+    const priceId = decryptPriceId(priceToken)
+    if (priceId) session.stripePriceId = priceId
+  }
+
   await session.save()
 
   return { success: true, redirect: "/subscribe" }

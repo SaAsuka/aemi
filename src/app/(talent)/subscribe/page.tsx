@@ -13,7 +13,8 @@ export default async function SubscribePage() {
     const t = await requireTalentRaw()
     if (!t.email) return
     const stripeCustomerId = t.subscription?.stripeCustomerId
-    const { url, customerId } = await createCheckoutSession(t.id, t.email, stripeCustomerId)
+    const session = await import("@/lib/auth").then((m) => m.getSession())
+    const { url, customerId } = await createCheckoutSession(t.id, t.email, stripeCustomerId, session.stripePriceId)
     if (customerId && !stripeCustomerId) {
       const { prisma } = await import("@/lib/db")
       await prisma.talentSubscription.upsert({
