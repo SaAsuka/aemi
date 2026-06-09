@@ -14,7 +14,7 @@ import {
   SidebarHeader,
   SidebarFooter,
 } from "@/components/ui/sidebar"
-import { BarChart3, Users, Briefcase, FileText, CalendarDays, ShoppingBag, Building2, Receipt, Settings } from "lucide-react"
+import { BarChart3, Users, Briefcase, FileText, CalendarDays, ShoppingBag, Building2, Receipt, Settings, ExternalLink } from "lucide-react"
 
 const navItems = [
   { title: "ダッシュボード", href: "/admin", icon: BarChart3 },
@@ -69,6 +69,15 @@ export function AdminSidebar() {
           <Settings className="h-4 w-4 shrink-0" />
           <span>設定</span>
         </Link>
+        <a
+          href="https://dashboard.stripe.com/products"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-sm text-muted-foreground hover:underline flex items-center gap-2"
+        >
+          <ExternalLink className="h-4 w-4 shrink-0" />
+          <span>Stripe商品管理</span>
+        </a>
         <Link href="/" className="text-sm text-muted-foreground hover:underline block">
           LP を表示
         </Link>
