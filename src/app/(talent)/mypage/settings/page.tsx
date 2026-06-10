@@ -44,7 +44,7 @@ export default async function SettingsPage() {
             <Lock className="h-5 w-5 text-primary" />
             <h2 className="text-lg font-semibold">パスワード変更</h2>
           </div>
-          <ChangePasswordForm mustChangePassword={session.mustChangePassword} />
+          <ChangePasswordForm mustChangePassword={session.mustChangePassword} hasPassword={!!talent.passwordHash} />
         </section>
 
         <section className="space-y-4">

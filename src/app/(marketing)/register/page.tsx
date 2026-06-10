@@ -1,7 +1,13 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { TalentRegisterForm } from "@/components/talent-register-form"
 
-export default function RegisterPage() {
+export default async function RegisterPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ t?: string }>
+}) {
+  const { t } = await searchParams
+
   return (
     <div className="min-h-screen bg-muted/30">
       <header className="bg-primary text-primary-foreground py-4 px-6">
@@ -14,7 +20,7 @@ export default function RegisterPage() {
             <p className="text-sm text-muted-foreground">以下の情報をご入力ください。* は必須項目です。</p>
           </CardHeader>
           <CardContent>
-            <TalentRegisterForm />
+            <TalentRegisterForm priceToken={t} />
           </CardContent>
         </Card>
       </main>

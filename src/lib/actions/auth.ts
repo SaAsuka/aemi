@@ -122,12 +122,12 @@ export async function changePassword(currentPassword: string, newPassword: strin
     select: { passwordHash: true },
   })
 
-  if (!talent || !talent.passwordHash) {
-    return { error: "パスワードが設定されていません" }
-  }
+  if (!talent) return { error: "タレントが見つかりません" }
 
-  const valid = await bcrypt.compare(currentPassword, talent.passwordHash)
-  if (!valid) return { error: "現在のパスワードが正しくありません" }
+  if (talent.passwordHash) {
+    const valid = await bcrypt.compare(currentPassword, talent.passwordHash)
+    if (!valid) return { error: "現在のパスワードが正しくありません" }
+  }
 
   const passwordHash = await bcrypt.hash(newPassword, 10)
   await prisma.talent.update({

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { registerTalent } from "@/lib/actions/talent-register"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -15,7 +16,7 @@ import {
 } from "@/components/ui/select"
 import { X, ImagePlus, Loader2, RefreshCw } from "lucide-react"
 
-type ActionResult = { success?: boolean; error?: Record<string, string[]> } | null
+type ActionResult = { success?: boolean; redirect?: string; error?: Record<string, string[]> } | null
 type PhotoSlot = { file: File; preview: string } | null
 
 const PHOTO_SLOTS = [
@@ -27,7 +28,8 @@ const PHOTO_SLOTS = [
   { label: "コンポジ用④" },
 ] as const
 
-export function TalentRegisterForm() {
+export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
+  const router = useRouter()
   const [photos, setPhotos] = useState<PhotoSlot[]>([null, null, null, null, null, null])
   const [uploading, setUploading] = useState(false)
   const [submitError, setSubmitError] = useState<string | null>(null)
@@ -36,6 +38,19 @@ export function TalentRegisterForm() {
   const formRef = useRef<HTMLFormElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const activeSlotRef = useRef<number>(0)
+  const submitErrorRef = useRef<HTMLParagraphElement>(null)
+
+  const FIELD_ORDER = ["lastName", "firstName", "lastNameKana", "firstNameKana", "email", "phone", "gender", "birthDate", "height"]
+
+  useEffect(() => {
+    if (!state?.error) return
+    for (const field of FIELD_ORDER) {
+      if (state.error[field]?.length) {
+        document.getElementById(field)?.scrollIntoView({ behavior: "smooth", block: "center" })
+        return
+      }
+    }
+  }, [state?.error])
 
   const openFilePicker = (slotIndex: number) => {
     activeSlotRef.current = slotIndex
@@ -70,6 +85,7 @@ export function TalentRegisterForm() {
     e.preventDefault()
     if (filledCount < 6) {
       setSubmitError("写真を6枚以上設定してください")
+      setTimeout(() => submitErrorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 50)
       return
     }
     setIsPending(true)
@@ -92,6 +108,10 @@ export function TalentRegisterForm() {
       const formData = new FormData(formRef.current!)
       formData.set("photoUrls", JSON.stringify(photoUrls))
       const result = await registerTalent(formData)
+      if (result?.redirect) {
+        router.push(result.redirect)
+        return
+      }
       setState(result)
     } catch (err) {
       setSubmitError(err instanceof Error ? err.message : "エラーが発生しました")
@@ -113,6 +133,7 @@ export function TalentRegisterForm() {
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+      {priceToken && <input type="hidden" name="priceToken" value={priceToken} />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="lastName">姓 *</Label>
@@ -152,8 +173,9 @@ export function TalentRegisterForm() {
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
-          <Label htmlFor="email">メールアドレス</Label>
-          <Input id="email" name="email" type="email" />
+          <Label htmlFor="email">メールアドレス *</Label>
+          <Input id="email" name="email" type="email" required />
+          {state?.error?.email && <p className="text-sm text-destructive">{state.error.email[0]}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="phone">電話番号</Label>
@@ -345,7 +367,7 @@ export function TalentRegisterForm() {
         onChange={handleFileChange}
       />
 
-      {submitError && <p className="text-sm text-destructive">{submitError}</p>}
+      {submitError && <p ref={submitErrorRef} className="text-sm text-destructive">{submitError}</p>}
 
       <Button type="submit" disabled={isPending || filledCount < 6} className="w-full">
         {uploading ? (

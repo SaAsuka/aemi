@@ -9,7 +9,7 @@ export const talentBaseSchema = z.object({
   firstNameKana: z.string().min(1, "メイは必須です"),
   stageName: optionalString,
   nameRomaji: optionalString,
-  email: z.string().email("メールアドレスの形式が不正です").optional().or(z.literal("")),
+  email: z.string().min(1, "メールアドレスは必須です").email("メールアドレスの形式が不正です"),
   phone: optionalString,
   gender: z.enum(["MALE", "FEMALE", "OTHER"]).optional().or(z.literal("")),
   birthDate: optionalString,

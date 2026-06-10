@@ -17,7 +17,7 @@ export function getStripe() {
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
 
-export async function createCheckoutSession(talentId: string, email: string, stripeCustomerId?: string | null) {
+export async function createCheckoutSession(talentId: string, email: string, stripeCustomerId?: string | null, priceId?: string | null) {
   const stripe = getStripe()
   let customerId = stripeCustomerId
   if (!customerId) {
@@ -28,7 +28,7 @@ export async function createCheckoutSession(talentId: string, email: string, str
   const session = await stripe.checkout.sessions.create({
     customer: customerId,
     mode: "subscription",
-    line_items: [{ price: process.env.STRIPE_PRICE_ID!, quantity: 1 }],
+    line_items: [{ price: priceId ?? process.env.STRIPE_PRICE_ID!, quantity: 1 }],
     success_url: `${APP_URL}/auth/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
     cancel_url: `${APP_URL}/subscribe`,
     metadata: { talentId },

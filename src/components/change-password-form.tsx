@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 
-export function ChangePasswordForm({ mustChangePassword = false }: { mustChangePassword?: boolean }) {
+export function ChangePasswordForm({ mustChangePassword = false, hasPassword = true }: { mustChangePassword?: boolean; hasPassword?: boolean }) {
   const router = useRouter()
   const [currentPassword, setCurrentPassword] = useState("")
   const [newPassword, setNewPassword] = useState("")
@@ -40,7 +40,7 @@ export function ChangePasswordForm({ mustChangePassword = false }: { mustChangeP
     }
 
     if (mustChangePassword) {
-      router.push("/mypage")
+      router.push("/welcome")
       return
     }
 
@@ -52,16 +52,18 @@ export function ChangePasswordForm({ mustChangePassword = false }: { mustChangeP
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label htmlFor="currentPassword">現在のパスワード</Label>
-        <Input
-          id="currentPassword"
-          type="password"
-          value={currentPassword}
-          onChange={(e) => setCurrentPassword(e.target.value)}
-          required
-        />
-      </div>
+      {hasPassword && (
+        <div className="space-y-2">
+          <Label htmlFor="currentPassword">現在のパスワード</Label>
+          <Input
+            id="currentPassword"
+            type="password"
+            value={currentPassword}
+            onChange={(e) => setCurrentPassword(e.target.value)}
+            required
+          />
+        </div>
+      )}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="newPassword">新しいパスワード</Label>
@@ -88,7 +90,7 @@ export function ChangePasswordForm({ mustChangePassword = false }: { mustChangeP
       {error && <p className="text-sm text-destructive">{error}</p>}
       {success && <p className="text-sm text-green-600">パスワードを変更しました</p>}
       <Button type="submit" disabled={loading}>
-        {loading ? "変更中..." : "パスワードを変更"}
+        {loading ? "設定中..." : hasPassword ? "パスワードを変更" : "パスワードを設定"}
       </Button>
     </form>
   )
