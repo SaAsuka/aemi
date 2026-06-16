@@ -6,10 +6,10 @@ import { ShoppingBag, CheckCircle2, Clock } from "lucide-react"
 export default async function OptionsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ purchased?: string }>
+  searchParams: Promise<{ purchased?: string; error?: string }>
 }) {
   const talent = await requireTalent()
-  const { purchased } = await searchParams
+  const { purchased, error } = await searchParams
   const options = await getActiveOptionsForTalent(talent.id)
 
   return (
@@ -22,6 +22,16 @@ export default async function OptionsPage({
           <div className="rounded-lg border border-green-200 bg-green-50 p-4 flex items-center gap-2 text-green-800">
             <CheckCircle2 className="h-5 w-5 shrink-0" />
             <p className="text-sm font-medium">購入が完了しました</p>
+          </div>
+        )}
+        {error === "paid" && (
+          <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+            このオプションはすでに購入済みです
+          </div>
+        )}
+        {error === "unavailable" && (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
+            このオプションは現在購入できません
           </div>
         )}
 

@@ -27,19 +27,19 @@ export async function getActiveOptionsForTalent(talentId: string) {
   }))
 }
 
-export async function createOptionCheckout(optionId: string) {
+export async function createOptionCheckout(optionId: string): Promise<void> {
   const talent = await requireTalent()
 
   const option = await prisma.option.findUnique({ where: { id: optionId } })
   if (!option || option.status !== "ACTIVE" || !option.stripePriceId) {
-    return { error: "このオプションは現在購入できません" }
+    redirect("/mypage/options?error=unavailable")
   }
 
   const existing = await prisma.optionPurchase.findUnique({
     where: { optionId_talentId: { optionId, talentId: talent.id } },
   })
   if (existing?.status === "PAID") {
-    return { error: "すでに購入済みです" }
+    redirect("/mypage/options?error=paid")
   }
 
   const stripe = getStripe()
@@ -67,5 +67,5 @@ export async function createOptionCheckout(optionId: string) {
     })
   }
 
-  if (session.url) redirect(session.url)
+  redirect(session.url!)
 }
