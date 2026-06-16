@@ -1,11 +1,17 @@
 "use server"
 
 import { redirect } from "next/navigation"
+import { headers } from "next/headers"
 import { prisma } from "@/lib/db"
 import { requireTalent } from "@/lib/auth"
 import { getStripe } from "@/lib/stripe"
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+async function getBaseUrl() {
+  const headersList = await headers()
+  const host = headersList.get("host") || "localhost:3000"
+  const protocol = host.includes("localhost") ? "http" : "https"
+  return `${protocol}://${host}`
+}
 
 export async function getActiveOptionsForTalent(talentId: string) {
   const [options, purchases] = await Promise.all([
@@ -42,14 +48,15 @@ export async function createOptionCheckout(optionId: string): Promise<void> {
     redirect("/mypage/options?error=paid")
   }
 
+  const baseUrl = await getBaseUrl()
   let session
   try {
     const stripe = getStripe()
     session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: [{ price: option.stripePriceId, quantity: 1 }],
-      success_url: `${APP_URL}/mypage/options?purchased=1`,
-      cancel_url: `${APP_URL}/mypage/options/${optionId}`,
+      success_url: `${baseUrl}/mypage/options?purchased=1`,
+      cancel_url: `${baseUrl}/mypage/options/${optionId}`,
       metadata: { optionId, talentId: talent.id },
     })
   } catch (e) {
