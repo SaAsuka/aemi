@@ -56,6 +56,7 @@ export async function createOptionCheckout(optionId: string): Promise<void> {
     const stripe = getStripe()
     session = await stripe.checkout.sessions.create({
       mode: "payment",
+      customer_email: talent.email ?? undefined,
       line_items: [{ price: option.stripePriceId, quantity: 1 }],
       success_url: `${baseUrl}/mypage/options?purchased=1`,
       cancel_url: `${baseUrl}/mypage/options/${optionId}`,
