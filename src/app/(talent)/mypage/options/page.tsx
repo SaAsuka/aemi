@@ -2,7 +2,6 @@ import Link from "next/link"
 import { requireTalent } from "@/lib/auth"
 import { getActiveOptionsForTalent } from "@/lib/actions/option-purchase"
 import { TalentNav } from "@/components/talent-nav"
-import { blobProxyUrl } from "@/lib/utils/blob"
 import { ShoppingBag, CheckCircle2, Clock, ChevronRight } from "lucide-react"
 
 export default async function OptionsPage({
@@ -52,7 +51,7 @@ export default async function OptionsPage({
               >
                 {opt.imageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={blobProxyUrl(opt.imageUrl)} alt={opt.name} className="w-full aspect-video object-cover" />
+                  <img src={opt.imageUrl!} alt={opt.name} className="w-full aspect-video object-cover" />
                 )}
                 <div className="p-4 space-y-2">
                   <div className="flex items-start justify-between gap-2">

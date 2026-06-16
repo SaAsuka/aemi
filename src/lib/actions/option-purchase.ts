@@ -5,6 +5,7 @@ import { headers } from "next/headers"
 import { prisma } from "@/lib/db"
 import { requireTalent } from "@/lib/auth"
 import { getStripe } from "@/lib/stripe"
+import { resolveStorageUrl } from "@/lib/storage-url"
 
 async function getBaseUrl() {
   const headersList = await headers()
@@ -27,10 +28,11 @@ export async function getActiveOptionsForTalent(talentId: string) {
 
   const purchaseMap = new Map(purchases.map((p) => [p.optionId, p.status]))
 
-  return options.map((opt) => ({
+  return Promise.all(options.map(async (opt) => ({
     ...opt,
+    imageUrl: await resolveStorageUrl(opt.imageUrl),
     purchaseStatus: purchaseMap.get(opt.id) ?? null,
-  }))
+  })))
 }
 
 export async function createOptionCheckout(optionId: string): Promise<void> {
