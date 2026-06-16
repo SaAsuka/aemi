@@ -79,8 +79,15 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
     })
   }
 
+  const filledCount = photos.filter(p => p !== null).length
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+    if (filledCount < 6) {
+      setSubmitError("写真を6枚以上設定してください")
+      setTimeout(() => submitErrorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 50)
+      return
+    }
     setIsPending(true)
     setSubmitError(null)
 
@@ -88,15 +95,11 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
       setUploading(true)
       const photoUrls: string[] = []
       for (const photo of photos) {
-        if (!photo) continue
         const fd = new FormData()
-        fd.append("file", photo.file)
+        fd.append("file", photo!.file)
         fd.append("category", "photos")
         const res = await fetch("/api/upload", { method: "POST", body: fd })
-        if (!res.ok) {
-          const json = await res.json().catch(() => ({}))
-          throw new Error(json.error ?? "写真のアップロードに失敗しました")
-        }
+        if (!res.ok) throw new Error((await res.json()).error ?? "アップロードに失敗しました")
         const { url } = await res.json()
         photoUrls.push(url)
       }
@@ -319,13 +322,13 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
         </div>
       </div>
 
-      <h3 className="text-sm font-semibold text-muted-foreground pt-2">宣材写真</h3>
-      <p className="text-xs text-muted-foreground">任意（後から設定ページで追加できます）。コンポジPDF作成には6枚必要です。</p>
+      <h3 className="text-sm font-semibold text-muted-foreground pt-2">宣材写真 *</h3>
+      <p className="text-xs text-muted-foreground">6枚すべて必須です。コンポジPDFに使用されます。</p>
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {PHOTO_SLOTS.map((slot, i) => (
           <div key={i} className="space-y-1">
             <p className="text-xs font-medium">
-              {slot.label}
+              {slot.label} <span className="text-destructive">*</span>
             </p>
             {"description" in slot && (
               <p className="text-[10px] text-muted-foreground">{slot.description}</p>
@@ -366,10 +369,10 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
 
       {submitError && <p ref={submitErrorRef} className="text-sm text-destructive">{submitError}</p>}
 
-      <Button type="submit" disabled={isPending} className="w-full">
+      <Button type="submit" disabled={isPending || filledCount < 6} className="w-full">
         {uploading ? (
           <><Loader2 className="h-4 w-4 animate-spin mr-2" />写真アップロード中...</>
-        ) : isPending ? "送信中..." : "登録する"}
+        ) : isPending ? "送信中..." : filledCount < 6 ? "写真を6枚以上設定してください" : "登録する"}
       </Button>
     </form>
   )
