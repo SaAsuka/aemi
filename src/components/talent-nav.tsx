@@ -3,7 +3,7 @@
 import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { User, Briefcase, Settings, LogOut, Menu, X } from "lucide-react"
+import { User, Briefcase, Settings, LogOut, Menu, X, BookOpen } from "lucide-react"
 
 export function TalentNav({ talentName }: { talentName: string }) {
   const pathname = usePathname()
@@ -12,6 +12,7 @@ export function TalentNav({ talentName }: { talentName: string }) {
   const links = [
     { href: "/mypage", label: "マイページ", icon: User },
     { href: "/jobs", label: "案件一覧", icon: Briefcase },
+    { href: "/mypage/options", label: "レッスン一覧", icon: BookOpen },
     { href: "/mypage/settings", label: "設定", icon: Settings },
   ]
 
