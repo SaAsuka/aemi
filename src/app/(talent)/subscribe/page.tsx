@@ -1,7 +1,14 @@
 import { redirect } from "next/navigation"
+import { headers } from "next/headers"
 import { requireTalentRaw, isSubscriptionActive, getSession } from "@/lib/auth"
 import { createCheckoutSession, getStripe } from "@/lib/stripe"
 import type Stripe from "stripe"
+
+async function getBaseUrl() {
+  const h = await headers()
+  const host = h.get("host") || "localhost:3000"
+  return host.includes("localhost") ? `http://${host}` : `https://${host}`
+}
 
 async function getPlanInfo(priceId: string | undefined) {
   if (!priceId) return null
@@ -32,7 +39,11 @@ const INTERVAL_LABELS: Record<string, string> = {
   day: "日",
 }
 
-export default async function SubscribePage() {
+export default async function SubscribePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ error?: string }>
+}) {
   const talent = await requireTalentRaw()
 
   if (isSubscriptionActive(talent)) redirect("/jobs")
@@ -40,6 +51,7 @@ export default async function SubscribePage() {
 
   const session = await getSession()
   const plan = await getPlanInfo(session.stripePriceId)
+  const { error } = await searchParams
 
   async function handleSubscribe() {
     "use server"
@@ -47,7 +59,20 @@ export default async function SubscribePage() {
     if (!t.email) return
     const stripeCustomerId = t.subscription?.stripeCustomerId
     const s = await getSession()
-    const { url, customerId } = await createCheckoutSession(t.id, t.email, stripeCustomerId, s.stripePriceId)
+    const baseUrl = await getBaseUrl()
+
+    let url: string | null = null
+    let customerId: string | undefined
+
+    try {
+      const result = await createCheckoutSession(t.id, t.email, stripeCustomerId, s.stripePriceId, baseUrl)
+      url = result.url
+      customerId = result.customerId
+    } catch (e) {
+      console.error("Stripe checkout session作成エラー:", e)
+      redirect("/subscribe?error=stripe")
+    }
+
     if (customerId && !stripeCustomerId) {
       const { prisma } = await import("@/lib/db")
       await prisma.talentSubscription.upsert({
@@ -80,6 +105,9 @@ export default async function SubscribePage() {
           )}
           <p className="text-sm text-muted-foreground">案件閲覧・応募が可能になります</p>
         </div>
+        {error === "stripe" && (
+          <p className="text-sm text-red-600">決済の開始に失敗しました。しばらく時間をおいて再度お試しください。</p>
+        )}
         <form action={handleSubscribe}>
           <button
             type="submit"
