@@ -42,14 +42,20 @@ export async function createOptionCheckout(optionId: string): Promise<void> {
     redirect("/mypage/options?error=paid")
   }
 
-  const stripe = getStripe()
-  const session = await stripe.checkout.sessions.create({
-    mode: "payment",
-    line_items: [{ price: option.stripePriceId, quantity: 1 }],
-    success_url: `${APP_URL}/mypage/options?purchased=1`,
-    cancel_url: `${APP_URL}/mypage/options`,
-    metadata: { optionId, talentId: talent.id },
-  })
+  let session
+  try {
+    const stripe = getStripe()
+    session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items: [{ price: option.stripePriceId, quantity: 1 }],
+      success_url: `${APP_URL}/mypage/options?purchased=1`,
+      cancel_url: `${APP_URL}/mypage/options/${optionId}`,
+      metadata: { optionId, talentId: talent.id },
+    })
+  } catch (e) {
+    console.error("Stripe checkout session作成エラー:", e)
+    redirect(`/mypage/options/${optionId}?error=stripe`)
+  }
 
   if (existing) {
     await prisma.optionPurchase.update({

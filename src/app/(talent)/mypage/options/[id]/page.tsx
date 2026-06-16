@@ -17,6 +17,12 @@ export default async function OptionDetailPage({
   const { id } = await params
   const { error } = await searchParams
 
+  const errorMessages: Record<string, string> = {
+    paid: "このオプションはすでに購入済みです",
+    unavailable: "このオプションは現在購入できません",
+    stripe: "決済の開始に失敗しました。しばらく時間をおいて再度お試しください",
+  }
+
   const [option, purchase] = await Promise.all([
     prisma.option.findUnique({ where: { id, status: "ACTIVE" } }),
     prisma.optionPurchase.findUnique({
@@ -59,14 +65,9 @@ export default async function OptionDetailPage({
             </div>
           )}
 
-          {error === "paid" && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-              このオプションはすでに購入済みです
-            </div>
-          )}
-          {error === "unavailable" && (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800">
-              このオプションは現在購入できません
+          {error && errorMessages[error] && (
+            <div className={`rounded-lg border p-4 text-sm ${error === "paid" ? "border-amber-200 bg-amber-50 text-amber-800" : "border-red-200 bg-red-50 text-red-800"}`}>
+              {errorMessages[error]}
             </div>
           )}
 
