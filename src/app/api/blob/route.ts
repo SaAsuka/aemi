@@ -14,10 +14,22 @@ export async function GET(request: NextRequest) {
     // Supabase Storage
     if (isSupabaseStorageUrl(url)) {
       const path = extractStoragePath(url)
-      // sign=true のときは署名付きURLをJSONで返す（7日間有効）
-      const signedUrl = await getSignedUrl(path, sign ? 60 * 60 * 24 * 7 : 3600)
+      const signedUrl = await getSignedUrl(path, 60 * 60 * 24 * 7)
+      // sign=true のときは署名付きURLをJSONで返す
       if (sign) return NextResponse.json({ url: signedUrl })
-      return NextResponse.redirect(signedUrl)
+      // 画像等はコンテンツを直接プロキシ（リダイレクトだとブラウザが追えない場合がある）
+      const upstream = await fetch(signedUrl)
+      if (!upstream.ok) {
+        console.error(`[BLOB_PROXY] Supabase fetch failed: ${upstream.status} ${path}`)
+        return new NextResponse("Not found", { status: 404 })
+      }
+      const contentType = upstream.headers.get("content-type") ?? "application/octet-stream"
+      return new NextResponse(upstream.body, {
+        headers: {
+          "Content-Type": contentType,
+          "Cache-Control": "private, max-age=3600",
+        },
+      })
     }
 
     // Vercel Blob（既存ファイルの後方互換）
