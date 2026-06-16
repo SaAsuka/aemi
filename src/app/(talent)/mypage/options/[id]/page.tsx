@@ -3,6 +3,7 @@ import { requireTalent } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { createOptionCheckout } from "@/lib/actions/option-purchase"
 import { TalentNav } from "@/components/talent-nav"
+import { blobProxyUrl } from "@/lib/utils/blob"
 import { CheckCircle2, Clock, ArrowLeft } from "lucide-react"
 import Link from "next/link"
 
@@ -46,7 +47,7 @@ export default async function OptionDetailPage({
 
         {option.imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={option.imageUrl} alt={option.name} className="w-full rounded-lg aspect-video object-cover" />
+          <img src={blobProxyUrl(option.imageUrl)} alt={option.name} className="w-full rounded-lg aspect-video object-cover" />
         )}
 
         <div className="space-y-4">
