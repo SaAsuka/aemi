@@ -1,7 +1,8 @@
+import Link from "next/link"
 import { requireTalent } from "@/lib/auth"
-import { getActiveOptionsForTalent, createOptionCheckout } from "@/lib/actions/option-purchase"
+import { getActiveOptionsForTalent } from "@/lib/actions/option-purchase"
 import { TalentNav } from "@/components/talent-nav"
-import { ShoppingBag, CheckCircle2, Clock } from "lucide-react"
+import { ShoppingBag, CheckCircle2, Clock, ChevronRight } from "lucide-react"
 
 export default async function OptionsPage({
   searchParams,
@@ -43,49 +44,39 @@ export default async function OptionsPage({
         ) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {options.map((opt) => (
-              <div key={opt.id} className="rounded-lg border bg-card overflow-hidden">
+              <Link
+                key={opt.id}
+                href={`/mypage/options/${opt.id}`}
+                className="block rounded-lg border bg-card overflow-hidden hover:border-primary transition-colors"
+              >
                 {opt.imageUrl && (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img src={opt.imageUrl} alt={opt.name} className="w-full aspect-video object-cover" />
                 )}
-                <div className="p-4 space-y-3">
-                  <div>
+                <div className="p-4 space-y-2">
+                  <div className="flex items-start justify-between gap-2">
                     <h2 className="font-semibold text-sm">{opt.name}</h2>
-                    {opt.description && (
-                      <p className="text-xs text-muted-foreground mt-1 whitespace-pre-wrap">{opt.description}</p>
-                    )}
+                    <ChevronRight className="h-4 w-4 text-muted-foreground shrink-0 mt-0.5" />
                   </div>
-                  <div className="flex items-center justify-between">
-                    <p className="text-lg font-bold">¥{opt.price.toLocaleString()}</p>
-                    {opt.deadline && (
-                      <p className="text-xs text-muted-foreground">
-                        締切: {new Date(opt.deadline).toLocaleDateString("ja-JP")}
-                      </p>
-                    )}
-                  </div>
-
-                  {opt.purchaseStatus === "PAID" ? (
-                    <div className="flex items-center gap-1.5 text-green-700 text-sm font-medium">
-                      <CheckCircle2 className="h-4 w-4" />
-                      購入済み
-                    </div>
-                  ) : opt.purchaseStatus === "PENDING" ? (
-                    <div className="flex items-center gap-1.5 text-muted-foreground text-sm">
-                      <Clock className="h-4 w-4" />
-                      決済処理中
-                    </div>
-                  ) : (
-                    <form action={createOptionCheckout.bind(null, opt.id)}>
-                      <button
-                        type="submit"
-                        className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-                      >
-                        購入する
-                      </button>
-                    </form>
+                  {opt.description && (
+                    <p className="text-xs text-muted-foreground line-clamp-2">{opt.description}</p>
                   )}
+                  <div className="flex items-center justify-between pt-1">
+                    <p className="text-base font-bold">¥{opt.price.toLocaleString()}</p>
+                    {opt.purchaseStatus === "PAID" ? (
+                      <div className="flex items-center gap-1 text-green-700 text-xs font-medium">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                        購入済み
+                      </div>
+                    ) : opt.purchaseStatus === "PENDING" ? (
+                      <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                        <Clock className="h-3.5 w-3.5" />
+                        決済処理中
+                      </div>
+                    ) : null}
+                  </div>
                 </div>
-              </div>
+              </Link>
             ))}
           </div>
         )}
