@@ -2,7 +2,6 @@
 
 import { useState, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { upload } from "@vercel/blob/client"
 import { Button } from "@/components/ui/button"
 import { FileText, RefreshCw, ExternalLink, Loader2, Upload } from "lucide-react"
 import { blobProxyUrl } from "@/lib/utils/blob"
@@ -89,13 +88,18 @@ export function CompositePdfButton({
 
     setUploading(true)
     try {
-      const blob = await upload(`composites/${talentId}.pdf`, file, {
-        access: "private",
-        handleUploadUrl: "/api/upload",
-        clientPayload: JSON.stringify({ talentId }),
-      })
-      await saveResumeUrl(talentId, blob.url, "manual")
-      setPdfLink(blobProxyUrl(blob.url, true))
+      const fd = new FormData()
+      fd.append("file", file)
+      fd.append("category", "pdfs")
+      fd.append("id", talentId)
+      const res = await fetch("/api/upload", { method: "POST", body: fd })
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        throw new Error(json.error ?? "アップロードに失敗しました")
+      }
+      const { url } = await res.json()
+      await saveResumeUrl(talentId, url, "manual")
+      setPdfLink(blobProxyUrl(url, true))
       setSource("manual")
       router.refresh()
     } catch (err) {
