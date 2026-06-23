@@ -15,10 +15,13 @@ export function getStripe() {
   return globalForStripe._stripe
 }
 
-const APP_URL = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+function getAppUrl(baseUrl?: string) {
+  return baseUrl ?? process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"
+}
 
-export async function createCheckoutSession(talentId: string, email: string, stripeCustomerId?: string | null, priceId?: string | null) {
+export async function createCheckoutSession(talentId: string, email: string, stripeCustomerId?: string | null, priceId?: string | null, baseUrl?: string) {
   const stripe = getStripe()
+  const appUrl = getAppUrl(baseUrl)
   let customerId = stripeCustomerId
   if (!customerId) {
     const customer = await stripe.customers.create({ email, metadata: { talentId } })
@@ -29,19 +32,20 @@ export async function createCheckoutSession(talentId: string, email: string, str
     customer: customerId,
     mode: "subscription",
     line_items: [{ price: priceId ?? process.env.STRIPE_PRICE_ID!, quantity: 1 }],
-    success_url: `${APP_URL}/auth/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
-    cancel_url: `${APP_URL}/subscribe`,
+    success_url: `${appUrl}/auth/checkout-success?session_id={CHECKOUT_SESSION_ID}`,
+    cancel_url: `${appUrl}/subscribe`,
     metadata: { talentId },
   })
 
   return { url: session.url, customerId }
 }
 
-export async function createBillingPortalSession(stripeCustomerId: string) {
+export async function createBillingPortalSession(stripeCustomerId: string, baseUrl?: string) {
   const stripe = getStripe()
+  const appUrl = getAppUrl(baseUrl)
   const session = await stripe.billingPortal.sessions.create({
     customer: stripeCustomerId,
-    return_url: `${APP_URL}/jobs`,
+    return_url: `${appUrl}/jobs`,
   })
   return session.url
 }

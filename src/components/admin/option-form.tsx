@@ -3,7 +3,6 @@
 import { useActionState } from "react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, useCallback } from "react"
-import { upload } from "@vercel/blob/client"
 import { createOption, updateOption } from "@/lib/actions/option"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -40,13 +39,18 @@ export function OptionForm({ option }: { option?: Option }) {
   const handleImageUpload = useCallback(async (file: File) => {
     setUploading(true)
     try {
-      const blob = await upload(file.name, file, {
-        access: "private",
-        handleUploadUrl: "/api/upload",
-      })
-      setImageUrl(blob.url)
-    } catch {
-      alert("画像のアップロードに失敗しました")
+      const fd = new FormData()
+      fd.append("file", file)
+      fd.append("category", "photos")
+      const res = await fetch("/api/upload", { method: "POST", body: fd })
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        throw new Error(json.error ?? "アップロードに失敗しました")
+      }
+      const { url } = await res.json()
+      setImageUrl(url)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "画像のアップロードに失敗しました")
     } finally {
       setUploading(false)
     }

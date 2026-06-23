@@ -3,7 +3,6 @@
 import { useActionState } from "react"
 import { useRouter } from "next/navigation"
 import { useEffect, useState, useCallback } from "react"
-import { upload } from "@vercel/blob/client"
 import { createJob, updateJob } from "@/lib/actions/job"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -71,13 +70,18 @@ export function JobForm({
   const handleRefFileUpload = useCallback(async (cat: string, file: File) => {
     setUploading(cat)
     try {
-      const blob = await upload(file.name, file, {
-        access: "private",
-        handleUploadUrl: "/api/upload",
-      })
-      setRefFiles((prev) => ({ ...prev, [cat]: blob.url }))
-    } catch {
-      alert("アップロードに失敗しました")
+      const fd = new FormData()
+      fd.append("file", file)
+      fd.append("category", "photos")
+      const res = await fetch("/api/upload", { method: "POST", body: fd })
+      if (!res.ok) {
+        const json = await res.json().catch(() => ({}))
+        throw new Error(json.error ?? "アップロードに失敗しました")
+      }
+      const { url } = await res.json()
+      setRefFiles((prev) => ({ ...prev, [cat]: url }))
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "アップロードに失敗しました")
     } finally {
       setUploading(null)
     }
