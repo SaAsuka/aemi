@@ -2,6 +2,7 @@ import { isFreeeConnected } from "@/lib/freee"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { FreeeConnectButton } from "@/components/admin/freee-connect-button"
+import { VozelAgencySeed } from "@/components/admin/vozel-agency-seed"
 
 export default async function SettingsPage({
   searchParams,
@@ -25,6 +26,18 @@ export default async function SettingsPage({
           Freee連携に失敗しました。もう一度お試しください。
         </div>
       )}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>代理店初期設定</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-sm text-muted-foreground mb-4">
+            自社（VOZEL）を代理店として登録し、既存の全タレント・案件・クライアント・オプションに紐付けます。
+          </p>
+          <VozelAgencySeed />
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
