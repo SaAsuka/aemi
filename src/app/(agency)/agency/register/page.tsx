@@ -33,7 +33,6 @@ export default function AgencyRegisterPage() {
       <div className="w-full max-w-sm space-y-6 rounded-xl border bg-white p-8 shadow-sm">
         <div className="text-center">
           <h1 className="text-2xl font-bold">事務所アカウント登録</h1>
-          <p className="mt-1 text-sm text-muted-foreground">無料で始められます</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
