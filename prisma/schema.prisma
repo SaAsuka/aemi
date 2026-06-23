@@ -55,6 +55,12 @@ enum AuthTokenType {
   PASSWORD_RESET
 }
 
+enum AgencyStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
+
 enum JobDateType {
   AUDITION
   SHOOTING
@@ -142,6 +148,8 @@ model Talent {
   emailVerified        Boolean            @default(true)
   status               TalentStatus       @default(ACTIVE)
   note                 String?
+  agencyId             String?
+  agency               Agency?            @relation(fields: [agencyId], references: [id])
   createdAt            DateTime           @default(now())
   updatedAt            DateTime           @updatedAt
 
@@ -227,6 +235,8 @@ model Client {
   contactPhone String?
   lineGroupId  String?
   note         String?
+  agencyId     String?
+  agency       Agency?  @relation(fields: [agencyId], references: [id])
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
@@ -252,6 +262,8 @@ model Job {
   capacity    Int?
   status      JobStatus @default(DRAFT)
   note        String?
+  agencyId    String?
+  agency      Agency?   @relation(fields: [agencyId], references: [id])
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
@@ -390,6 +402,8 @@ model Option {
   status          OptionStatus   @default(DRAFT)
   stripeProductId String?        @unique
   stripePriceId   String?        @unique
+  agencyId        String?
+  agency          Agency?        @relation(fields: [agencyId], references: [id])
   createdAt       DateTime       @default(now())
   updatedAt       DateTime       @updatedAt
 
@@ -468,4 +482,52 @@ model FreeeToken {
   updatedAt    DateTime @updatedAt
 
   @@map("freee_tokens")
+}
+
+model Agency {
+  id           String       @id @default(cuid())
+  name         String
+  email        String       @unique
+  passwordHash String?
+  feePercent   Float        @default(0.6)
+  contactName  String?
+  contactPhone String?
+  address      String?
+  status       AgencyStatus @default(ACTIVE)
+  note         String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  parents  AgencyRelation[] @relation("ChildAgency")
+  children AgencyRelation[] @relation("ParentAgency")
+  admins   AgencyAdmin[]
+  talents  Talent[]
+  jobs     Job[]
+  clients  Client[]
+  options  Option[]
+
+  @@map("agencies")
+}
+
+model AgencyRelation {
+  parentId String
+  childId  String
+  parent   Agency @relation("ParentAgency", fields: [parentId], references: [id])
+  child    Agency @relation("ChildAgency",  fields: [childId],  references: [id])
+
+  @@id([parentId, childId])
+  @@map("agency_relations")
+}
+
+model AgencyAdmin {
+  id           String   @id @default(cuid())
+  agencyId     String
+  agency       Agency   @relation(fields: [agencyId], references: [id])
+  name         String
+  email        String   @unique
+  passwordHash String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("agency_admins")
 }
