@@ -45,13 +45,18 @@ export default async function AgencySubscribePage() {
           </div>
         ) : (
           <div className="space-y-4">
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-              <p className="font-medium">料金プラン準備中</p>
-              <p className="mt-1 text-amber-700">現在料金プランを調整中です。準備が整い次第ご連絡いたします。</p>
-            </div>
-            <div className="rounded-lg bg-muted/40 p-4 text-sm text-muted-foreground space-y-1">
-              <p>ご登録完了後、担当者よりご連絡いたします。</p>
-              <p>今すぐダッシュボードをご確認いただけます。</p>
+            <div className="rounded-lg border border-blue-200 bg-blue-50 p-5 space-y-3">
+              <p className="font-semibold text-blue-900">ご登録ありがとうございます</p>
+              <p className="text-sm text-blue-800">
+                お支払いの設定については担当者よりご連絡いたします。
+                下記のメールアドレスまでお問い合わせください。
+              </p>
+              <a
+                href={`mailto:${process.env.AGENCY_CONTACT_EMAIL ?? "info@vozel.jp"}`}
+                className="inline-flex items-center gap-1.5 text-sm font-medium text-blue-700 hover:underline"
+              >
+                {process.env.AGENCY_CONTACT_EMAIL ?? "info@vozel.jp"}
+              </a>
             </div>
             <Link
               href="/agency/dashboard"
