@@ -10,16 +10,21 @@ export default function AgencyRegisterPage() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState("")
 
-  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     setLoading(true)
     setError("")
-    const result = await registerAgency(new FormData(e.currentTarget))
-    if (result.error) {
-      setError(result.error)
+    try {
+      const result = await registerAgency(new FormData(e.currentTarget as HTMLFormElement))
+      if (result.error) {
+        setError(result.error)
+        setLoading(false)
+      } else {
+        router.push("/agency/verify-sent")
+      }
+    } catch {
+      setError("エラーが発生しました。時間をおいて再度お試しください。")
       setLoading(false)
-    } else {
-      router.push("/agency/verify-sent")
     }
   }
 

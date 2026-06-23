@@ -7,30 +7,35 @@ import { getAgencySession } from "@/lib/agency-auth"
 import { sendAgencyVerifyEmail } from "@/lib/email"
 
 export async function registerAgency(formData: FormData) {
-  const name = (formData.get("name") as string)?.trim()
-  const email = (formData.get("email") as string)?.trim().toLowerCase()
-  const password = formData.get("password") as string
-
-  if (!name || !email || !password) return { error: "すべての項目を入力してください" }
-  if (password.length < 8) return { error: "パスワードは8文字以上で入力してください" }
-
-  const existing = await prisma.agency.findUnique({ where: { email }, select: { id: true } })
-  if (existing) return { error: "このメールアドレスはすでに登録されています" }
-
-  const passwordHash = await bcrypt.hash(password, 10)
-  const verifyToken = crypto.randomBytes(32).toString("hex")
-
-  await prisma.agency.create({
-    data: { name, email, passwordHash, verifyToken, emailVerified: false },
-  })
-
   try {
-    await sendAgencyVerifyEmail(email, name, verifyToken)
-  } catch (e) {
-    console.error("[registerAgency] email send failed", e)
-  }
+    const name = (formData.get("name") as string)?.trim()
+    const email = (formData.get("email") as string)?.trim().toLowerCase()
+    const password = formData.get("password") as string
 
-  return { success: true }
+    if (!name || !email || !password) return { error: "すべての項目を入力してください" }
+    if (password.length < 8) return { error: "パスワードは8文字以上で入力してください" }
+
+    const existing = await prisma.agency.findUnique({ where: { email }, select: { id: true } })
+    if (existing) return { error: "このメールアドレスはすでに登録されています" }
+
+    const passwordHash = await bcrypt.hash(password, 10)
+    const verifyToken = crypto.randomBytes(32).toString("hex")
+
+    await prisma.agency.create({
+      data: { name, email, passwordHash, verifyToken, emailVerified: false },
+    })
+
+    try {
+      await sendAgencyVerifyEmail(email, name, verifyToken)
+    } catch (e) {
+      console.error("[registerAgency] email send failed", e)
+    }
+
+    return { success: true }
+  } catch (e) {
+    console.error("[registerAgency] error", e)
+    return { error: "登録中にエラーが発生しました。時間をおいて再度お試しください。" }
+  }
 }
 
 export async function verifyAgencyEmail(token: string) {
