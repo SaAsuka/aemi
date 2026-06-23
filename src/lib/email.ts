@@ -26,6 +26,24 @@ export async function sendInviteEmail(email: string, token: string) {
   })
 }
 
+export async function sendAgencyVerifyEmail(email: string, agencyName: string, token: string) {
+  const url = `${APP_URL}/agency/verify?token=${token}`
+  await getResend().emails.send({
+    from: FROM,
+    to: email,
+    subject: "メールアドレスの確認",
+    html: `
+      <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+        <h2 style="color: #1a1a1a;">${agencyName} 様</h2>
+        <p>ご登録ありがとうございます。以下のリンクをクリックしてメールアドレスを確認してください。</p>
+        <a href="${url}" style="display: inline-block; background: #1a1a1a; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 6px; margin: 16px 0;">メールアドレスを確認する</a>
+        <p style="color: #666; font-size: 14px;">このリンクは24時間有効です。</p>
+        <p style="color: #666; font-size: 14px;">お心当たりのない場合はこのメールを無視してください。</p>
+      </div>
+    `,
+  })
+}
+
 export async function sendPasswordResetEmail(email: string, token: string) {
   const url = `${APP_URL}/auth/reset-password?token=${token}`
   await getResend().emails.send({

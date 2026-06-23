@@ -485,18 +485,25 @@ model FreeeToken {
 }
 
 model Agency {
-  id           String       @id @default(cuid())
-  name         String
-  email        String       @unique
-  passwordHash String?
-  feePercent   Float        @default(0.6)
-  contactName  String?
-  contactPhone String?
-  address      String?
-  status       AgencyStatus @default(ACTIVE)
-  note         String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id                  String             @id @default(cuid())
+  name                String
+  email               String             @unique
+  passwordHash        String?
+  feePercent          Float              @default(0.6)
+  contactName         String?
+  contactPhone        String?
+  address             String?
+  status              AgencyStatus       @default(ACTIVE)
+  note                String?
+  emailVerified       Boolean            @default(false)
+  onboardingCompleted Boolean            @default(false)
+  verifyToken         String?            @unique
+  stripeCustomerId    String?            @unique
+  subscriptionId      String?            @unique
+  subscriptionStatus  SubscriptionStatus @default(NONE)
+  currentPeriodEnd    DateTime?
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
 
   parents  AgencyRelation[] @relation("ChildAgency")
   children AgencyRelation[] @relation("ParentAgency")

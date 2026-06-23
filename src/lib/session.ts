@@ -2,7 +2,8 @@ import { SessionOptions } from "iron-session"
 
 export type SessionData = {
   talentId?: string
-  role?: "talent" | "admin"
+  agencyId?: string
+  role?: "talent" | "admin" | "agency_admin"
   stripePriceId?: string
 }
 

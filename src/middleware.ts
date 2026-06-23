@@ -37,9 +37,29 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  if (
+    pathname.startsWith("/agency/dashboard") ||
+    pathname.startsWith("/agency/onboarding") ||
+    pathname.startsWith("/agency/subscribe")
+  ) {
+    if (!session.agencyId || session.role !== "agency_admin") {
+      return NextResponse.redirect(new URL("/agency/login", request.url))
+    }
+  }
+
   return response
 }
 
 export const config = {
-  matcher: ["/admin/:path*", "/jobs/:path*", "/subscribe", "/setup", "/mypage/:path*", "/welcome"],
+  matcher: [
+    "/admin/:path*",
+    "/jobs/:path*",
+    "/subscribe",
+    "/setup",
+    "/mypage/:path*",
+    "/welcome",
+    "/agency/dashboard/:path*",
+    "/agency/onboarding",
+    "/agency/subscribe",
+  ],
 }
