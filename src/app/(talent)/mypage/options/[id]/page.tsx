@@ -25,7 +25,7 @@ export default async function OptionDetailPage({
   }
 
   const [option, purchase] = await Promise.all([
-    prisma.option.findUnique({ where: { id, status: "ACTIVE" } }),
+    prisma.option.findFirst({ where: { id, status: "ACTIVE", ...(talent.agencyId ? { agencyId: talent.agencyId } : {}) } }),
     prisma.optionPurchase.findUnique({
       where: { optionId_talentId: { optionId: id, talentId: talent.id } },
       select: { status: true },
