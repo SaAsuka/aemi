@@ -14,10 +14,10 @@ async function getBaseUrl() {
   return `${protocol}://${host}`
 }
 
-export async function getActiveOptionsForTalent(talentId: string) {
+export async function getActiveOptionsForTalent(talentId: string, agencyId?: string | null) {
   const [options, purchases] = await Promise.all([
     prisma.option.findMany({
-      where: { status: "ACTIVE" },
+      where: { status: "ACTIVE", ...(agencyId ? { agencyId } : {}) },
       orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
     }),
     prisma.optionPurchase.findMany({

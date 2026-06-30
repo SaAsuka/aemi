@@ -11,7 +11,7 @@ export default async function OptionsPage({
 }) {
   const talent = await requireTalent()
   const { purchased, error } = await searchParams
-  const options = await getActiveOptionsForTalent(talent.id)
+  const options = await getActiveOptionsForTalent(talent.id, talent.agencyId)
 
   return (
     <>

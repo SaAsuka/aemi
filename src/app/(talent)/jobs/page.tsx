@@ -18,7 +18,7 @@ export default async function TalentJobsPage({
 }) {
   const { t } = await searchParams
 
-  let talent: { id: string; name: string; status: string; gender: string | null; birthDate: Date | null; height: number | null }
+  let talent: { id: string; name: string; status: string; gender: string | null; birthDate: Date | null; height: number | null; agencyId: string | null }
 
   if (t) {
     const tokenTalent = await getTalentByToken(t)
@@ -31,7 +31,7 @@ export default async function TalentJobsPage({
 
   const displayName = talent.name
 
-  const jobs = await getOpenJobs()
+  const jobs = await getOpenJobs(talent.agencyId)
 
   const jobsWithMatch: JobWithMatch[] = jobs.map((job) => {
     const { matchStatus, unmatchReasons } = matchTalentToJob(talent, job)

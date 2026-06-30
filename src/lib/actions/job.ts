@@ -91,7 +91,7 @@ export async function getJob(id: string) {
   })
 }
 
-export async function getOpenJobs() {
+export async function getOpenJobs(agencyId?: string | null) {
   const now = new Date()
   return prisma.job.findMany({
     where: {
@@ -100,6 +100,7 @@ export async function getOpenJobs() {
         { deadline: null },
         { deadline: { gte: now } },
       ],
+      ...(agencyId ? { agencyId } : {}),
     },
     orderBy: { createdAt: "desc" },
     select: {
@@ -112,9 +113,9 @@ export async function getOpenJobs() {
   })
 }
 
-export async function getOpenJob(id: string) {
+export async function getOpenJob(id: string, agencyId?: string | null) {
   const now = new Date()
-  return prisma.job.findUnique({
+  return prisma.job.findFirst({
     where: {
       id,
       status: "OPEN",
@@ -122,6 +123,7 @@ export async function getOpenJob(id: string) {
         { deadline: null },
         { deadline: { gte: now } },
       ],
+      ...(agencyId ? { agencyId } : {}),
     },
     select: {
       id: true, title: true, description: true, location: true, fee: true,

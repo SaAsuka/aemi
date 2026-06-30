@@ -18,7 +18,7 @@ export default async function TalentJobDetailPage({
 }) {
   const [{ id }, { t }] = await Promise.all([params, searchParams])
 
-  let talent: { id: string; name: string; status: string }
+  let talent: { id: string; name: string; status: string; agencyId: string | null }
 
   if (t) {
     const tokenTalent = await getTalentByToken(t)
@@ -31,7 +31,7 @@ export default async function TalentJobDetailPage({
 
   const displayName = talent.name
   const [job, talentResume, activeApps] = await Promise.all([
-    getOpenJob(id),
+    getOpenJob(id, talent.agencyId),
     prisma.talent.findUnique({ where: { id: talent.id }, select: { resume: true } }),
     prisma.application.findMany({
       where: {
