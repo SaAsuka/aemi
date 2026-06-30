@@ -68,6 +68,22 @@ export default function AgencyRegisterPage() {
             />
           </div>
 
+          <div className="flex items-start gap-2">
+            <input
+              id="agree"
+              name="agree"
+              type="checkbox"
+              required
+              className="mt-0.5 h-4 w-4 rounded border-gray-300"
+            />
+            <label htmlFor="agree" className="text-xs text-muted-foreground leading-relaxed">
+              <a href="/terms" target="_blank" className="underline hover:text-foreground">利用規約</a>
+              {" "}および{" "}
+              <a href="/privacy" target="_blank" className="underline hover:text-foreground">プライバシーポリシー</a>
+              に同意します
+            </label>
+          </div>
+
           {error && <p className="text-sm text-red-600">{error}</p>}
 
           <button

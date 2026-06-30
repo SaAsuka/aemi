@@ -50,7 +50,8 @@ export default async function SubscribePage({
   if (!talent.email) redirect("/auth/login")
 
   const session = await getSession()
-  const plan = await getPlanInfo(session.stripePriceId)
+  const priceId = session.stripePriceId ?? process.env.STRIPE_PRICE_ID
+  const plan = await getPlanInfo(priceId)
   const { error } = await searchParams
 
   async function handleSubscribe() {
