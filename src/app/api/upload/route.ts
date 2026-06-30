@@ -1,5 +1,8 @@
 import { NextResponse } from "next/server"
+import { cookies } from "next/headers"
+import { getIronSession } from "iron-session"
 import { uploadToStorage, generateStoragePath } from "@/lib/supabase-storage"
+import { sessionOptions, type SessionData } from "@/lib/session"
 
 const ALLOWED_TYPES = [
   "video/mp4",
@@ -17,6 +20,12 @@ const MAX_SIZE = 100 * 1024 * 1024 // 100MB
 
 export async function POST(request: Request): Promise<NextResponse> {
   try {
+    const cookieStore = await cookies()
+    const session = await getIronSession<SessionData>(cookieStore, sessionOptions)
+    if (!(session.role === "admin" || session.role === "agency_admin" || session.talentId)) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const formData = await request.formData()
     const file = formData.get("file") as File | null
     const category = (formData.get("category") as string | null) ?? "photos"

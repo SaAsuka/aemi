@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server"
 import { revalidatePath } from "next/cache"
+import { cookies } from "next/headers"
+import { getIronSession } from "iron-session"
 import { renderToBuffer, Font } from "@react-pdf/renderer"
 import { get } from "@vercel/blob"
 import { uploadToStorage, isSupabaseStorageUrl, extractStoragePath, getSignedUrl } from "@/lib/supabase-storage"
+import { sessionOptions, type SessionData } from "@/lib/session"
 
 import sharp from "sharp"
 import { prisma } from "@/lib/db"
@@ -24,6 +27,12 @@ export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  const cookieStore = await cookies()
+  const session = await getIronSession<SessionData>(cookieStore, sessionOptions)
+  if (!(session.role === "admin" || session.role === "agency_admin")) {
+    return new NextResponse("Unauthorized", { status: 401 })
+  }
+
   const { id } = await params
   const force = new URL(req.url).searchParams.get("force") === "true"
   const t0 = Date.now()

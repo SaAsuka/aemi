@@ -1,0 +1,254 @@
+"use server"
+
+import { revalidatePath, updateTag } from "next/cache"
+import { prisma } from "@/lib/db"
+import { optionSchema } from "@/lib/validations/option"
+import { normalizeDeadline } from "@/lib/utils/date"
+import { requireAgencyAdmin } from "@/lib/agency-auth"
+
+function buildOptionWhere(agencyId: string, search?: string, status?: string) {
+  const where: Record<string, unknown> = { agencyId }
+  if (search) where.name = { contains: search, mode: "insensitive" }
+  if (status && status !== "ALL") where.status = status
+  return where
+}
+
+export async function getAgencyOptionCount(agencyId: string, search?: string, status?: string) {
+  return prisma.option.count({ where: buildOptionWhere(agencyId, search, status) })
+}
+
+export async function getAgencyOptions(agencyId: string, search?: string, status?: string, page?: number) {
+  const where = buildOptionWhere(agencyId, search, status)
+  const pageSize = 50
+  const currentPage = page ?? 1
+
+  return prisma.option.findMany({
+    where,
+    orderBy: [{ sortOrder: "asc" }, { createdAt: "desc" }],
+    skip: (currentPage - 1) * pageSize,
+    take: pageSize,
+    include: {
+      _count: { select: { purchases: true } },
+    },
+  })
+}
+
+export async function getAgencyOption(id: string, agencyId: string) {
+  return prisma.option.findFirst({
+    where: { id, agencyId },
+    include: {
+      purchases: {
+        include: {
+          talent: { select: { id: true, name: true } },
+        },
+        orderBy: { createdAt: "desc" },
+      },
+    },
+  })
+}
+
+async function stripePost(path: string, body: Record<string, string>) {
+  const key = process.env.STRIPE_SECRET_KEY
+  if (!key) throw new Error("STRIPE_SECRET_KEY が未設定")
+
+  const res = await fetch(`https://api.stripe.com/v1${path}`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${key}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: new URLSearchParams(body).toString(),
+    signal: AbortSignal.timeout(15000),
+  })
+  if (!res.ok) {
+    const text = await res.text()
+    throw new Error(`Stripe API ${res.status}: ${text.slice(0, 200)}`)
+  }
+  return res.json()
+}
+
+async function ensureStripeProduct(optionId: string, name: string, description: string | null, price: number) {
+  const productBody: Record<string, string> = {
+    name,
+    "metadata[optionId]": optionId,
+  }
+  if (description) productBody.description = description
+
+  const product = await stripePost("/products", productBody)
+
+  const stripePrice = await stripePost("/prices", {
+    product: product.id,
+    unit_amount: String(price),
+    currency: "jpy",
+  })
+
+  return { stripeProductId: product.id as string, stripePriceId: stripePrice.id as string }
+}
+
+async function updateStripePrice(existingProductId: string, existingPriceId: string, newAmount: number) {
+  await stripePost(`/prices/${existingPriceId}`, { active: "false" })
+
+  const newPrice = await stripePost("/prices", {
+    product: existingProductId,
+    unit_amount: String(newAmount),
+    currency: "jpy",
+  })
+
+  return newPrice.id as string
+}
+
+async function updateStripeProduct(productId: string, name: string, description: string | null) {
+  const body: Record<string, string> = { name }
+  if (description) body.description = description
+  await stripePost(`/products/${productId}`, body)
+}
+
+async function archiveStripeProduct(productId: string) {
+  await stripePost(`/products/${productId}`, { active: "false" })
+}
+
+export async function createAgencyOption(formData: FormData) {
+  const agency = await requireAgencyAdmin()
+  const raw = Object.fromEntries(formData)
+  const parsed = optionSchema.safeParse(raw)
+
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors }
+  }
+
+  const data = parsed.data
+  let stripeData: { stripeProductId: string; stripePriceId: string } | null = null
+
+  if (data.status === "ACTIVE") {
+    try {
+      stripeData = await ensureStripeProduct("pending", data.name, data.description || null, data.price)
+    } catch (e) {
+      console.error("Stripe商品作成エラー:", e)
+      return { error: { status: ["Stripe商品の作成に失敗しました"] } }
+    }
+  }
+
+  const option = await prisma.option.create({
+    data: {
+      agencyId: agency.id,
+      name: data.name,
+      description: data.description || null,
+      category: data.category,
+      price: data.price,
+      imageUrl: data.imageUrl || null,
+      deadline: data.deadline ? normalizeDeadline(data.deadline) : null,
+      sortOrder: typeof data.sortOrder === "number" ? data.sortOrder : 0,
+      status: data.status,
+      ...(stripeData && {
+        stripeProductId: stripeData.stripeProductId,
+        stripePriceId: stripeData.stripePriceId,
+      }),
+    },
+  })
+
+  if (stripeData) {
+    try {
+      await stripePost(`/products/${stripeData.stripeProductId}`, {
+        "metadata[optionId]": option.id,
+      })
+    } catch (e) {
+      console.error("Stripe metadata更新エラー:", e)
+    }
+  }
+
+  revalidatePath("/agency/options")
+  updateTag("options")
+  return { success: true }
+}
+
+export async function updateAgencyOption(id: string, formData: FormData) {
+  const agency = await requireAgencyAdmin()
+  const raw = Object.fromEntries(formData)
+  const parsed = optionSchema.safeParse(raw)
+
+  if (!parsed.success) {
+    return { error: parsed.error.flatten().fieldErrors }
+  }
+
+  const data = parsed.data
+  const existing = await prisma.option.findFirst({ where: { id, agencyId: agency.id } })
+  if (!existing) return { error: { name: ["オプションが見つかりません"] } }
+
+  let stripeProductId = existing.stripeProductId
+  let stripePriceId = existing.stripePriceId
+
+  if (data.status === "ACTIVE" && !stripeProductId) {
+    try {
+      const result = await ensureStripeProduct(id, data.name, data.description || null, data.price)
+      stripeProductId = result.stripeProductId
+      stripePriceId = result.stripePriceId
+    } catch (e) {
+      console.error("Stripe商品作成エラー:", e)
+      return { error: { status: ["Stripe商品の作成に失敗しました"] } }
+    }
+  } else if (stripeProductId && stripePriceId && data.price !== existing.price) {
+    try {
+      stripePriceId = await updateStripePrice(stripeProductId, stripePriceId, data.price)
+    } catch (e) {
+      console.error("Stripe価格更新エラー:", e)
+      return { error: { price: ["Stripe価格の更新に失敗しました"] } }
+    }
+  }
+
+  if (stripeProductId) {
+    try {
+      await updateStripeProduct(stripeProductId, data.name, data.description || null)
+    } catch (e) {
+      console.error("Stripe商品更新エラー:", e)
+    }
+  }
+
+  await prisma.option.update({
+    where: { id },
+    data: {
+      name: data.name,
+      description: data.description || null,
+      category: data.category,
+      price: data.price,
+      imageUrl: data.imageUrl || null,
+      deadline: data.deadline ? normalizeDeadline(data.deadline) : null,
+      sortOrder: typeof data.sortOrder === "number" ? data.sortOrder : 0,
+      status: data.status,
+      stripeProductId,
+      stripePriceId,
+    },
+  })
+
+  revalidatePath("/agency/options")
+  revalidatePath(`/agency/options/${id}`)
+  updateTag("options")
+  return { success: true }
+}
+
+export async function deleteAgencyOption(id: string) {
+  const agency = await requireAgencyAdmin()
+
+  const paidCount = await prisma.optionPurchase.count({
+    where: { optionId: id, status: "PAID" },
+  })
+  if (paidCount > 0) {
+    return { error: "支払済みの購入があるため削除できません" }
+  }
+
+  const option = await prisma.option.findFirst({ where: { id, agencyId: agency.id } })
+  if (!option) return { error: "オプションが見つかりません" }
+
+  if (option.stripeProductId) {
+    try {
+      await archiveStripeProduct(option.stripeProductId)
+    } catch (e) {
+      console.error("Stripe商品アーカイブエラー:", e)
+    }
+  }
+
+  await prisma.optionPurchase.deleteMany({ where: { optionId: id } })
+  await prisma.option.delete({ where: { id } })
+  revalidatePath("/agency/options")
+  updateTag("options")
+  return { success: true }
+}

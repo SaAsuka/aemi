@@ -1,8 +1,25 @@
 import { type NextRequest, NextResponse } from "next/server"
+import { cookies } from "next/headers"
+import { getIronSession } from "iron-session"
 import { get } from "@vercel/blob"
 import { isSupabaseStorageUrl, extractStoragePath, getSignedUrl } from "@/lib/supabase-storage"
+import { sessionOptions, type SessionData } from "@/lib/session"
+
+async function isAuthenticated(request: NextRequest): Promise<boolean> {
+  try {
+    const cookieStore = await cookies()
+    const session = await getIronSession<SessionData>(cookieStore, sessionOptions)
+    return !!(session.role === "admin" || session.role === "agency_admin" || session.talentId)
+  } catch {
+    return false
+  }
+}
 
 export async function GET(request: NextRequest) {
+  if (!await isAuthenticated(request)) {
+    return new NextResponse("Unauthorized", { status: 401 })
+  }
+
   const url = request.nextUrl.searchParams.get("url")
   const sign = request.nextUrl.searchParams.get("sign") === "true"
 
