@@ -1,6 +1,7 @@
 import { requireAgencyAdmin } from "@/lib/agency-auth"
 import { agencyLogout } from "@/lib/actions/agency-auth"
 import { redirect } from "next/navigation"
+import Link from "next/link"
 import { Building2, Users, Briefcase, LogOut } from "lucide-react"
 
 export default async function AgencyDashboardPage() {
@@ -43,15 +44,15 @@ export default async function AgencyDashboardPage() {
               <p className="text-2xl font-bold">0</p>
             </div>
           </div>
-          <div className="rounded-xl border bg-white p-6 flex items-center gap-4">
+          <Link href="/agency/jobs" className="rounded-xl border bg-white p-6 flex items-center gap-4 hover:border-primary transition-colors">
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-green-50">
               <Briefcase className="h-6 w-6 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">応募中案件</p>
-              <p className="text-2xl font-bold">0</p>
+              <p className="text-sm text-muted-foreground">案件管理</p>
+              <p className="text-sm font-medium mt-0.5 text-primary">管理する →</p>
             </div>
-          </div>
+          </Link>
           <div className="rounded-xl border bg-white p-6 flex items-center gap-4">
             <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-50">
               <Building2 className="h-6 w-6 text-purple-600" />
