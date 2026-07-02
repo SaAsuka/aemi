@@ -22,12 +22,12 @@ async function DashboardStats() {
   const jstNow = getJstNow()
   const { start: monthStart, end: monthEnd } = getMonthRange(jstNow.getFullYear(), jstNow.getMonth() + 1)
 
-  const [talentCount, jobCount, applicationCount, openJobs, monthlyAccepted, monthlyInvoices] =
+  const [monthlyTalents, monthlyJobs, openJobs, monthlyApplications, monthlyAccepted, monthlyInvoices] =
     await Promise.all([
-      prisma.talent.count(),
-      prisma.job.count(),
-      prisma.application.count(),
+      prisma.talent.count({ where: { createdAt: { gte: monthStart, lt: monthEnd } } }),
+      prisma.job.count({ where: { createdAt: { gte: monthStart, lt: monthEnd } } }),
       prisma.job.count({ where: { status: "OPEN" } }),
+      prisma.application.count({ where: { appliedAt: { gte: monthStart, lt: monthEnd } } }),
       prisma.application.count({
         where: {
           status: "ACCEPTED",
@@ -49,11 +49,11 @@ async function DashboardStats() {
   )
 
   const stats = [
-    { label: "タレント", value: talentCount, href: "/admin/talents" },
-    { label: "案件（募集中）", value: `${openJobs} / ${jobCount}`, href: "/admin/jobs" },
-    { label: "応募", value: applicationCount, href: "/admin/applications" },
+    { label: "今月の新規タレント", value: monthlyTalents, href: "/admin/talents" },
+    { label: "今月の新規案件", value: `${monthlyJobs}（募集中 ${openJobs}）`, href: "/admin/jobs" },
+    { label: "今月の応募", value: monthlyApplications, href: "/admin/applications" },
     { label: "今月の合格", value: monthlyAccepted, href: "/admin/applications?status=ACCEPTED" },
-    { label: "今月の請求額", value: `\u00a5${monthlyInvoiceTotal.toLocaleString()}`, href: "/admin/invoices" },
+    { label: "今月の請求額", value: `¥${monthlyInvoiceTotal.toLocaleString()}`, href: "/admin/invoices" },
   ]
 
   return (
