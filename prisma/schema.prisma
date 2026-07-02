@@ -153,8 +153,21 @@ model Talent {
   subscription      TalentSubscription?
   deadlineReminders DeadlineReminder[]
   optionPurchases   OptionPurchase[]
+  loginHistories    TalentLoginHistory[]
 
   @@map("talents")
+}
+
+model TalentLoginHistory {
+  id        String   @id @default(cuid())
+  talentId  String
+  talent    Talent   @relation(fields: [talentId], references: [id], onDelete: Cascade)
+  ua        String?
+  ip        String?
+  txnId     String?
+  loggedAt  DateTime @default(now())
+
+  @@map("talent_login_histories")
 }
 
 model TalentBankAccount {

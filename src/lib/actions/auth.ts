@@ -2,6 +2,7 @@
 
 import crypto from "crypto"
 import bcrypt from "bcryptjs"
+import { headers } from "next/headers"
 import { prisma } from "@/lib/db"
 import { getSession } from "@/lib/auth"
 import { sendInviteEmail, sendPasswordResetEmail } from "@/lib/email"
@@ -43,6 +44,13 @@ export async function passwordLogin(email: string, password: string, redirectTo?
   session.talentId = talent.id
   session.role = "talent"
   await session.save()
+
+  const hdrs = await headers()
+  const ip = hdrs.get("x-forwarded-for")?.split(",")[0].trim() ?? hdrs.get("x-real-ip") ?? null
+  const ua = hdrs.get("user-agent") ?? null
+  prisma.talentLoginHistory.create({
+    data: { talentId: talent.id, ip, ua, txnId: crypto.randomUUID() },
+  }).catch(() => {})
 
   const redirect = talent.nameKana === "未設定"
     ? "/setup"
