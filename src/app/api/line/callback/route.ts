@@ -4,6 +4,7 @@ import { getIronSession } from "iron-session"
 import { sessionOptions, type SessionData } from "@/lib/session"
 import { prisma } from "@/lib/db"
 import { lineLogger } from "@logs/line"
+import { trackEvent } from "@/lib/track-event"
 
 const CHANNEL_ID = process.env.LINE_LOGIN_CHANNEL_ID
 const CHANNEL_SECRET = process.env.LINE_LOGIN_CHANNEL_SECRET
@@ -73,6 +74,7 @@ export async function GET(req: NextRequest) {
       data: { lineUserId: userId },
     })
 
+    trackEvent("line_connected", { userId: session.talentId, userType: "talent" })
     lineLogger.info("connect_success", { talentId: session.talentId, lineUserId: userId })
     const successDest = returnTo ? `${BASE_URL}${returnTo}` : `${BASE_URL}/mypage/settings?line=connected`
     return NextResponse.redirect(successDest)

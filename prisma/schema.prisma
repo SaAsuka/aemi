@@ -482,3 +482,18 @@ model FreeeToken {
 
   @@map("freee_tokens")
 }
+
+model UserEvent {
+  id        String   @id @default(cuid())
+  userId    String?
+  userType  String?
+  eventName String
+  properties Json?
+  ip        String?
+  ua        String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, userType])
+  @@index([eventName])
+  @@map("user_events")
+}

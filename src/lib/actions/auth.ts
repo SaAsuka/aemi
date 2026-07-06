@@ -6,6 +6,7 @@ import { headers } from "next/headers"
 import { prisma } from "@/lib/db"
 import { getSession } from "@/lib/auth"
 import { sendInviteEmail, sendPasswordResetEmail } from "@/lib/email"
+import { trackEvent } from "@/lib/track-event"
 
 export async function inviteTalent(email: string) {
   const session = await getSession()
@@ -175,6 +176,7 @@ export async function verifyToken(token: string) {
         },
         select: { id: true },
       })
+      trackEvent("registered", { userId: talent.id, userType: "talent" })
     } else {
       await prisma.talent.update({
         where: { id: talent.id },

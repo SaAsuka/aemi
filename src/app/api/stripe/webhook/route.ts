@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 import { getStripe } from "@/lib/stripe"
 import { prisma } from "@/lib/db"
+import { trackEvent } from "@/lib/track-event"
 import type Stripe from "stripe"
 
 function getPeriodEnd(subscription: Stripe.Subscription): Date | null {
@@ -67,6 +68,11 @@ export async function POST(request: NextRequest) {
             status: "ACTIVE",
             ...(periodEnd && { currentPeriodEnd: periodEnd }),
           },
+        })
+        trackEvent("subscribed", {
+          userId: talentId,
+          userType: "talent",
+          properties: { subscriptionId },
         })
       }
       break

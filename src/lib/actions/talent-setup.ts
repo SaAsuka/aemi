@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db"
 import { getSession } from "@/lib/auth"
 import { setupSchema } from "@/lib/validations/talent"
 import { upsertSocialLinks, upsertBankAccount } from "./talent-relations"
+import { trackEvent } from "@/lib/track-event"
 
 export async function setupTalent(formData: FormData) {
   const session = await getSession()
@@ -57,6 +58,8 @@ export async function setupTalent(formData: FormData) {
 
   await upsertSocialLinks(session.talentId, data)
   await upsertBankAccount(session.talentId, data)
+
+  trackEvent("setup_completed", { userId: session.talentId, userType: "talent" })
 
   revalidatePath("/mypage")
   return { success: true, redirect: "/subscribe" }
