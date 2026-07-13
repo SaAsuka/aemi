@@ -16,6 +16,7 @@ import { TALENT_STATUS_LABELS, SUBSCRIPTION_STATUS_LABELS, STATUS_COLORS } from 
 import { SearchForm } from "@/components/admin/search-form"
 import { TalentFilters } from "@/components/admin/talent-filters"
 import { CompositePdfIconButton } from "@/components/admin/composite-pdf-button"
+import { formatDate } from "@/lib/utils/date"
 import { ExternalLink, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { RegisterLinkCopy } from "@/components/admin/register-link-copy"
@@ -126,6 +127,7 @@ export default async function TalentsPage({
                 <SortableHeader column="status" label="ステータス" />
                 <TableHead>LINE</TableHead>
                 <TableHead>決済</TableHead>
+                <TableHead className="hidden md:table-cell">最終ログイン</TableHead>
                 <TableHead>コンポジ生成</TableHead>
                 <TableHead>コンポジPDF</TableHead>
                 <TableHead></TableHead>
@@ -134,7 +136,7 @@ export default async function TalentsPage({
             <TableBody>
               {talents.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
+                  <TableCell colSpan={9} className="text-center text-muted-foreground py-8">
                     データがありません
                   </TableCell>
                 </TableRow>
@@ -174,6 +176,11 @@ export default async function TalentsPage({
                           </span>
                         )
                       })()}
+                    </TableCell>
+                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                      {talent.loginHistories[0]
+                        ? formatDate(talent.loginHistories[0].loggedAt)
+                        : <span className="text-xs">−</span>}
                     </TableCell>
                     <TableCell>
                       <CompositePdfIconButton talentId={talent.id} photoCount={talent._count.photos} />

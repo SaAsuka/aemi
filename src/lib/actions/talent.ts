@@ -46,6 +46,11 @@ const TALENT_SELECT = {
   subscription: {
     select: { status: true, currentPeriodEnd: true },
   },
+  loginHistories: {
+    select: { loggedAt: true },
+    orderBy: { loggedAt: "desc" as const },
+    take: 1,
+  },
   _count: { select: { photos: true } },
 } as const
 
