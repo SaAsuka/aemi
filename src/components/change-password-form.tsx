@@ -51,7 +51,7 @@ export function ChangePasswordForm({ mustChangePassword = false, hasPassword = t
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-4">
+    <form onSubmit={handleSubmit} noValidate className="space-y-4">
       {hasPassword && (
         <div className="space-y-2">
           <Label htmlFor="currentPassword">現在のパスワード</Label>

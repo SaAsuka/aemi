@@ -57,7 +57,7 @@ function ResetPasswordContent() {
         <h1 className="text-2xl font-bold">パスワード設定</h1>
         <p className="text-sm text-muted-foreground mt-1">新しいパスワードを入力してください</p>
       </div>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} noValidate className="space-y-4">
         <input
           type="password"
           value={password}
