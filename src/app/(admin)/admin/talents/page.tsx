@@ -177,10 +177,13 @@ export default async function TalentsPage({
                         )
                       })()}
                     </TableCell>
-                    <TableCell className="hidden md:table-cell text-sm text-muted-foreground">
+                    <TableCell className="hidden md:table-cell text-sm">
                       {talent.loginHistories[0]
-                        ? formatDate(talent.loginHistories[0].loggedAt)
-                        : <span className="text-xs">−</span>}
+                        ? (() => {
+                            const isOld = Date.now() - new Date(talent.loginHistories[0].loggedAt).getTime() > 7 * 24 * 60 * 60 * 1000
+                            return <span className={isOld ? "font-medium text-red-600" : "text-muted-foreground"}>{formatDate(talent.loginHistories[0].loggedAt)}</span>
+                          })()
+                        : <span className="text-xs text-muted-foreground">−</span>}
                     </TableCell>
                     <TableCell>
                       <CompositePdfIconButton talentId={talent.id} photoCount={talent._count.photos} />
