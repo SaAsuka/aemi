@@ -132,7 +132,7 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
   }
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
+    <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-6">
       {priceToken && <input type="hidden" name="priceToken" value={priceToken} />}
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div className="space-y-2">

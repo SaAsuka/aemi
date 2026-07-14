@@ -549,7 +549,7 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
         </section>
       )}
 
-      <form ref={formRef} onSubmit={(e) => e.preventDefault()} className="space-y-10" onChange={handleChange}>
+      <form ref={formRef} onSubmit={(e) => e.preventDefault()} noValidate className="space-y-10" onChange={handleChange}>
         {/* ステップ1: 基本情報 */}
         <div className={step === 1 ? "" : "hidden"}>
           <section className="space-y-4">
