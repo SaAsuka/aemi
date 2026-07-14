@@ -113,7 +113,7 @@ function LoginContent() {
             <h1 className="text-2xl font-bold">パスワードリセット</h1>
             <p className="text-sm text-muted-foreground mt-1">登録済みのメールアドレスを入力してください</p>
           </div>
-          <form onSubmit={handleResetRequest} className="space-y-4">
+          <form onSubmit={handleResetRequest} noValidate className="space-y-4">
             <input
               type="email"
               value={email}
@@ -151,7 +151,7 @@ function LoginContent() {
           <h1 className="text-2xl font-bold">VOZEL</h1>
           <p className="text-sm text-muted-foreground mt-1">ログイン</p>
         </div>
-        <form onSubmit={handleLogin} className="space-y-4">
+        <form onSubmit={handleLogin} noValidate className="space-y-4">
           <input
             type="email"
             value={email}
