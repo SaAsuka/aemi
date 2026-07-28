@@ -17,6 +17,7 @@ import { CompositePdfButton } from "@/components/admin/composite-pdf-button"
 import { SetPasswordDialog } from "@/components/admin/set-password-dialog"
 import { TalentPhotos } from "@/components/admin/talent-photos"
 import { TalentWorks } from "@/components/admin/talent-works"
+import { CancelSubscriptionButton } from "@/components/admin/cancel-subscription-button"
 import { APPLICATION_STATUS_LABELS, TALENT_STATUS_LABELS, SUBSCRIPTION_STATUS_LABELS, STATUS_COLORS } from "@/types"
 import { formatDate, calcAge } from "@/lib/utils/date"
 import { Button } from "@/components/ui/button"
@@ -94,6 +95,9 @@ export default async function TalentDetailPage({
             >
               Stripe →
             </a>
+          )}
+          {talent.subscription?.status === "ACTIVE" && (
+            <CancelSubscriptionButton talentId={talent.id} />
           )}
         </div>
         <div className="rounded-lg border p-3 text-center">

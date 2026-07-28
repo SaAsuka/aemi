@@ -2,6 +2,8 @@
 
 import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
+import { getStripe } from "@/lib/stripe"
+import { getSession } from "@/lib/auth"
 import type { SubscriptionStatus } from "@/generated/prisma/client"
 
 const STATUS_MAP: Record<string, SubscriptionStatus> = {
@@ -91,6 +93,29 @@ export async function syncStripeCustomers(): Promise<{ totalCustomers: number; m
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
     console.error("Stripe同期エラー:", msg)
+    return { error: msg }
+  }
+}
+
+export async function cancelSubscriptionAtPeriodEnd(talentId: string): Promise<{ ok: true } | { error: string }> {
+  const session = await getSession()
+  if (session.role !== "admin") return { error: "権限がありません" }
+
+  try {
+    const sub = await prisma.talentSubscription.findUnique({ where: { talentId } })
+    if (!sub?.subscriptionId) return { error: "サブスクリプション情報が見つかりません" }
+    if (sub.status !== "ACTIVE") return { error: "アクティブなサブスクリプションがありません" }
+
+    const stripe = getStripe()
+    await stripe.subscriptions.update(sub.subscriptionId, { cancel_at_period_end: true })
+
+    revalidatePath(`/admin/talents/${talentId}`)
+    updateTag("talents")
+
+    return { ok: true }
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error("解約処理エラー:", msg)
     return { error: msg }
   }
 }
