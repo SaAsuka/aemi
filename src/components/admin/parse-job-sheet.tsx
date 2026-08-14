@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react"
 import { FileText } from "lucide-react"
-import { toast } from "sonner"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Label } from "@/components/ui/label"
@@ -21,21 +20,24 @@ export function ParseJobSheet() {
   const [open, setOpen] = useState(false)
   const [text, setText] = useState("")
   const [result, setResult] = useState<ParseResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
   const [isParsing, startTransition] = useTransition()
 
   const handleParse = () => {
+    setError(null)
     startTransition(async () => {
       const res = await parseJobText(text)
       if (res.success) {
         setResult(res.data)
       } else {
-        toast.error(res.error)
+        setError(res.error)
       }
     })
   }
 
   const handleReset = () => {
     setResult(null)
+    setError(null)
     setText("")
   }
 
@@ -43,6 +45,7 @@ export function ParseJobSheet() {
     setOpen(nextOpen)
     if (!nextOpen) {
       setResult(null)
+      setError(null)
       setText("")
     }
   }
@@ -69,6 +72,11 @@ export function ParseJobSheet() {
                 rows={15}
               />
             </div>
+            {error && (
+              <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700 break-all">
+                {error}
+              </div>
+            )}
             <Button onClick={handleParse} disabled={isParsing || !text.trim()}>
               {isParsing ? "解析中..." : "解析する"}
             </Button>
