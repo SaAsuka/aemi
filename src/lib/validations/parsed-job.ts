@@ -4,8 +4,8 @@ const parsedStatusEnum = z.enum(["ACCEPTED", "REJECTED", "PENDING"])
 const genderEnum = z.enum(["MALE", "FEMALE", "OTHER"]).nullable().optional()
 
 export const parsedTalentEntrySchema = z.object({
-  name: z.string(),
-  status: parsedStatusEnum,
+  name: z.string().nullable().optional().transform((v) => v ?? ""),
+  status: parsedStatusEnum.nullable().optional().transform((v) => v ?? "PENDING"),
   date: z.string().nullable().optional(),
   startTime: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
@@ -36,24 +36,31 @@ export const parsedJobSchema = z.object({
 export type ParsedTalentEntry = z.infer<typeof parsedTalentEntrySchema>
 export type ParsedJob = z.infer<typeof parsedJobSchema>
 
+const VALID_DATE_TYPES = ["AUDITION", "SHOOTING", "OTHER"] as const
+const VALID_REQUIREMENTS = ["ACTING_VIDEO", "VOICE_SAMPLE", "PAST_WORK_VIDEO", "PROFILE_PHOTO"] as const
+
 export const parsedJobDateSchema = z.object({
-  type: z.enum(["AUDITION", "SHOOTING", "OTHER"]),
-  date: z.string(),
+  type: z.string().nullable().optional(),
+  date: z.string().nullable().optional(),
   startTime: z.string().nullable().optional(),
   endTime: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
   note: z.string().nullable().optional(),
 })
 
-const submissionCategoryEnum = z.enum(["ACTING_VIDEO", "VOICE_SAMPLE", "PAST_WORK_VIDEO", "PROFILE_PHOTO"])
-
 export const parsedCommonSchema = z.object({
   clientCompanyName: z.string().nullable().optional(),
   clientContactName: z.string().nullable().optional(),
   location: z.string().nullable().optional(),
   deadline: z.string().nullable().optional(),
-  dates: z.array(parsedJobDateSchema).nullable().optional().transform((v) => v ?? []),
-  requirements: z.array(submissionCategoryEnum).nullable().optional().transform((v) => v ?? []),
+  dates: z.array(parsedJobDateSchema).nullable().optional().transform((v) =>
+    (v ?? [])
+      .filter((d) => d.date != null && VALID_DATE_TYPES.includes(d.type as typeof VALID_DATE_TYPES[number]))
+      .map((d) => ({ ...d, type: d.type as typeof VALID_DATE_TYPES[number], date: d.date as string }))
+  ),
+  requirements: z.array(z.string()).nullable().optional().transform((v) =>
+    (v ?? []).filter((r): r is typeof VALID_REQUIREMENTS[number] => VALID_REQUIREMENTS.includes(r as typeof VALID_REQUIREMENTS[number]))
+  ),
   description: z.string().nullable().optional(),
   note: z.string().nullable().optional(),
 })
