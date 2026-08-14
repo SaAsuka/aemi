@@ -168,39 +168,10 @@ export async function parseJobText(text: string): Promise<
       common = parsed.data.common
       roles = parsed.data.roles
     } else {
-      console.error("新フォーマットパース失敗:", JSON.stringify(parsed.error.issues, null, 2))
+      const issues = parsed.error.issues.map(i => `${i.path.join(".")}: ${i.message}`).join(" / ")
+      console.error("スキーマバリデーション失敗:", issues)
       console.error("Gemini生レスポンス:", JSON.stringify(raw, null, 2))
-
-      const legacy = parsedJobSchema.safeParse(raw)
-      if (legacy.success) {
-        console.log("旧フォーマットでパース成功、変換します")
-        const d = legacy.data
-        common = {
-          clientCompanyName: d.clientCompanyName,
-          clientContactName: d.clientContactName,
-          location: d.location,
-          deadline: d.deadline,
-          dates: [],
-          requirements: [],
-          description: d.description,
-          note: d.note,
-        }
-        roles = [{
-          title: d.title,
-          genderReq: d.genderReq,
-          ageMin: d.ageMin,
-          ageMax: d.ageMax,
-          heightMin: d.heightMin,
-          heightMax: d.heightMax,
-          fee: d.fee,
-          capacity: d.capacity,
-          note: d.note,
-          talents: d.talents,
-        }]
-      } else {
-        console.error("旧フォーマットもパース失敗:", JSON.stringify(legacy.error.issues, null, 2))
-        return { success: false, error: "パース結果の形式が不正です" }
-      }
+      return { success: false, error: `解析結果の形式が不正です。[詳細: ${issues}]` }
     }
 
     const jobs = await Promise.all(
