@@ -144,13 +144,20 @@ export async function parseJobText(text: string): Promise<
   try {
     const response = await getGemini().models.generateContent({
       model: "gemini-2.5-flash",
-      contents: `${SYSTEM_PROMPT}\n\n---\n\n${text}`,
       config: {
+        systemInstruction: SYSTEM_PROMPT,
         responseMimeType: "application/json",
       },
+      contents: [{ role: "user", parts: [{ text }] }],
     })
 
-    const raw = JSON.parse(response.text ?? "{}")
+    const rawText = response.text
+    if (!rawText) {
+      console.error("Gemini returned empty response. response:", JSON.stringify(response))
+      return { success: false, error: "AIからの応答が空でした。しばらく待ってから再試行してください。" }
+    }
+
+    const raw = JSON.parse(rawText)
 
     const parsed = parsedJobResponseSchema.safeParse(raw)
 
