@@ -8,10 +8,29 @@ const ALLOWED_TYPES = [
   "audio/mpeg",
   "audio/wav",
   "image/jpeg",
+  "image/jpg",
   "image/png",
   "image/webp",
+  "image/heic",
+  "image/heif",
   "application/pdf",
 ]
+
+const EXT_TYPE_MAP: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  heic: "image/heic",
+  heif: "image/heif",
+  gif: "image/gif",
+  pdf: "application/pdf",
+  mp4: "video/mp4",
+  mov: "video/quicktime",
+  webm: "video/webm",
+  mp3: "audio/mpeg",
+  wav: "audio/wav",
+}
 
 const MAX_SIZE = 100 * 1024 * 1024 // 100MB
 
@@ -26,7 +45,12 @@ export async function POST(request: Request): Promise<NextResponse> {
       return NextResponse.json({ error: "ファイルが指定されていません" }, { status: 400 })
     }
 
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    // iOSのHEIC等でfile.typeが空になる場合、ファイル名の拡張子から補完する
+    const ext = file.name.split(".").pop()?.toLowerCase() ?? ""
+    const contentType = file.type || EXT_TYPE_MAP[ext] || "application/octet-stream"
+
+    if (!ALLOWED_TYPES.includes(contentType)) {
+      console.warn("[UPLOAD] rejected:", { name: file.name, type: file.type, resolvedType: contentType })
       return NextResponse.json({ error: "このファイル形式はアップロードできません" }, { status: 400 })
     }
 
@@ -39,11 +63,11 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const buffer = Buffer.from(await file.arrayBuffer())
     const path = generateStoragePath(cat, file.name, id ?? undefined)
-    const url = await uploadToStorage(buffer, path, file.type)
+    const url = await uploadToStorage(buffer, path, contentType)
 
     return NextResponse.json({ url })
   } catch (error) {
-    console.error("[UPLOAD]", error)
+    console.error("[UPLOAD] error:", error instanceof Error ? error.message : error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "アップロードに失敗しました" },
       { status: 500 },

@@ -51,6 +51,51 @@
 - **本番環境（main）へのマージはユーザーの明示的な許可なく行わない**
 - 作業開始時は、本番（main）・テスト（vozel-test）両ブランチを最新に pull してから始める
 
+## ブラウザ互換性
+
+フォームや画面を新規実装・修正する際は以下を確認すること。
+
+### フォーム
+- **`<form>` には必ず `noValidate` を付ける**
+  iOS SafariではブラウザネイティブバリデーションがReactの `onSubmit` より先に発火し、独自エラーメッセージが表示されない場合がある
+- **バリデーションはZod（サーバー）またはReact（クライアント）で実装する**
+  HTMLの `required`・`minLength`・`type="email"` などブラウザ標準バリデーションには依存しない
+
+### レイアウト
+- **`min-h-screen`（100vh）はiOS Safariで高さが不足することがある**
+  アドレスバーの表示・非表示により入力欄やボタンが隠れる場合がある。必要に応じて `100dvh` や `min-h-[100dvh]` を使用する
+- **仮想キーボード表示時は `position: fixed` の表示を確認する**
+  iOS Safari・Android Chromeではキーボード表示時に位置がずれることがある
+
+### 入力
+- **`type="date"`・`time`・`datetime-local` はブラウザごとにUIが異なる**
+  デザインや操作性に依存する場合はライブラリ（例：Flatpickr）を使用する
+- **`autocomplete` を適切に設定する**
+  Safari・Chromeで自動入力挙動が異なるため、ログイン・会員登録画面では確認する
+
+### CSS
+- **SafariやWebViewで未対応・挙動差のあるCSSを使用していないか確認する**
+  `backdrop-filter`・`position: sticky`・`100vh`・`overflow: hidden`・`:has()`・`aspect-ratio`
+  新しいCSSを使用する場合は対応ブラウザを確認する
+
+### JavaScript
+- **Clipboard API・Share APIなどブラウザ依存APIはフォールバックを用意する**
+- **`Intl`・`URL` など新しいAPIを利用する場合は対象ブラウザで動作確認する**
+
+### このプロジェクト固有
+- **LINE内蔵ブラウザ（WebView）に注意する**
+  タレントがLINEアプリ経由でアクセスするケースがあり、写真アップロード（カメラ・ライブラリアクセス）などでSafari・Chromeと挙動が異なる場合がある
+
+### 動作確認
+最低限以下のブラウザで確認する。
+
+| ブラウザ | 確認内容 |
+|---------|---------|
+| Chrome | PC・Android |
+| Safari | iPhone・iPad |
+| Edge | Windows |
+| Firefox | PC（必要に応じて） |
+
 ## 既知の注意点
 - Vercel Blob `addRandomSuffix: false` → ブラウザキャッシュ問題 → `blobProxyUrl` にtimestamp付与
 - Route Handler内の `revalidatePath` はクライアント側に効かない → Server Action経由で呼ぶ

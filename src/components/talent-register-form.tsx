@@ -114,6 +114,7 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
       }
       setState(result)
     } catch (err) {
+      console.error("[Register] submit error:", err)
       setSubmitError(err instanceof Error ? err.message : "エラーが発生しました")
     } finally {
       setIsPending(false)

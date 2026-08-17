@@ -35,11 +35,22 @@ export async function uploadToStorage(
   contentType: string,
 ): Promise<string> {
   const supabase = getAdminClient()
-  const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
-    contentType,
-    upsert: true,
-  })
-  if (error) throw new Error(`Supabase Storage upload failed: ${error.message}`)
+  let uploadError: { message: string } | null = null
+  try {
+    const { error } = await supabase.storage.from(BUCKET).upload(path, file, {
+      contentType,
+      upsert: true,
+    })
+    uploadError = error
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.error("[Storage] upload threw non-StorageError:", msg, "path:", path, "contentType:", contentType)
+    throw new Error(`写真のアップロードに失敗しました（${msg}）`)
+  }
+  if (uploadError) {
+    console.error("[Storage] upload error:", uploadError.message, "path:", path, "contentType:", contentType)
+    throw new Error(`Supabase Storage upload failed: ${uploadError.message}`)
+  }
 
   const url = getSupabaseUrl()
   return `${url}/storage/v1/object/${BUCKET}/${path}`
