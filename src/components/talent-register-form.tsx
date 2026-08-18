@@ -35,6 +35,7 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
   const [submitError, setSubmitError] = useState<string | null>(null)
   const [state, setState] = useState<ActionResult>(null)
   const [isPending, setIsPending] = useState(false)
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string[]>>({})
   const formRef = useRef<HTMLFormElement>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const activeSlotRef = useRef<number>(0)
@@ -42,15 +43,37 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
 
   const FIELD_ORDER = ["lastName", "firstName", "lastNameKana", "firstNameKana", "email", "phone", "gender", "birthDate", "height"]
 
-  useEffect(() => {
-    if (!state?.error) return
+  const scrollToFirstError = (errors: Record<string, string[]>) => {
     for (const field of FIELD_ORDER) {
-      if (state.error[field]?.length) {
-        document.getElementById(field)?.scrollIntoView({ behavior: "smooth", block: "center" })
+      if (errors[field]?.length) {
+        setTimeout(() => {
+          document.getElementById(field)?.scrollIntoView({ behavior: "smooth", block: "center" })
+        }, 50)
         return
       }
     }
+  }
+
+  useEffect(() => {
+    if (!state?.error) return
+    scrollToFirstError(state.error)
   }, [state?.error])
+
+  const getFieldError = (field: string): string | undefined =>
+    fieldErrors[field]?.[0] ?? state?.error?.[field]?.[0]
+
+  const validateFields = (): Record<string, string[]> => {
+    const data = Object.fromEntries(new FormData(formRef.current!))
+    const errors: Record<string, string[]> = {}
+    if (!String(data.lastName ?? "").trim()) errors.lastName = ["必須項目です"]
+    if (!String(data.firstName ?? "").trim()) errors.firstName = ["必須項目です"]
+    if (!String(data.lastNameKana ?? "").trim()) errors.lastNameKana = ["必須項目です"]
+    if (!String(data.firstNameKana ?? "").trim()) errors.firstNameKana = ["必須項目です"]
+    const email = String(data.email ?? "").trim()
+    if (!email) errors.email = ["メールアドレスは必須です"]
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = ["メールアドレスの形式が不正です"]
+    return errors
+  }
 
   const openFilePicker = (slotIndex: number) => {
     activeSlotRef.current = slotIndex
@@ -83,6 +106,16 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
+
+    // アップロード前にクライアントバリデーション
+    const errors = validateFields()
+    if (Object.keys(errors).length > 0) {
+      setFieldErrors(errors)
+      scrollToFirstError(errors)
+      return
+    }
+    setFieldErrors({})
+
     if (filledCount < 6) {
       setSubmitError("写真を6枚以上設定してください")
       setTimeout(() => submitErrorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" }), 50)
@@ -139,12 +172,12 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
         <div className="space-y-2">
           <Label htmlFor="lastName">姓 *</Label>
           <Input id="lastName" name="lastName" required />
-          {state?.error?.lastName && <p className="text-sm text-destructive">{state.error.lastName[0]}</p>}
+          {getFieldError("lastName") && <p className="text-sm text-destructive">{getFieldError("lastName")}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="firstName">名 *</Label>
           <Input id="firstName" name="firstName" required />
-          {state?.error?.firstName && <p className="text-sm text-destructive">{state.error.firstName[0]}</p>}
+          {getFieldError("firstName") && <p className="text-sm text-destructive">{getFieldError("firstName")}</p>}
         </div>
       </div>
 
@@ -152,12 +185,12 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
         <div className="space-y-2">
           <Label htmlFor="lastNameKana">セイ *</Label>
           <Input id="lastNameKana" name="lastNameKana" required />
-          {state?.error?.lastNameKana && <p className="text-sm text-destructive">{state.error.lastNameKana[0]}</p>}
+          {getFieldError("lastNameKana") && <p className="text-sm text-destructive">{getFieldError("lastNameKana")}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="firstNameKana">メイ *</Label>
           <Input id="firstNameKana" name="firstNameKana" required />
-          {state?.error?.firstNameKana && <p className="text-sm text-destructive">{state.error.firstNameKana[0]}</p>}
+          {getFieldError("firstNameKana") && <p className="text-sm text-destructive">{getFieldError("firstNameKana")}</p>}
         </div>
       </div>
 
@@ -176,7 +209,7 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
         <div className="space-y-2">
           <Label htmlFor="email">メールアドレス *</Label>
           <Input id="email" name="email" type="email" required />
-          {state?.error?.email && <p className="text-sm text-destructive">{state.error.email[0]}</p>}
+          {getFieldError("email") && <p className="text-sm text-destructive">{getFieldError("email")}</p>}
         </div>
         <div className="space-y-2">
           <Label htmlFor="phone">電話番号</Label>
