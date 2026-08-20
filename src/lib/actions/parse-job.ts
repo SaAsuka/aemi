@@ -134,7 +134,7 @@ const SYSTEM_PROMPT = `あなたはキャスティング案件のテキストを
   ]
 }`
 
-const FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-1.5-flash"] as const
+const FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-2.0-flash"] as const
 
 function isQuotaError(e: unknown): boolean {
   const msg = e instanceof Error ? e.message : String(e)
