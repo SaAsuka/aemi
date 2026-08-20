@@ -151,13 +151,30 @@ export async function parseJobText(text: string): Promise<
       contents: [{ role: "user", parts: [{ text }] }],
     })
 
-    const rawText = response.text
+    let rawText: string | undefined
+    try {
+      rawText = response.text
+    } catch (e) {
+      console.error("Gemini response.text threw:", e, "response:", JSON.stringify(response))
+      return { success: false, error: "AIからの応答が空でした。しばらく待ってから再試行してください。" }
+    }
     if (!rawText) {
       console.error("Gemini returned empty response. response:", JSON.stringify(response))
       return { success: false, error: "AIからの応答が空でした。しばらく待ってから再試行してください。" }
     }
 
-    const raw = JSON.parse(rawText)
+    // マークダウンのコードブロックが含まれていれば除去
+    const cleaned = rawText.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim()
+
+    let raw: unknown
+    try {
+      raw = JSON.parse(cleaned)
+    } catch (e) {
+      console.error("JSON.parse失敗:", e)
+      console.error("Gemini生レスポンス:", cleaned.slice(0, 500))
+      const msg = e instanceof Error ? e.message : String(e)
+      return { success: false, error: `JSONの解析に失敗しました: ${msg}` }
+    }
 
     const parsed = parsedJobResponseSchema.safeParse(raw)
 
@@ -186,8 +203,9 @@ export async function parseJobText(text: string): Promise<
       data: { common, jobs, existingClientId: null },
     }
   } catch (e) {
-    console.error("Gemini parse error:", e)
-    return { success: false, error: "テキストの解析に失敗しました" }
+    const msg = e instanceof Error ? e.message : String(e)
+    console.error("Gemini parse error:", msg)
+    return { success: false, error: `テキストの解析に失敗しました: ${msg}` }
   }
 }
 
