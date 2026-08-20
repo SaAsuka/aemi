@@ -134,6 +134,13 @@ const SYSTEM_PROMPT = `あなたはキャスティング案件のテキストを
   ]
 }`
 
+const FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-1.5-flash"] as const
+
+function isQuotaError(e: unknown): boolean {
+  const msg = e instanceof Error ? e.message : String(e)
+  return msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota")
+}
+
 export async function parseJobText(text: string): Promise<
   { success: true; data: ParseResult } | { success: false; error: string }
 > {
@@ -142,14 +149,29 @@ export async function parseJobText(text: string): Promise<
   }
 
   try {
-    const response = await getGemini().models.generateContent({
-      model: "gemini-2.5-flash",
-      config: {
-        systemInstruction: SYSTEM_PROMPT,
-        responseMimeType: "application/json",
-      },
-      contents: [{ role: "user", parts: [{ text }] }],
-    })
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let response: any
+    for (let i = 0; i < FALLBACK_MODELS.length; i++) {
+      const model = FALLBACK_MODELS[i]
+      try {
+        response = await getGemini().models.generateContent({
+          model,
+          config: {
+            systemInstruction: SYSTEM_PROMPT,
+            responseMimeType: "application/json",
+          },
+          contents: [{ role: "user", parts: [{ text }] }],
+        })
+        break
+      } catch (e) {
+        if (isQuotaError(e) && i < FALLBACK_MODELS.length - 1) {
+          console.warn(`[Gemini] ${model} quota exceeded, falling back to ${FALLBACK_MODELS[i + 1]}`)
+          continue
+        }
+        throw e
+      }
+    }
+    if (!response) throw new Error("全モデルでクォータ超過しました")
 
     let rawText: string | undefined
     try {
