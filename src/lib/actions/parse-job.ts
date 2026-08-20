@@ -136,9 +136,18 @@ const SYSTEM_PROMPT = `あなたはキャスティング案件のテキストを
 
 const FALLBACK_MODELS = ["gemini-2.5-flash", "gemini-3.6-flash"] as const
 
-function isQuotaError(e: unknown): boolean {
+function isFallbackError(e: unknown): boolean {
   const msg = e instanceof Error ? e.message : String(e)
-  return msg.includes("429") || msg.includes("RESOURCE_EXHAUSTED") || msg.includes("quota")
+  return (
+    msg.includes("429") ||
+    msg.includes("RESOURCE_EXHAUSTED") ||
+    msg.includes("quota") ||
+    msg.includes("503") ||
+    msg.includes("UNAVAILABLE") ||
+    msg.includes("404") ||
+    msg.includes("NOT_FOUND") ||
+    msg.includes("no longer available")
+  )
 }
 
 export async function parseJobText(text: string): Promise<
@@ -164,7 +173,7 @@ export async function parseJobText(text: string): Promise<
         })
         break
       } catch (e) {
-        if (isQuotaError(e) && i < FALLBACK_MODELS.length - 1) {
+        if (isFallbackError(e) && i < FALLBACK_MODELS.length - 1) {
           console.warn(`[Gemini] ${model} quota exceeded, falling back to ${FALLBACK_MODELS[i + 1]}`)
           continue
         }
