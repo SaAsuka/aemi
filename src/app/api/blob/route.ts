@@ -76,7 +76,9 @@ export async function GET(request: NextRequest) {
       headers: {
         "Content-Type": result.blob.contentType,
         "Content-Length": String(buffer.length),
-        "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(blobFilename)}`,
+        "Content-Disposition": download
+          ? `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`
+          : `inline; filename*=UTF-8''${encodeURIComponent(blobFilename)}`,
         "X-Content-Type-Options": "nosniff",
         ETag: result.blob.etag,
         "Cache-Control": "private, max-age=3600, must-revalidate",
