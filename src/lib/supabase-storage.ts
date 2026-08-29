@@ -56,9 +56,10 @@ export async function uploadToStorage(
   return `${url}/storage/v1/object/${BUCKET}/${path}`
 }
 
-export async function getSignedUrl(path: string, expiresIn = 3600): Promise<string> {
+export async function getSignedUrl(path: string, expiresIn = 3600, download?: string): Promise<string> {
   const supabase = getAdminClient()
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, expiresIn)
+  const options = download ? { download } : undefined
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(path, expiresIn, options)
   if (error || !data) throw new Error(`署名付きURL取得失敗: ${error?.message}`)
   return data.signedUrl
 }

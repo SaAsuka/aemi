@@ -16,7 +16,8 @@ export async function GET(request: NextRequest) {
     // Supabase Storage
     if (isSupabaseStorageUrl(url)) {
       const path = extractStoragePath(url)
-      const signedUrl = await getSignedUrl(path, 60 * 60 * 24 * 7)
+      const downloadName = download ? decodeURIComponent(filename) : undefined
+      const signedUrl = await getSignedUrl(path, 60 * 60 * 24 * 7, downloadName)
       // sign=true のときは署名付きURLをJSONで返す
       if (sign) return NextResponse.json({ url: signedUrl })
       // 画像等はコンテンツを直接プロキシ（リダイレクトだとブラウザが追えない場合がある）

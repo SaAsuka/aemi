@@ -54,7 +54,8 @@ export function ApplicationRowActions({
     setDownloadingPdf(true)
     try {
       if (talent.resume.includes(".supabase.co/storage/")) {
-        const res = await fetch(`/api/blob?url=${encodeURIComponent(talent.resume)}&sign=true`)
+        const filename = encodeURIComponent(`${talent.name}_コンポジ.pdf`)
+        const res = await fetch(`/api/blob?url=${encodeURIComponent(talent.resume)}&sign=true&download=true&filename=${filename}`)
         if (!res.ok) throw new Error()
         const { url } = await res.json()
         window.open(url, "_blank")
