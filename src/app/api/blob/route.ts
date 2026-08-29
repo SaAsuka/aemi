@@ -69,13 +69,13 @@ export async function GET(request: NextRequest) {
     const buffer = Buffer.concat(chunks)
 
     const pathname = result.blob.pathname
-    const filename = decodeURIComponent(pathname.split("/").pop() ?? "download")
+    const blobFilename = decodeURIComponent(pathname.split("/").pop() ?? "download")
 
     return new NextResponse(buffer, {
       headers: {
         "Content-Type": result.blob.contentType,
         "Content-Length": String(buffer.length),
-        "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(filename)}`,
+        "Content-Disposition": `inline; filename*=UTF-8''${encodeURIComponent(blobFilename)}`,
         "X-Content-Type-Options": "nosniff",
         ETag: result.blob.etag,
         "Cache-Control": "private, max-age=3600, must-revalidate",
