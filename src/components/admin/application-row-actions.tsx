@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
-import { MoreVertical, Copy, Download, Trash2, Check, Loader2 } from "lucide-react"
+import { MoreVertical, Copy, Download, Trash2, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -32,7 +32,6 @@ export function ApplicationRowActions({
   talent: TalentInfo
 }) {
   const [copiedText, setCopiedText] = useState(false)
-  const [downloadingPdf, setDownloadingPdf] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
@@ -48,33 +47,14 @@ export function ApplicationRowActions({
     setTimeout(() => setCopiedText(false), 2000)
   }
 
-  const downloadPdf = async (e: React.MouseEvent) => {
+  const downloadPdf = (e: React.MouseEvent) => {
     e.preventDefault()
-    if (!talent.resume || downloadingPdf) return
-    setDownloadingPdf(true)
-    try {
-      let fileUrl = talent.resume
-      if (talent.resume.includes(".supabase.co/storage/")) {
-        const res = await fetch(`/api/blob?url=${encodeURIComponent(talent.resume)}&sign=true`)
-        if (res.ok) {
-          const json = await res.json()
-          fileUrl = json.url
-        }
-      }
-      const res = await fetch(fileUrl)
-      if (!res.ok) throw new Error("ダウンロードに失敗しました")
-      const blob = await res.blob()
-      const objectUrl = URL.createObjectURL(blob)
-      const a = document.createElement("a")
-      a.href = objectUrl
-      a.download = `${talent.name}_コンポジ.pdf`
-      a.click()
-      URL.revokeObjectURL(objectUrl)
-    } catch {
-      alert("PDFのダウンロードに失敗しました")
-    } finally {
-      setDownloadingPdf(false)
-    }
+    if (!talent.resume) return
+    const filename = encodeURIComponent(`${talent.name}_コンポジ.pdf`)
+    const proxyUrl = `/api/blob?url=${encodeURIComponent(talent.resume)}&download=true&filename=${filename}`
+    const a = document.createElement("a")
+    a.href = proxyUrl
+    a.click()
   }
 
   function handleDelete(e: React.MouseEvent) {
@@ -101,9 +81,9 @@ export function ApplicationRowActions({
           {copiedText ? "コピー済" : "情報コピー"}
         </DropdownMenuItem>
         {talent.resume && (
-          <DropdownMenuItem onClick={downloadPdf} disabled={downloadingPdf}>
-            {downloadingPdf ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-            {downloadingPdf ? "取得中..." : "PDFダウンロード"}
+          <DropdownMenuItem onClick={downloadPdf}>
+            <Download className="h-3.5 w-3.5" />
+            PDFダウンロード
           </DropdownMenuItem>
         )}
         <DropdownMenuSeparator />

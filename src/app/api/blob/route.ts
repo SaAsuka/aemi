@@ -5,6 +5,8 @@ import { isSupabaseStorageUrl, extractStoragePath, getSignedUrl } from "@/lib/su
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get("url")
   const sign = request.nextUrl.searchParams.get("sign") === "true"
+  const download = request.nextUrl.searchParams.get("download") === "true"
+  const filename = request.nextUrl.searchParams.get("filename") ?? "download.pdf"
 
   if (!url) {
     return NextResponse.json({ error: "Missing url" }, { status: 400 })
@@ -24,9 +26,13 @@ export async function GET(request: NextRequest) {
         return new NextResponse("Not found", { status: 404 })
       }
       const contentType = upstream.headers.get("content-type") ?? "application/octet-stream"
+      const disposition = download
+        ? `attachment; filename*=UTF-8''${encodeURIComponent(filename)}`
+        : "inline"
       return new NextResponse(upstream.body, {
         headers: {
           "Content-Type": contentType,
+          "Content-Disposition": disposition,
           "Cache-Control": "private, max-age=3600",
         },
       })
