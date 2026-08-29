@@ -53,18 +53,41 @@ export function ApplicationRowActions({
     if (!talent.resume || downloadingPdf) return
     setDownloadingPdf(true)
     try {
+      const filename = encodeURIComponent(`${talent.name}_コンポジ.pdf`)
       if (talent.resume.includes(".supabase.co/storage/")) {
-        const filename = encodeURIComponent(`${talent.name}_コンポジ.pdf`)
         const res = await fetch(`/api/blob?url=${encodeURIComponent(talent.resume)}&sign=true&download=true&filename=${filename}`)
-        if (!res.ok) throw new Error()
+        if (!res.ok) {
+          const json = await res.json().catch(() => ({}))
+          if (res.status === 404 || json.error === "not_found") {
+            alert("PDFファイルが見つかりません。\nファイルが削除されているか、まだ登録されていない可能性があります。")
+          } else {
+            alert("サーバーエラーが発生しました。\nしばらく待ってから再試行してください。")
+          }
+          return
+        }
         const { url } = await res.json()
         window.open(url, "_blank")
       } else {
-        const filename = encodeURIComponent(`${talent.name}_コンポジ.pdf`)
-        window.open(`/api/blob?url=${encodeURIComponent(talent.resume)}&download=true&filename=${filename}`, "_blank")
+        const res = await fetch(`/api/blob?url=${encodeURIComponent(talent.resume)}&download=true&filename=${filename}`)
+        if (!res.ok) {
+          const json = await res.json().catch(() => ({}))
+          if (res.status === 404 || json.error === "not_found") {
+            alert("PDFファイルが見つかりません。\nファイルが削除されているか、まだ登録されていない可能性があります。")
+          } else {
+            alert("サーバーエラーが発生しました。\nしばらく待ってから再試行してください。")
+          }
+          return
+        }
+        const blob = await res.blob()
+        const objectUrl = URL.createObjectURL(blob)
+        const a = document.createElement("a")
+        a.href = objectUrl
+        a.download = `${talent.name}_コンポジ.pdf`
+        a.click()
+        URL.revokeObjectURL(objectUrl)
       }
     } catch {
-      alert("PDFのダウンロードに失敗しました")
+      alert("通信エラーが発生しました。\nネットワーク接続を確認して再試行してください。")
     } finally {
       setDownloadingPdf(false)
     }

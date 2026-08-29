@@ -24,7 +24,8 @@ export async function GET(request: NextRequest) {
       const upstream = await fetch(signedUrl)
       if (!upstream.ok) {
         console.error(`[BLOB_PROXY] Supabase fetch failed: ${upstream.status} ${path}`)
-        return new NextResponse("Not found", { status: 404 })
+        const status = upstream.status === 404 ? 404 : 502
+        return NextResponse.json({ error: status === 404 ? "not_found" : "upstream_error" }, { status })
       }
       const contentType = upstream.headers.get("content-type") ?? "application/octet-stream"
       const disposition = download
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     if (!result) {
       console.error(`[BLOB_PROXY] not found: ${url}`)
-      return new NextResponse("Not found", { status: 404 })
+      return NextResponse.json({ error: "not_found" }, { status: 404 })
     }
 
     if (result.statusCode === 304) {
@@ -86,6 +87,6 @@ export async function GET(request: NextRequest) {
     })
   } catch (e) {
     console.error(`[BLOB_PROXY] error: ${url}`, e instanceof Error ? e.message : e)
-    return new NextResponse("Not found", { status: 404 })
+    return NextResponse.json({ error: "server_error" }, { status: 500 })
   }
 }
