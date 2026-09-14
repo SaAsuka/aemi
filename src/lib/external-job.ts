@@ -104,9 +104,23 @@ export async function verifyExternalRequest(
 
   const source = headers.get("x-kamite-source") || "KAMITE"
 
-  const recent = await prisma.externalJobLog.count({
-    where: { source, createdAt: { gte: new Date(Date.now() - 60_000) } },
-  })
+  // 件数を数えるのに記録テーブルを使う。ここが読めないと上限が効かないので、
+  // 通してしまわずに落とす（マイグレーション未適用のときに黙って素通りさせないため）
+  let recent: number
+  try {
+    recent = await prisma.externalJobLog.count({
+      where: { source, createdAt: { gte: new Date(Date.now() - 60_000) } },
+    })
+  } catch (e) {
+    return {
+      ok: false,
+      result: "ERROR",
+      httpStatus: 503,
+      message: `記録テーブルを読めません（マイグレーション未適用の可能性）: ${
+        e instanceof Error ? e.message.slice(0, 200) : ""
+      }`,
+    }
+  }
   if (recent >= RATE_LIMIT_PER_MIN) {
     return { ok: false, result: "RATE_LIMITED", httpStatus: 429, message: "短時間に多すぎます" }
   }
