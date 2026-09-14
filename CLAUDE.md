@@ -120,13 +120,24 @@ KAMITE（`develop/yokai-aomidori/app` ／ https://app.kamite.jp ）に届いた�
 
 ## 踏んだ罠
 
-- 🔴 **`vozel-test` ブランチは `main` から79コミット遅れている**（2026-09-14 時点）。
-  **`vozel-test` を `main` にマージすると本番が79コミットぶん巻き戻る**（1,790行の削除・Stripeのオプション購入や
-  PDFダウンロードの修正が丸ごと消える）。テスト環境で作ったものを本番へ出すときは、
+- 🔴 **`vozel-test` が `main` から遅れていないか、マージ前に必ず確かめる**（2026-09-15 時点では追いついている。
+  2026-09-14 時点では79コミット遅れていた）。遅れたまま
+  **`vozel-test` を `main` にマージすると本番がそのぶん巻き戻る**（2026-09-14 時点なら1,790行の削除・
+  Stripeのオプション購入やPDFダウンロードの修正が丸ごと消える）。テスト環境で作ったものを本番へ出すときは、
   **`origin/main` から枝を切って作り直す**。出す前に必ず `git diff origin/main..HEAD --stat` を見て、
   触っていないファイルが並んでいないか・削除行が追加行より多くないかを確かめる
-- ⚠️ **`.env` が指しているのはテスト環境のDB**（本番より遅れている。例: `talents.email` の一意制約が無い）。
-  本番の状態を前提にした差分を取らないこと
+- 🔴 **ローカルの `.env` は本番DBを指している**（Supabase `jolerxtkrxfhxjrilsrj`）。テスト環境は別のDB
+  （`sdjpqumioxjmmbakizjv`）。**手元から `prisma migrate deploy` を打つと本番に当たる。**
+  テストDBへ当てたいときは `vercel env pull --environment=preview --git-branch=vozel-test` で取った
+  接続先を環境変数に入れてから実行する（2026-09-15 修正。それ以前は「.env はテスト環境」と誤記していた）
+- 🔴 **`DIRECT_URL` は pooler 経由（`aws-1-....pooler.supabase.com:5432`）にする。**
+  古い直接接続（`db.<ref>.supabase.co:5432`）はSupabase側で到達できなくなっており、
+  **デプロイのたびにビルド中の `prisma migrate deploy` が静かに失敗し続ける**（アプリは
+  `DATABASE_URL` で動くので気づけない）。2026-09-15 に本番・テストとも壊れているのを発見して直した。
+  症状は「新しいテーブルだけ存在しない」。`prisma migrate status` で確認する
+- ⚠️ **テーブルは実在するのに履歴だけ無い**状態がある（過去の `db push` の名残）。
+  `migrate deploy` が `relation ... already exists` で止まったら
+  **実テーブルの有無を確かめてから `migrate resolve --applied <名前>`** で履歴を実態に合わせる
 - ⚠️ **既存のマイグレーション履歴は空のDBに順番どおり当て直せない**（`20260322230000_add_password_auth` が
   `type "AuthTokenType" does not exist` で落ちる）。差分は `--from-migrations` ではなく
   **`--from-config-datasource`（いまのDBとスキーマの差）**で出す。`prisma.config.ts` に `shadowDatabaseUrl` を用意してある
