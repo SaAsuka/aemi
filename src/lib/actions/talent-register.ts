@@ -12,10 +12,10 @@ export async function registerTalent(formData: FormData) {
   const passwordConfirm = formData.get("passwordConfirm")
 
   if (!password || typeof password !== "string" || password.length < 8) {
-    return { error: { password: ["パスワードは8文字以上で入力してください"] } }
+    return { error: { password: ["パスワードは8文字以上で入力してください"] } as Record<string, string[]> }
   }
   if (password !== passwordConfirm) {
-    return { error: { passwordConfirm: ["パスワードが一致しません"] } }
+    return { error: { passwordConfirm: ["パスワードが一致しません"] } as Record<string, string[]> }
   }
 
   const raw = Object.fromEntries(formData)
