@@ -1,5 +1,6 @@
 "use server"
 
+import bcrypt from "bcryptjs"
 import { prisma } from "@/lib/db"
 import { talentBaseSchema } from "@/lib/validations/talent"
 import { upsertSocialLinks, upsertBankAccount } from "./talent-relations"
@@ -7,6 +8,16 @@ import { getSession } from "@/lib/auth"
 import { decryptPriceId } from "@/lib/register-token"
 
 export async function registerTalent(formData: FormData) {
+  const password = formData.get("password")
+  const passwordConfirm = formData.get("passwordConfirm")
+
+  if (!password || typeof password !== "string" || password.length < 8) {
+    return { error: { password: ["パスワードは8文字以上で入力してください"] } }
+  }
+  if (password !== passwordConfirm) {
+    return { error: { passwordConfirm: ["パスワードが一致しません"] } }
+  }
+
   const raw = Object.fromEntries(formData)
   const parsed = talentBaseSchema.safeParse(raw)
 
@@ -60,7 +71,8 @@ export async function registerTalent(formData: FormData) {
       profileImage: photoUrls[0] || null,
       emailVerified: true,
       status: "ACTIVE",
-      mustChangePassword: true,
+      passwordHash: await bcrypt.hash(password, 10),
+      mustChangePassword: false,
       photos: photoUrls.length > 0 ? {
         create: photoUrls.map((url, i) => ({ url, sortOrder: i })),
       } : undefined,

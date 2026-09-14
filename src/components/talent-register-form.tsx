@@ -41,7 +41,7 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
   const activeSlotRef = useRef<number>(0)
   const submitErrorRef = useRef<HTMLParagraphElement>(null)
 
-  const FIELD_ORDER = ["lastName", "firstName", "lastNameKana", "firstNameKana", "email", "phone", "gender", "birthDate", "height"]
+  const FIELD_ORDER = ["lastName", "firstName", "lastNameKana", "firstNameKana", "email", "phone", "gender", "birthDate", "height", "password", "passwordConfirm"]
 
   const scrollToFirstError = (errors: Record<string, string[]>) => {
     for (const field of FIELD_ORDER) {
@@ -72,6 +72,9 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
     const email = String(data.email ?? "").trim()
     if (!email) errors.email = ["メールアドレスは必須です"]
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = ["メールアドレスの形式が不正です"]
+    const password = String(data.password ?? "")
+    if (password.length < 8) errors.password = ["パスワードは8文字以上で入力してください"]
+    if (password !== String(data.passwordConfirm ?? "")) errors.passwordConfirm = ["パスワードが一致しません"]
     return errors
   }
 
@@ -321,6 +324,20 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
         <div className="space-y-2">
           <Label htmlFor="websiteUrl">公式HP等</Label>
           <Input id="websiteUrl" name="websiteUrl" placeholder="https://..." />
+        </div>
+      </div>
+
+      <h3 className="text-sm font-semibold text-muted-foreground pt-2">ログイン情報</h3>
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="password">パスワード *</Label>
+          <Input id="password" name="password" type="password" placeholder="8文字以上" required />
+          {getFieldError("password") && <p className="text-sm text-destructive">{getFieldError("password")}</p>}
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="passwordConfirm">パスワード（確認） *</Label>
+          <Input id="passwordConfirm" name="passwordConfirm" type="password" placeholder="もう一度入力" required />
+          {getFieldError("passwordConfirm") && <p className="text-sm text-destructive">{getFieldError("passwordConfirm")}</p>}
         </div>
       </div>
 
