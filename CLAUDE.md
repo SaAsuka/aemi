@@ -101,3 +101,33 @@
 - Route Handler内の `revalidatePath` はクライアント側に効かない → Server Action経由で呼ぶ
 - Vercel Serverlessで短時間DB大量アクセス → プール枯渇注意
 - ビルドスクリプトに `prisma migrate deploy` 追加済み
+
+## KAMITEから案件を受け取る口（2026-09-14〜）
+
+KAMITE（`develop/yokai-aomidori/app` ／ https://app.kamite.jp ）に届いた案件が、
+`POST /api/external/jobs` からVOZELの案件として自動で登録される。**仕様書は `EXTERNAL_JOB_API.md` が正。**
+
+- 🔴 **外から叩ける口。** 守りは `src/lib/external-job.ts` にまとめてある。
+  キー照合（定数時間）・本文のHMAC署名・時刻の検証（5分）・1分20件の上限・全リクエストの記録。**ここを緩めない**
+- 🔴 **送信元IPのホワイトリスト（`KAMITE_ALLOWED_IPS`）は既定で空＝未使用。**
+  KAMITEはVercelで外向きIPが固定されないため（固定IPはEnterpriseのSecure Compute）。
+  固定IPが取れる場所へ移したら値を入れるだけで有効になる
+- 鍵は `KAMITE_API_KEY` / `KAMITE_API_SECRET`（KAMITE側の `VOZEL_API_KEY` / `VOZEL_API_SECRET` と同じ値）
+- 同じ案件は増えない：`jobs.externalSource` + `jobs.externalId` で突き合わせて上書きする。
+  **人が締め切った（CLOSED）・取り下げた（CANCELLED）案件は、送られてきても募集中に戻さない**
+- 枠（roles）と提出物（requirements）は入れ物が無いので `jobs.note` に文章で入る。枠が1つのときだけ案件側の条件にも入れる
+- 弾いたぶんも含めて `external_job_logs` に残る。**このテーブルを消さない**（不審なアクセスに気づくため）
+
+## 踏んだ罠
+
+- 🔴 **`vozel-test` ブランチは `main` から79コミット遅れている**（2026-09-14 時点）。
+  **`vozel-test` を `main` にマージすると本番が79コミットぶん巻き戻る**（1,790行の削除・Stripeのオプション購入や
+  PDFダウンロードの修正が丸ごと消える）。テスト環境で作ったものを本番へ出すときは、
+  **`origin/main` から枝を切って作り直す**。出す前に必ず `git diff origin/main..HEAD --stat` を見て、
+  触っていないファイルが並んでいないか・削除行が追加行より多くないかを確かめる
+- ⚠️ **`.env` が指しているのはテスト環境のDB**（本番より遅れている。例: `talents.email` の一意制約が無い）。
+  本番の状態を前提にした差分を取らないこと
+- ⚠️ **既存のマイグレーション履歴は空のDBに順番どおり当て直せない**（`20260322230000_add_password_auth` が
+  `type "AuthTokenType" does not exist` で落ちる）。差分は `--from-migrations` ではなく
+  **`--from-config-datasource`（いまのDBとスキーマの差）**で出す。`prisma.config.ts` に `shadowDatabaseUrl` を用意してある
+- ⚠️ **`npx prisma` は最新版（8系）を取ってきて `migrate` が無いと言われる。** `./node_modules/.bin/prisma` を使う

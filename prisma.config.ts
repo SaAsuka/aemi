@@ -10,5 +10,7 @@ export default defineConfig({
   },
   datasource: {
     url: process.env["DIRECT_URL"] ?? process.env["DATABASE_URL"],
+    // マイグレーションの差分を計算するのに使う空のDB。手元のPostgresを指す（本番には触らない）
+    shadowDatabaseUrl: process.env["SHADOW_DATABASE_URL"],
   },
 });

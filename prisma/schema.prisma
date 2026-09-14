@@ -268,14 +268,39 @@ model Job {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  // 外部システムから取り込んだ案件の出どころ。
+  // 同じ案件が二度送られてきても増やさないための鍵で、externalSource="KAMITE" + 先方の管理番号で一意にする。
+  // 手で作った案件は両方とも空のまま（Postgresは空どうしを別物として扱うので重複しない）
+  externalSource String?
+  externalId     String?
+  sourceUrl      String? // 送り元の案件ページ。中身を突き合わせたいときに開く
+
   applications      Application[]
   requirements      JobRequirement[]
   dates             JobDate[]
   deadlineReminders DeadlineReminder[]
 
+  @@unique([externalSource, externalId])
   @@index([clientId])
   @@index([status])
   @@map("jobs")
+}
+
+// 外部システムからの案件登録の記録。
+// 誰が・いつ・どこから・何件登録したかを残す（弾いたリクエストも残す＝攻撃に気づくため）。
+model ExternalJobLog {
+  id         String   @id @default(cuid())
+  source     String // 送り元 例: KAMITE
+  externalId String? // 送り元の管理番号
+  ip         String?
+  result     String // OK_CREATED / OK_UPDATED / UNAUTHORIZED / BAD_SIGNATURE / STALE / RATE_LIMITED / INVALID / ERROR
+  httpStatus Int
+  message    String?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([source, createdAt])
+  @@map("external_job_logs")
 }
 
 model JobDate {
