@@ -135,6 +135,13 @@ KAMITE（`develop/yokai-aomidori/app` ／ https://app.kamite.jp ）に届いた�
   **デプロイのたびにビルド中の `prisma migrate deploy` が静かに失敗し続ける**（アプリは
   `DATABASE_URL` で動くので気づけない）。2026-09-15 に本番・テストとも壊れているのを発見して直した。
   症状は「新しいテーブルだけ存在しない」。`prisma migrate status` で確認する
+- 🔴 **Vercelの環境変数には「Production と Preview（全ブランチ）」で1件しか無いものがある＝テスト環境でも本番の値が使われる。**
+  2026-09-15 に `SERVICE_ROLE_KEY` がこれで、テストから保存したファイルが本番のストレージへ行く状態だった。
+  直し方は `npx vercel env add <名前> preview vozel-test`（ブランチ指定のほうが優先される）。
+  入れる値は Supabase の API キー画面の **「legacy」タブの service_role**（新方式の `sb_secret_` ではない）。
+  **環境変数を足しただけでは反映されない。`npx vercel redeploy <テスト環境のURL>` で入れ直す**
+- ℹ️ `SUPABASE_URL` は設定していない。`src/lib/supabase-storage.ts` が `DATABASE_URL` から
+  プロジェクトrefを割り出すので、DBの接続先が正しければストレージの向き先も自動でそろう
 - ⚠️ **テーブルは実在するのに履歴だけ無い**状態がある（過去の `db push` の名残）。
   `migrate deploy` が `relation ... already exists` で止まったら
   **実テーブルの有無を確かめてから `migrate resolve --applied <名前>`** で履歴を実態に合わせる
