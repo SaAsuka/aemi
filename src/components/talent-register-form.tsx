@@ -100,33 +100,43 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
     return {}
   }
 
-  const handleNextFromTalent = () => {
-    const errors = validateTalentFields()
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors)
-      scrollToFirstError(errors)
+  const TAB_ORDER: TabKey[] = ["talent", "bank", "photos"]
+
+  const validateTab = (tab: TabKey): Record<string, string[]> => {
+    if (tab === "talent") return validateTalentFields()
+    if (tab === "bank") return validateBankFields()
+    return {}
+  }
+
+  // タブを直接クリックした場合も、先送りする分はすべて順にバリデーションしてから移動する
+  const handleTabClick = (target: TabKey) => {
+    const currentIndex = TAB_ORDER.indexOf(activeTab)
+    const targetIndex = TAB_ORDER.indexOf(target)
+
+    if (targetIndex <= currentIndex) {
+      setActiveTab(target)
+      scrollToTabTop()
       return
     }
+
+    for (let i = currentIndex; i < targetIndex; i++) {
+      const tab = TAB_ORDER[i]
+      const errors = validateTab(tab)
+      if (Object.keys(errors).length > 0) {
+        setFieldErrors(errors)
+        setActiveTab(tab)
+        scrollToFirstError(errors)
+        return
+      }
+    }
     setFieldErrors({})
-    setActiveTab("bank")
+    setActiveTab(target)
     scrollToTabTop()
   }
 
-  const handleNextFromBank = () => {
-    const errors = validateBankFields()
-    if (Object.keys(errors).length > 0) {
-      setFieldErrors(errors)
-      return
-    }
-    setFieldErrors({})
-    setActiveTab("photos")
-    scrollToTabTop()
-  }
-
-  const goBackTo = (tab: TabKey) => {
-    setActiveTab(tab)
-    scrollToTabTop()
-  }
+  const handleNextFromTalent = () => handleTabClick("bank")
+  const handleNextFromBank = () => handleTabClick("photos")
+  const goBackTo = (tab: TabKey) => handleTabClick(tab)
 
   const openFilePicker = (slotIndex: number) => {
     activeSlotRef.current = slotIndex
@@ -243,7 +253,7 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
           <button
             key={tab.key}
             type="button"
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => handleTabClick(tab.key)}
             className={`flex-1 pb-3 text-sm font-medium border-b-2 transition-colors ${
               activeTab === tab.key
                 ? "border-primary text-primary"
