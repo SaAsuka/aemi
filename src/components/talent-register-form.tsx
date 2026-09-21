@@ -15,6 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { X, ImagePlus, Loader2, RefreshCw } from "lucide-react"
+import { validateTalentTabFields, validateBankTabFields } from "@/lib/validations/talent-register-form"
 
 type ActionResult = { success?: boolean; redirect?: string; error?: Record<string, string[]> } | null
 type PhotoSlot = { file: File; preview: string } | null
@@ -78,27 +79,11 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
   const getFieldError = (field: string): string | undefined =>
     fieldErrors[field]?.[0] ?? state?.error?.[field]?.[0]
 
-  // タレント情報タブの必須項目チェック
-  const validateTalentFields = (): Record<string, string[]> => {
-    const data = Object.fromEntries(new FormData(formRef.current!))
-    const errors: Record<string, string[]> = {}
-    if (!String(data.lastName ?? "").trim()) errors.lastName = ["必須項目です"]
-    if (!String(data.firstName ?? "").trim()) errors.firstName = ["必須項目です"]
-    if (!String(data.lastNameKana ?? "").trim()) errors.lastNameKana = ["必須項目です"]
-    if (!String(data.firstNameKana ?? "").trim()) errors.firstNameKana = ["必須項目です"]
-    const email = String(data.email ?? "").trim()
-    if (!email) errors.email = ["メールアドレスは必須です"]
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) errors.email = ["メールアドレスの形式が不正です"]
-    const password = String(data.password ?? "")
-    if (password.length < 8) errors.password = ["パスワードは8文字以上で入力してください"]
-    if (password !== String(data.passwordConfirm ?? "")) errors.passwordConfirm = ["パスワードが一致しません"]
-    return errors
-  }
+  const validateTalentFields = (): Record<string, string[]> =>
+    validateTalentTabFields(Object.fromEntries(new FormData(formRef.current!)))
 
-  // 口座情報タブ（現状必須項目なし）
-  const validateBankFields = (): Record<string, string[]> => {
-    return {}
-  }
+  const validateBankFields = (): Record<string, string[]> =>
+    validateBankTabFields(Object.fromEntries(new FormData(formRef.current!)))
 
   const TAB_ORDER: TabKey[] = ["talent", "bank", "photos"]
 

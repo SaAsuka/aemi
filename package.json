@@ -7,6 +7,8 @@
     "build": "prisma generate && (prisma migrate deploy || echo 'migrate deploy skipped') && next build",
     "start": "next start",
     "lint": "eslint",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "postinstall": "prisma generate",
     "db:migrate": "prisma migrate dev",
     "db:seed": "npx tsx prisma/seed.ts",
