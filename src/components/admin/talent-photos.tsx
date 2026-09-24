@@ -24,7 +24,12 @@ export function TalentPhotos({ talentId, photos: initialPhotos }: { talentId: st
       for (const file of Array.from(files)) {
         setUploadProgress((prev) => ({ ...prev, [file.name]: 0 }))
         const formData = new FormData()
-        formData.append("file", file)
+        // ファイル名に日本語等の非ASCII文字が含まれるとSafariで
+        // 「The string did not match the expected pattern.」が発生することがあるため、
+        // 拡張子だけ残して安全なファイル名に付け替える
+        const ext = file.name.split(".").pop() || "jpg"
+        const safeFile = new File([file], `photo-${Date.now()}.${ext}`, { type: file.type })
+        formData.append("file", safeFile)
         formData.append("category", "photos")
         formData.append("id", talentId)
         const res = await fetch("/api/upload", { method: "POST", body: formData })
