@@ -186,7 +186,12 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
       const photoUrls: string[] = []
       for (const photo of photos) {
         const fd = new FormData()
-        fd.append("file", photo!.file)
+        // ファイル名に日本語等の非ASCII文字が含まれるとSafariで
+        // 「The string did not match the expected pattern.」が発生することがあるため、
+        // 拡張子だけ残して安全なファイル名に付け替える
+        const ext = photo!.file.name.split(".").pop() || "jpg"
+        const safeFile = new File([photo!.file], `photo-${Date.now()}.${ext}`, { type: photo!.file.type })
+        fd.append("file", safeFile)
         fd.append("category", "photos")
         const res = await fetch("/api/upload", { method: "POST", body: fd })
         if (!res.ok) throw new Error((await res.json()).error ?? "アップロードに失敗しました")
