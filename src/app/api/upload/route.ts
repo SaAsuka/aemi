@@ -1,5 +1,6 @@
-import { NextResponse } from "next/server"
+import { NextResponse, after } from "next/server"
 import { uploadToStorage, generateStoragePath } from "@/lib/supabase-storage"
+import { logger } from "@/lib/logger"
 
 const ALLOWED_TYPES = [
   "video/mp4",
@@ -51,6 +52,8 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     if (!ALLOWED_TYPES.includes(contentType)) {
       console.warn("[UPLOAD] rejected:", { name: file.name, type: file.type, resolvedType: contentType })
+      // after()でレスポンスを遅延させず追加でAxiomにも送信する（失敗しても既存の挙動に影響しない）
+      after(() => logger.warn("upload_rejected_type", { fileName: file.name, fileType: file.type, resolvedType: contentType }))
       return NextResponse.json({ error: "このファイル形式はアップロードできません" }, { status: 400 })
     }
 
@@ -67,7 +70,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({ url })
   } catch (error) {
-    console.error("[UPLOAD] error:", error instanceof Error ? error.message : error)
+    const message = error instanceof Error ? error.message : String(error)
+    console.error("[UPLOAD] error:", message)
+    // after()でレスポンスを遅延させずログ送信する（失敗しても既存の挙動に影響しない）
+    after(() => logger.error("upload_failed", { message }))
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "アップロードに失敗しました" },
       { status: 500 },
