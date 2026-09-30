@@ -29,7 +29,10 @@ export async function inviteTalent(email: string) {
 export async function passwordLogin(email: string, password: string, redirectTo?: string) {
   const talent = await prisma.talent.findFirst({
     where: { email, emailVerified: true },
-    select: { id: true, passwordHash: true, nameKana: true, mustChangePassword: true },
+    select: {
+      id: true, passwordHash: true, nameKana: true, mustChangePassword: true,
+      subscription: { select: { status: true, currentPeriodEnd: true } },
+    },
   })
 
   if (!talent) return { error: "メールアドレスまたはパスワードが正しくありません" }
@@ -53,11 +56,17 @@ export async function passwordLogin(email: string, password: string, redirectTo?
     data: { talentId: talent.id, ip, ua, txnId: crypto.randomUUID() },
   }).catch(() => {})
 
+  const sub = talent.subscription
+  const isActive = sub?.status === "ACTIVE" ||
+    (sub?.status === "CANCELED" && sub.currentPeriodEnd && sub.currentPeriodEnd > new Date())
+
   const redirect = talent.nameKana === "未設定"
     ? "/setup"
     : talent.mustChangePassword
       ? "/mypage/settings"
-      : redirectTo && redirectTo.startsWith("/") ? redirectTo : "/mypage"
+      : !isActive
+        ? "/subscribe"
+        : redirectTo && redirectTo.startsWith("/") ? redirectTo : "/mypage"
 
   return { success: true, redirect }
 }
