@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { headers } from "next/headers"
-import { requireTalentRaw, isSubscriptionActive, getSession } from "@/lib/auth"
+import { requireTalentRaw, isSubscriptionActive } from "@/lib/auth"
 import { createCheckoutSession, getStripe } from "@/lib/stripe"
 import type Stripe from "stripe"
 
@@ -49,8 +49,7 @@ export default async function SubscribePage({
   if (isSubscriptionActive(talent)) redirect("/jobs")
   if (!talent.email) redirect("/auth/login")
 
-  const session = await getSession()
-  const plan = await getPlanInfo(session.stripePriceId)
+  const plan = await getPlanInfo(talent.subscription?.priceId ?? undefined)
   const { error } = await searchParams
 
   async function handleSubscribe() {
@@ -58,14 +57,13 @@ export default async function SubscribePage({
     const t = await requireTalentRaw()
     if (!t.email) return
     const stripeCustomerId = t.subscription?.stripeCustomerId
-    const s = await getSession()
     const baseUrl = await getBaseUrl()
 
     let url: string | null = null
     let customerId: string | undefined
 
     try {
-      const result = await createCheckoutSession(t.id, t.email, stripeCustomerId, s.stripePriceId, baseUrl)
+      const result = await createCheckoutSession(t.id, t.email, stripeCustomerId, t.subscription?.priceId, baseUrl)
       url = result.url
       customerId = result.customerId
     } catch (e) {

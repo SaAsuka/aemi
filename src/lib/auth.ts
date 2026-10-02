@@ -35,7 +35,7 @@ export async function requireTalentRaw() {
       lineUserId: true,
       mustChangePassword: true,
       subscription: {
-        select: { status: true, currentPeriodEnd: true, stripeCustomerId: true },
+        select: { status: true, currentPeriodEnd: true, stripeCustomerId: true, priceId: true },
       },
     },
   })
