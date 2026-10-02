@@ -82,16 +82,23 @@ export async function registerTalent(formData: FormData) {
   await upsertSocialLinks(talent.id, data)
   await upsertBankAccount(talent.id, data)
 
-  const session = await getSession()
-  session.talentId = talent.id
-  session.role = "talent"
-
   const priceToken = formData.get("priceToken")
   if (typeof priceToken === "string" && priceToken) {
     const priceId = decryptPriceId(priceToken)
-    if (priceId) session.stripePriceId = priceId
+    // 決済するプランはセッションではなくDBに保存する。セッションだけだと
+    // ログインし直した時などに消えてしまい、別のプランで決済されてしまうため
+    if (priceId) {
+      await prisma.talentSubscription.upsert({
+        where: { talentId: talent.id },
+        create: { talentId: talent.id, priceId },
+        update: { priceId },
+      })
+    }
   }
 
+  const session = await getSession()
+  session.talentId = talent.id
+  session.role = "talent"
   await session.save()
 
   return { success: true, redirect: "/subscribe" }

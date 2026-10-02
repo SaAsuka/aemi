@@ -201,6 +201,8 @@ model TalentSubscription {
   talent           Talent             @relation(fields: [talentId], references: [id], onDelete: Cascade)
   stripeCustomerId String?            @unique
   subscriptionId   String?            @unique
+  // 登録時に選んだプラン（Stripeの価格ID）。セッションだけに置くと消えてしまうためDBに保存する
+  priceId          String?
   status           SubscriptionStatus @default(NONE)
   currentPeriodEnd DateTime?
 
