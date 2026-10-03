@@ -3,6 +3,7 @@
 //
 // 使い方（本番の環境変数で実行）：
 //   npx tsx scripts/sync-subscription-status.ts <talentId> [<talentId2> ...]
+//   npx tsx scripts/sync-subscription-status.ts --all   … Stripe顧客IDを持つ全員をチェック
 
 import dotenv from "dotenv"
 dotenv.config({ path: ".env.local" })
@@ -29,17 +30,32 @@ function getPeriodEnd(subscription: Stripe.Subscription): Date | null {
 }
 
 async function main() {
-  const talentIds = process.argv.slice(2)
-  if (talentIds.length === 0) {
+  const args = process.argv.slice(2)
+  const all = args.includes("--all")
+  const talentIds = args.filter((a) => a !== "--all")
+
+  if (talentIds.length === 0 && !all) {
     console.error("使い方: npx tsx scripts/sync-subscription-status.ts <talentId> [<talentId2> ...]")
+    console.error("     または: npx tsx scripts/sync-subscription-status.ts --all")
     process.exit(1)
   }
 
   console.log(`接続先DB: ${process.env.DATABASE_URL?.replace(/:[^:@]+@/, ":***@")}`)
   console.log("---")
 
-  for (const talentId of talentIds) {
-    const sub = await prisma.talentSubscription.findUnique({ where: { talentId } })
+  type Target = { talentId: string; stripeCustomerId: string | null; status: string } | null
+
+  const targets: { talentId: string; sub: Target }[] = all
+    ? (await prisma.talentSubscription.findMany({ where: { stripeCustomerId: { not: null } } }))
+        .map((sub) => ({ talentId: sub.talentId, sub }))
+    : await Promise.all(
+        talentIds.map(async (talentId) => ({
+          talentId,
+          sub: await prisma.talentSubscription.findUnique({ where: { talentId } }),
+        })),
+      )
+
+  for (const { talentId, sub } of targets) {
     if (!sub) {
       console.log(`✗ talentId=${talentId} → talent_subscriptions にレコードがありません`)
       continue
@@ -66,18 +82,21 @@ async function main() {
     const priceId = subscription.items.data[0]?.price.id
     const periodEnd = getPeriodEnd(subscription)
     const status = statusMap[subscription.status] ?? "NONE"
+    const changed = status !== sub.status
 
-    await prisma.talentSubscription.update({
-      where: { talentId },
-      data: {
-        subscriptionId: subscription.id,
-        status,
-        ...(priceId && { priceId }),
-        ...(periodEnd && { currentPeriodEnd: periodEnd }),
-      },
-    })
+    if (changed) {
+      await prisma.talentSubscription.update({
+        where: { talentId },
+        data: {
+          subscriptionId: subscription.id,
+          status,
+          ...(priceId && { priceId }),
+          ...(periodEnd && { currentPeriodEnd: periodEnd }),
+        },
+      })
+    }
 
-    console.log(`✓ talentId=${talentId} → status=${status} subscriptionId=${subscription.id} priceId=${priceId}`)
+    console.log(`${changed ? "✓" : "-"} talentId=${talentId} → DB:${sub.status} → Stripe:${status}${changed ? "（更新）" : "（一致・変更なし）"}`)
   }
 }
 

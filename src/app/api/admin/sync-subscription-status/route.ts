@@ -9,8 +9,10 @@ import type Stripe from "stripe"
 // 対応完了後はこのファイルごと削除してよい。
 //
 // 使い方（管理者としてログインした状態でブラウザから）：
-//   /api/admin/sync-subscription-status?talentId=xxx&talentId=yyy            … ドライラン
-//   /api/admin/sync-subscription-status?talentId=xxx&talentId=yyy&apply=true … 実際に更新
+//   /api/admin/sync-subscription-status?talentId=xxx&talentId=yyy            … 指定した人だけドライラン
+//   /api/admin/sync-subscription-status?talentId=xxx&talentId=yyy&apply=true … 指定した人だけ実際に更新
+//   /api/admin/sync-subscription-status?all=true                            … Stripe顧客IDを持つ全員をドライラン
+//   /api/admin/sync-subscription-status?all=true&apply=true                 … 全員に実際に更新
 const STATUS_MAP: Record<string, "ACTIVE" | "PAST_DUE" | "CANCELED" | "UNPAID"> = {
   active: "ACTIVE",
   past_due: "PAST_DUE",
@@ -28,43 +30,62 @@ export async function GET(request: NextRequest) {
   await requireAdmin()
 
   const talentIds = request.nextUrl.searchParams.getAll("talentId")
-  if (talentIds.length === 0) {
-    return NextResponse.json({ error: "talentId を1つ以上クエリパラメータで指定してください" }, { status: 400 })
+  const all = request.nextUrl.searchParams.get("all") === "true"
+  if (talentIds.length === 0 && !all) {
+    return NextResponse.json({ error: "talentId を1つ以上指定するか、all=true を付けてください" }, { status: 400 })
   }
   const apply = request.nextUrl.searchParams.get("apply") === "true"
 
   const stripe = getStripe()
   const results: Record<string, unknown>[] = []
 
-  for (const talentId of talentIds) {
-    const sub = await prisma.talentSubscription.findUnique({ where: { talentId } })
-    if (!sub) {
+  type Target = { talentId: string; stripeCustomerId: string | null; status: string }
+  const targets: Target[] = all
+    ? await prisma.talentSubscription.findMany({
+        where: { stripeCustomerId: { not: null } },
+        select: { talentId: true, stripeCustomerId: true, status: true },
+      })
+    : (
+        await Promise.all(
+          talentIds.map((talentId) =>
+            prisma.talentSubscription.findUnique({
+              where: { talentId },
+              select: { talentId: true, stripeCustomerId: true, status: true },
+            }),
+          ),
+        )
+      ).map((sub, i) => sub ?? { talentId: talentIds[i], stripeCustomerId: null, status: "__NOT_FOUND__" })
+
+  for (const target of targets) {
+    const { talentId } = target
+    if (target.status === "__NOT_FOUND__") {
       results.push({ talentId, error: "talent_subscriptions にレコードがありません" })
       continue
     }
-    if (!sub.stripeCustomerId) {
+    if (!target.stripeCustomerId) {
       results.push({ talentId, error: "stripeCustomerId が無く、Stripe上の顧客を特定できません" })
       continue
     }
 
     try {
       const subscriptions = await stripe.subscriptions.list({
-        customer: sub.stripeCustomerId,
+        customer: target.stripeCustomerId,
         limit: 1,
         expand: ["data.items"],
       })
       const subscription = subscriptions.data[0]
 
       if (!subscription) {
-        results.push({ talentId, stripeCustomerId: sub.stripeCustomerId, error: "Stripe側に契約が見つかりません" })
+        results.push({ talentId, stripeCustomerId: target.stripeCustomerId, error: "Stripe側に契約が見つかりません" })
         continue
       }
 
       const priceId = subscription.items.data[0]?.price.id
       const periodEnd = getPeriodEnd(subscription)
       const status = STATUS_MAP[subscription.status] ?? "NONE"
+      const changed = status !== target.status
 
-      if (apply) {
+      if (apply && changed) {
         await prisma.talentSubscription.update({
           where: { talentId },
           data: {
@@ -76,11 +97,23 @@ export async function GET(request: NextRequest) {
         })
       }
 
-      results.push({ talentId, status, subscriptionId: subscription.id, priceId, applied: apply })
+      results.push({
+        talentId,
+        dbStatusBefore: target.status,
+        stripeStatus: status,
+        changed,
+        subscriptionId: subscription.id,
+        priceId,
+        applied: apply && changed,
+      })
     } catch (e) {
       results.push({ talentId, error: e instanceof Error ? e.message : String(e) })
     }
   }
 
-  return NextResponse.json({ results })
+  return NextResponse.json({
+    checked: results.length,
+    changed: results.filter((r) => r.changed === true).length,
+    results,
+  })
 }
