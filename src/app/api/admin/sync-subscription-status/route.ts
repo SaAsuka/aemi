@@ -104,6 +104,7 @@ export async function GET(request: NextRequest) {
         changed,
         subscriptionId: subscription.id,
         priceId,
+        subscriptionCreatedAt: new Date(subscription.created * 1000).toISOString(),
         applied: apply && changed,
       })
     } catch (e) {

@@ -96,7 +96,8 @@ async function main() {
       })
     }
 
-    console.log(`${changed ? "✓" : "-"} talentId=${talentId} → DB:${sub.status} → Stripe:${status}${changed ? "（更新）" : "（一致・変更なし）"}`)
+    const createdAt = new Date(subscription.created * 1000).toISOString()
+    console.log(`${changed ? "✓" : "-"} talentId=${talentId} → DB:${sub.status} → Stripe:${status}${changed ? "（更新）" : "（一致・変更なし）"} 契約開始:${createdAt}`)
   }
 }
 
