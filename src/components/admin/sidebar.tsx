@@ -46,12 +46,12 @@ function isActivePath(pathname: string, href: string) {
 }
 
 // 押してから画面が切り替わるまでの間、アイコンをくるくるに変えて「反応している」ことを伝える
-function NavIcon({ icon: Icon }: { icon: LucideIcon }) {
+function NavIcon({ icon: Icon, className = "size-[18px]" }: { icon: LucideIcon; className?: string }) {
   const { pending } = useLinkStatus()
   return pending ? (
-    <Loader2 className="size-[18px] shrink-0 animate-spin" aria-hidden="true" />
+    <Loader2 className={`${className} shrink-0 animate-spin`} aria-hidden="true" />
   ) : (
-    <Icon className="size-[18px] shrink-0" aria-hidden="true" />
+    <Icon className={`${className} shrink-0`} aria-hidden="true" />
   )
 }
 
@@ -94,7 +94,14 @@ function Brand() {
   )
 }
 
-function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
+// withUtilities：設定・ログアウトなど。PCはヘッダーに出すので、スマホのメニューの中だけで表示する
+function AdminNav({
+  onNavigate,
+  withUtilities = false,
+}: {
+  onNavigate?: () => void
+  withUtilities?: boolean
+}) {
   const pathname = usePathname()
 
   return (
@@ -113,34 +120,36 @@ function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
         </ul>
       </nav>
 
-      <div className="space-y-1 border-t border-white/10 px-3 py-3">
-        <NavLink
-          href="/admin/settings"
-          icon={Settings}
-          title="設定"
-          active={isActivePath(pathname, "/admin/settings")}
-          onNavigate={onNavigate}
-        />
-        <a
-          href="https://dashboard.stripe.com/products"
-          target="_blank"
-          rel="noopener noreferrer"
-          className={`${ITEM} ${ITEM_IDLE}`}
-        >
-          <CreditCard className="size-[18px] shrink-0" aria-hidden="true" />
-          <span className="truncate">Stripe商品管理</span>
-          <ArrowUpRight className="ml-auto size-4 shrink-0 text-neutral-500" aria-hidden="true" />
-          <span className="sr-only">（新しいタブで開きます）</span>
-        </a>
-        <Link href="/" onClick={onNavigate} className={`${ITEM} ${ITEM_IDLE}`}>
-          <Globe className="size-[18px] shrink-0" aria-hidden="true" />
-          <span className="truncate">LP を表示</span>
-        </Link>
-        <a href="/auth/logout" className={`${ITEM} ${ITEM_IDLE}`}>
-          <LogOut className="size-[18px] shrink-0" aria-hidden="true" />
-          <span className="truncate">ログアウト</span>
-        </a>
-      </div>
+      {withUtilities && (
+        <div className="space-y-1 border-t border-white/10 px-3 py-3">
+          <NavLink
+            href="/admin/settings"
+            icon={Settings}
+            title="設定"
+            active={isActivePath(pathname, "/admin/settings")}
+            onNavigate={onNavigate}
+          />
+          <a
+            href="https://dashboard.stripe.com/products"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`${ITEM} ${ITEM_IDLE}`}
+          >
+            <CreditCard className="size-[18px] shrink-0" aria-hidden="true" />
+            <span className="truncate">Stripe商品管理</span>
+            <ArrowUpRight className="ml-auto size-4 shrink-0 text-neutral-500" aria-hidden="true" />
+            <span className="sr-only">（新しいタブで開きます）</span>
+          </a>
+          <Link href="/" onClick={onNavigate} className={`${ITEM} ${ITEM_IDLE}`}>
+            <Globe className="size-[18px] shrink-0" aria-hidden="true" />
+            <span className="truncate">LP を表示</span>
+          </Link>
+          <a href="/auth/logout" className={`${ITEM} ${ITEM_IDLE}`}>
+            <LogOut className="size-[18px] shrink-0" aria-hidden="true" />
+            <span className="truncate">ログアウト</span>
+          </a>
+        </div>
+      )}
     </>
   )
 }
@@ -154,6 +163,51 @@ export function AdminSidebar() {
       </div>
       <AdminNav />
     </aside>
+  )
+}
+
+const HEADER_ITEM =
+  "flex h-9 items-center gap-2 rounded-md px-3 text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950/30"
+const HEADER_IDLE = "text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950"
+
+// PC：中身の上に置く白いヘッダー。設定・ログアウトなど、毎日は使わないものをまとめる
+export function AdminHeader() {
+  const pathname = usePathname()
+  const settingsActive = isActivePath(pathname, "/admin/settings")
+
+  return (
+    <header className="hidden h-14 shrink-0 items-center justify-end gap-1 border-b border-neutral-200 bg-white px-6 lg:flex">
+      <Link href="/" className={`${HEADER_ITEM} ${HEADER_IDLE}`}>
+        <Globe className="size-4 shrink-0" aria-hidden="true" />
+        LP を表示
+      </Link>
+      <a
+        href="https://dashboard.stripe.com/products"
+        target="_blank"
+        rel="noopener noreferrer"
+        className={`${HEADER_ITEM} ${HEADER_IDLE}`}
+      >
+        <CreditCard className="size-4 shrink-0" aria-hidden="true" />
+        Stripe商品管理
+        <ArrowUpRight className="size-3.5 shrink-0 text-neutral-400" aria-hidden="true" />
+        <span className="sr-only">（新しいタブで開きます）</span>
+      </a>
+      <Link
+        href="/admin/settings"
+        aria-current={settingsActive ? "page" : undefined}
+        className={`${HEADER_ITEM} ${
+          settingsActive ? "bg-neutral-100 font-medium text-neutral-950" : HEADER_IDLE
+        }`}
+      >
+        <NavIcon icon={Settings} className="size-4" />
+        設定
+      </Link>
+      <span className="mx-2 h-5 w-px bg-neutral-200" aria-hidden="true" />
+      <a href="/auth/logout" className={`${HEADER_ITEM} ${HEADER_IDLE}`}>
+        <LogOut className="size-4 shrink-0" aria-hidden="true" />
+        ログアウト
+      </a>
+    </header>
   )
 }
 
@@ -200,7 +254,7 @@ export function AdminMobileHeader() {
               <X className="size-5" aria-hidden="true" />
             </Dialog.Close>
           </div>
-          <AdminNav onNavigate={() => setOpen(false)} />
+          <AdminNav onNavigate={() => setOpen(false)} withUtilities />
         </Dialog.Popup>
       </Dialog.Portal>
     </Dialog.Root>
