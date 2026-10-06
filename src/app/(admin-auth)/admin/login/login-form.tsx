@@ -5,6 +5,10 @@ import { useRouter } from "next/navigation"
 import { AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react"
 import { adminLogin } from "@/lib/actions/auth"
 
+// サーバーから応答が返らないまま待たせ続けないための上限（Vercelのコールドスタートを見込んで長めに取る）
+const LOGIN_TIMEOUT_MS = 15_000
+const TIMEOUT = Symbol("timeout")
+
 export function AdminLoginForm() {
   const router = useRouter()
   const inputRef = useRef<HTMLInputElement>(null)
@@ -40,11 +44,26 @@ export function AdminLoginForm() {
     setError("")
 
     // 通信が切れた・サーバーが落ちた等で例外になっても「ログイン中…」のまま止まらないようにする
-    let result: Awaited<ReturnType<typeof adminLogin>>
+    let result: Awaited<ReturnType<typeof adminLogin>> | typeof TIMEOUT
+    let timer: ReturnType<typeof setTimeout> | undefined
     try {
-      result = await adminLogin(password)
+      result = await Promise.race([
+        adminLogin(password),
+        new Promise<typeof TIMEOUT>((resolve) => {
+          timer = setTimeout(() => resolve(TIMEOUT), LOGIN_TIMEOUT_MS)
+        }),
+      ])
     } catch {
       setError("通信に失敗しました。もう一度お試しください")
+      setLoading(false)
+      return
+    } finally {
+      clearTimeout(timer)
+    }
+
+    if (result === TIMEOUT) {
+      // 遅れて届いた応答は race が決着済みなので捨てられる
+      setError("応答がありません。もう一度お試しください")
       setLoading(false)
       return
     }
