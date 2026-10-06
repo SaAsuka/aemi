@@ -319,6 +319,13 @@ export async function sendLineNotification(jobId: string, talentIds: string[]) {
 }
 
 export async function deleteJob(id: string) {
+  // 応募は案件と一緒には消えない（DBの設定）。応募がある案件は消さず、理由を返す
+  const applicationCount = await prisma.application.count({ where: { jobId: id } })
+  if (applicationCount > 0) {
+    return {
+      error: `この案件には${applicationCount}件の応募があるため削除できません。募集をやめる場合は「編集」で「募集終了」にしてください。`,
+    }
+  }
   await prisma.job.delete({ where: { id } })
   revalidatePath("/admin/jobs")
   updateTag("jobs")
