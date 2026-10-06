@@ -83,7 +83,7 @@ export async function getJob(id: string) {
               id: true, category: true, fileUrl: true, externalUrl: true, fileName: true,
             },
           },
-          schedule: { select: { date: true } },
+          schedule: { select: { date: true, status: true } },
         },
         orderBy: { appliedAt: "desc" },
       },

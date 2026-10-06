@@ -36,9 +36,17 @@ export function BulkActionsBar({
     const label = STATUS_OPTIONS.find((o) => o.value === bulkStatus)?.label ?? ""
     const count = selectedIds.length
     startTransition(async () => {
-      await bulkUpdateApplicationStatus(selectedIds, bulkStatus)
+      const res = await bulkUpdateApplicationStatus(selectedIds, bulkStatus)
+      if (res && "error" in res && res.error) {
+        toast.error("変更できませんでした", { description: res.error })
+        return
+      }
+      const cancelled = res && "cancelledSchedules" in res ? (res.cancelledSchedules ?? 0) : 0
       toast.success(`${count}件を「${label}」にしました`, {
-        description: LINE_NOTIFY_STATUSES.has(bulkStatus) ? NO_LINE_NOTE : undefined,
+        description:
+          [cancelled > 0 ? `登録済みの予定${cancelled}件も「キャンセル」にしました。` : null, LINE_NOTIFY_STATUSES.has(bulkStatus) ? NO_LINE_NOTE : null]
+            .filter(Boolean)
+            .join("") || undefined,
       })
       onClear()
       setBulkStatus("")

@@ -199,6 +199,7 @@ export default async function JobDetailPage({
                           applicationId={app.id}
                           currentStatus={app.status}
                           scheduleDate={app.schedule?.date ?? null}
+                          scheduleStatus={app.schedule?.status ?? null}
                           talentName={app.talent.name}
                           jobTitle={job.title}
                         />

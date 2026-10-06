@@ -51,7 +51,7 @@ const APP_SELECT = {
     where: { status: { not: "CANCELLED" } },
     take: 1,
   },
-  schedule: { select: { date: true } },
+  schedule: { select: { date: true, status: true } },
 } as const
 
 export async function getApplications(status?: string, jobId?: string, sort?: string, order?: string, page?: number, talentId?: string) {
@@ -241,6 +241,18 @@ export async function createApplication(formData: FormData) {
 }
 
 const NOTIFY_STATUSES = new Set(["RESUME_SENT", "ACCEPTED", "REJECTED"])
+// 不合格・キャンセルにしたら、登録済みの予定（確定のもの）も「キャンセル」にする。
+// 完了・無断欠席は終わった記録なので変えない
+const SCHEDULE_CANCEL_STATUSES = new Set(["REJECTED", "CANCELLED"])
+
+async function cancelSchedulesOf(applicationIds: string[]) {
+  const res = await prisma.schedule.updateMany({
+    where: { applicationId: { in: applicationIds }, status: "CONFIRMED" },
+    data: { status: "CANCELLED" },
+  })
+  if (res.count > 0) revalidatePath("/admin/schedule")
+  return res.count
+}
 
 export async function updateApplicationStatus(id: string, status: string) {
   await requireAdmin()
@@ -271,10 +283,12 @@ export async function updateApplicationStatus(id: string, status: string) {
     })
   }
 
+  const cancelledSchedules = SCHEDULE_CANCEL_STATUSES.has(status) ? await cancelSchedulesOf([id]) : 0
+
   revalidatePath("/admin/applications")
   updateTag("talents")
   updateTag("jobs")
-  return { success: true }
+  return { success: true, cancelledSchedules }
 }
 
 export async function bulkUpdateApplicationStatus(ids: string[], status: string) {
@@ -291,10 +305,11 @@ export async function bulkUpdateApplicationStatus(ids: string[], status: string)
       decidedAt: decidedStatuses.includes(status) ? new Date() : null,
     },
   })
+  const cancelledSchedules = SCHEDULE_CANCEL_STATUSES.has(status) ? await cancelSchedulesOf(ids) : 0
   revalidatePath("/admin/applications")
   updateTag("talents")
   updateTag("jobs")
-  return { success: true, count: ids.length }
+  return { success: true, count: ids.length, cancelledSchedules }
 }
 
 // 請求書はお金の記録なので、請求書がある応募は消さない（取消の請求書も含む）
