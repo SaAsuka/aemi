@@ -361,6 +361,9 @@ export function TalentEditorForm({
         </div>
       )}
 
+      {/* 編集フォームに無い profileImage は、保存で消えないよう今の値をそのまま送る */}
+      {talent && <input type="hidden" name="profileImage" value={talent.profileImage ?? ""} />}
+
       <Section
         plain={inDialog}
         title="基本情報"
