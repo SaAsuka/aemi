@@ -37,11 +37,14 @@ export function CompositePdfButton({
   resumeUrl,
   resumeSource,
   photoCount,
+  buttonClassName,
 }: {
   talentId: string
   resumeUrl?: string | null
   resumeSource?: string | null
   photoCount: number
+  // 見た目を画面ごとに変えたいとき用（未指定なら従来どおり）
+  buttonClassName?: string
 }) {
   const [generating, setGenerating] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -115,7 +118,7 @@ export function CompositePdfButton({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button onClick={generate} disabled={busy} variant="outline" size="sm">
+      <Button onClick={generate} disabled={busy} variant="outline" size="sm" className={buttonClassName}>
         {generating ? (
           <Loader2 className="h-4 w-4 animate-spin mr-1" />
         ) : resumeUrl ? (
@@ -125,14 +128,14 @@ export function CompositePdfButton({
         )}
         {generating ? "生成中..." : resumeUrl ? "PDF再生成" : "コンポジPDF生成"}
       </Button>
-      <Button onClick={() => fileRef.current?.click()} disabled={busy} variant="outline" size="sm">
+      <Button onClick={() => fileRef.current?.click()} disabled={busy} variant="outline" size="sm" className={buttonClassName}>
         {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
         {uploading ? "アップロード中..." : "コンポジアップロード"}
       </Button>
       <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handleUpload} />
       {displayUrl && (
         <a href={displayUrl} target="_blank" rel="noopener noreferrer">
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className={buttonClassName}>
             <ExternalLink className="h-4 w-4 mr-1" />
             コンポジを表示
             {source === "manual" && <span className="ml-1 text-xs text-blue-500">(手動)</span>}

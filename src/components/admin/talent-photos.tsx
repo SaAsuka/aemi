@@ -7,7 +7,18 @@ import { addTalentPhoto, deleteTalentPhoto, reorderTalentPhotos } from "@/lib/ac
 import { blobProxyUrl } from "@/lib/utils/blob"
 import type { TalentPhoto } from "@/generated/prisma/client"
 
-export function TalentPhotos({ talentId, photos: initialPhotos }: { talentId: string; photos: TalentPhoto[] }) {
+export function TalentPhotos({
+  talentId,
+  photos: initialPhotos,
+  buttonClassName,
+  tileClassName,
+}: {
+  talentId: string
+  photos: TalentPhoto[]
+  // 見た目を画面ごとに変えたいとき用（未指定なら従来どおり）
+  buttonClassName?: string
+  tileClassName?: string
+}) {
   const [photos, setPhotos] = useState(initialPhotos)
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
   const [dragIdx, setDragIdx] = useState<number | null>(null)
@@ -71,7 +82,7 @@ export function TalentPhotos({ talentId, photos: initialPhotos }: { talentId: st
   return (
     <div className="space-y-4">
       <div className="flex items-center gap-2">
-        <Button type="button" variant="outline" size="sm" disabled={uploading} onClick={() => document.getElementById(`photo-upload-${talentId}`)?.click()}>
+        <Button type="button" variant="outline" size="sm" className={buttonClassName} disabled={uploading} onClick={() => document.getElementById(`photo-upload-${talentId}`)?.click()}>
           {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
           写真を追加
         </Button>
@@ -110,7 +121,7 @@ export function TalentPhotos({ talentId, photos: initialPhotos }: { talentId: st
               onDragStart={() => handleDragStart(idx)}
               onDragOver={(e) => e.preventDefault()}
               onDrop={() => handleDrop(idx)}
-              className={`relative group border rounded-lg overflow-hidden ${dragIdx === idx ? "opacity-50" : ""}`}
+              className={`relative group border rounded-lg overflow-hidden ${tileClassName ?? ""} ${dragIdx === idx ? "opacity-50" : ""}`}
             >
               <img src={blobProxyUrl(photo.url)} alt={`宣材写真 ${idx + 1}`} className="w-full aspect-[3/4] object-cover" />
               <div className="absolute top-1 left-1 bg-black/60 text-white text-xs px-1.5 py-0.5 rounded">
