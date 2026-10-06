@@ -20,6 +20,7 @@ import { InviteTalentButton } from "@/components/admin/invite-talent-button"
 import { StripeSyncButton } from "@/components/admin/stripe-sync-button"
 import { ClickableCard, ClickableRow } from "@/components/admin/clickable-row"
 import { TalentAvatar } from "@/components/admin/talent-avatar"
+import { StatusChip, SUBSCRIPTION_TONE, TALENT_STATUS_TONE } from "@/components/admin/status-chip"
 import { Pagination } from "@/components/admin/pagination"
 import { SortableHeader } from "@/components/admin/sortable-header"
 import { CsvExportButton } from "@/components/admin/csv-export-button"
@@ -49,34 +50,6 @@ function toNum(val: string | undefined): number | undefined {
   if (!val) return undefined
   const n = Number(val)
   return Number.isNaN(n) ? undefined : n
-}
-
-// 状態は塗りのチップ＋白文字で表す。白文字が読める濃さ（コントラスト4.5以上）の色を選んでいる
-type Tone = "green" | "red" | "yellow" | "blue" | "gray"
-const CHIP: Record<Tone, string> = {
-  green: "bg-green-700",
-  red: "bg-red-600",
-  yellow: "bg-yellow-700",
-  blue: "bg-blue-600",
-  gray: "bg-neutral-500",
-}
-const TALENT_STATUS_TONE: Record<string, Tone> = { ACTIVE: "green", INACTIVE: "gray", WITHDRAWN: "red" }
-const SUBSCRIPTION_TONE: Record<string, Tone> = {
-  ACTIVE: "green",
-  NONE: "gray",
-  PAST_DUE: "yellow",
-  CANCELED: "gray",
-  UNPAID: "red",
-}
-
-function StatusChip({ tone, label }: { tone: Tone; label: string }) {
-  return (
-    <span
-      className={`inline-flex h-6 items-center whitespace-nowrap rounded-full px-2.5 text-xs font-medium text-white ${CHIP[tone]}`}
-    >
-      {label}
-    </span>
-  )
 }
 
 // 最終ログインが7日以上前か（赤字で知らせる）

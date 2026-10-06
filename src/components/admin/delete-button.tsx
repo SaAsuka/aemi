@@ -25,16 +25,23 @@ export function DeleteButton({
   id,
   type,
   redirectTo,
+  className,
+  label = "削除",
+  confirmMessage = "本当に削除しますか？",
 }: {
   id: string
   type: keyof typeof deleteActions
   redirectTo?: string
+  // 以下は画面ごとに見た目・文言を変えたいとき用（未指定なら従来どおり）
+  className?: string
+  label?: string
+  confirmMessage?: string
 }) {
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
 
   function handleDelete() {
-    if (!confirm("本当に削除しますか？")) return
+    if (!confirm(confirmMessage)) return
     startTransition(async () => {
       const result = await deleteActions[type](id)
       if (result && "error" in result && typeof result.error === "string") {
@@ -54,8 +61,9 @@ export function DeleteButton({
       size="sm"
       onClick={handleDelete}
       disabled={isPending}
+      className={className}
     >
-      {isPending ? "削除中..." : "削除"}
+      {isPending ? "削除中..." : label}
     </Button>
   )
 }

@@ -8,7 +8,20 @@ import { addTalentWork, deleteTalentWork, updateTalentWork, reorderTalentWorks }
 import { blobProxyUrl } from "@/lib/utils/blob"
 import type { TalentWork } from "@/generated/prisma/client"
 
-export function TalentWorks({ talentId, works: initialWorks }: { talentId: string; works: TalentWork[] }) {
+export function TalentWorks({
+  talentId,
+  works: initialWorks,
+  buttonClassName,
+  inputClassName,
+  itemClassName,
+}: {
+  talentId: string
+  works: TalentWork[]
+  // 見た目を画面ごとに変えたいとき用（未指定なら従来どおり）
+  buttonClassName?: string
+  inputClassName?: string
+  itemClassName?: string
+}) {
   const [works, setWorks] = useState(initialWorks)
   const [uploading, setUploading] = useState(false)
   const [caption, setCaption] = useState("")
@@ -67,9 +80,9 @@ export function TalentWorks({ talentId, works: initialWorks }: { talentId: strin
           placeholder="キャプション（作品名など）"
           value={caption}
           onChange={e => setCaption(e.target.value)}
-          className="flex-1"
+          className={`flex-1 ${inputClassName ?? ""}`}
         />
-        <Button type="button" variant="outline" size="sm" disabled={uploading || !caption.trim()} onClick={() => document.getElementById(`work-upload-${talentId}`)?.click()} className="shrink-0">
+        <Button type="button" variant="outline" size="sm" disabled={uploading || !caption.trim()} onClick={() => document.getElementById(`work-upload-${talentId}`)?.click()} className={`shrink-0 ${buttonClassName ?? ""}`}>
           {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
           追加
         </Button>
@@ -92,7 +105,7 @@ export function TalentWorks({ talentId, works: initialWorks }: { talentId: strin
               onDragStart={() => handleDragStart(idx)}
               onDragOver={e => e.preventDefault()}
               onDrop={() => handleDrop(idx)}
-              className={`flex items-start gap-3 border rounded-lg p-2 ${dragIdx === idx ? "opacity-50" : ""}`}
+              className={`flex items-start gap-3 border rounded-lg p-2 ${itemClassName ?? ""} ${dragIdx === idx ? "opacity-50" : ""}`}
             >
               <button type="button" className="cursor-grab mt-2 text-muted-foreground">
                 <GripVertical className="h-4 w-4" />
@@ -104,7 +117,7 @@ export function TalentWorks({ talentId, works: initialWorks }: { talentId: strin
                   onBlur={e => {
                     if (e.target.value !== work.caption) handleCaptionUpdate(work.id, e.target.value)
                   }}
-                  className="text-sm"
+                  className={`text-sm ${inputClassName ?? ""}`}
                 />
               </div>
               <Button type="button" variant="ghost" size="icon" onClick={() => handleDelete(work.id)}>
