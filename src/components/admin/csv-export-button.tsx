@@ -7,9 +7,11 @@ import { Button } from "@/components/ui/button"
 type Props = {
   action: () => Promise<string>
   filename: string
+  // 見た目を画面ごとに変えたいとき用（未指定なら従来どおり）
+  className?: string
 }
 
-export function CsvExportButton({ action, filename }: Props) {
+export function CsvExportButton({ action, filename, className }: Props) {
   const [loading, setLoading] = useState(false)
 
   async function handleClick() {
@@ -29,7 +31,7 @@ export function CsvExportButton({ action, filename }: Props) {
   }
 
   return (
-    <Button variant="outline" size="sm" onClick={handleClick} disabled={loading}>
+    <Button variant="outline" size="sm" onClick={handleClick} disabled={loading} className={className}>
       <Download className="h-4 w-4 mr-1" />
       {loading ? "出力中..." : "CSV出力"}
     </Button>
