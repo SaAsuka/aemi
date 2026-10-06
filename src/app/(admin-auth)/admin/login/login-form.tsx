@@ -39,7 +39,16 @@ export function AdminLoginForm() {
     setLoading(true)
     setError("")
 
-    const result = await adminLogin(password)
+    // 通信が切れた・サーバーが落ちた等で例外になっても「ログイン中…」のまま止まらないようにする
+    let result: Awaited<ReturnType<typeof adminLogin>>
+    try {
+      result = await adminLogin(password)
+    } catch {
+      setError("通信に失敗しました。もう一度お試しください")
+      setLoading(false)
+      return
+    }
+
     if (result.error) {
       setError(result.error)
       setLoading(false)
