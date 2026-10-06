@@ -19,17 +19,27 @@ const statuses = [
   { value: "CANCELLED", label: "キャンセル", desc: "応募を取り下げた", bg: "bg-neutral-500" },
 ]
 
+const WEEKDAYS = ["日", "月", "火", "水", "木", "金", "土"]
+// 予定の日付は日付だけを保存している（UTCの0時）ので、UTCのまま読む
+function formatScheduleDate(date: Date | string) {
+  const d = new Date(date)
+  return `${d.getUTCMonth() + 1}月${d.getUTCDate()}日（${WEEKDAYS[d.getUTCDay()]}）`
+}
+
 const CHIP =
   "inline-flex h-7 w-full items-center justify-between gap-1 whitespace-nowrap rounded-full pl-3 pr-2 text-xs font-medium text-white"
 
 export function ApplicationStatusSelect({
   applicationId,
   currentStatus,
+  scheduleDate = null,
   talentName,
   jobTitle,
 }: {
   applicationId: string
   currentStatus: string
+  // すでに登録されている予定の日付（あれば、合格にしても予定登録の小窓は出さない）
+  scheduleDate?: Date | string | null
   talentName: string
   jobTitle: string
 }) {
@@ -46,6 +56,12 @@ export function ApplicationStatusSelect({
       const res = await updateApplicationStatus(applicationId, value)
       if (res && "error" in res && res.error) {
         toast.error("選考の状況を変えられませんでした", { description: String(res.error) })
+        return
+      }
+      if (value === "ACCEPTED" && scheduleDate) {
+        toast.success("「合格」にしました", {
+          description: `予定は登録済みです（${formatScheduleDate(scheduleDate)}）。変えるときはスケジュールのページから。`,
+        })
         return
       }
       toast.success(`「${label}」にしました`, { description: `${talentName}さん ／ ${jobTitle}` })

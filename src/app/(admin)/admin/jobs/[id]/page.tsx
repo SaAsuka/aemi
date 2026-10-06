@@ -198,6 +198,7 @@ export default async function JobDetailPage({
                         <ApplicationStatusSelect
                           applicationId={app.id}
                           currentStatus={app.status}
+                          scheduleDate={app.schedule?.date ?? null}
                           talentName={app.talent.name}
                           jobTitle={job.title}
                         />

@@ -49,6 +49,7 @@ const APP_SELECT = {
     where: { status: { not: "CANCELLED" } },
     take: 1,
   },
+  schedule: { select: { date: true } },
 } as const
 
 export async function getApplications(status?: string, jobId?: string, sort?: string, order?: string, page?: number, talentId?: string) {
