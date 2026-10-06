@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { useConfirm } from "@/components/admin/confirm-dialog"
 import { toast } from "sonner"
 import { ChevronDown, Loader2, Trash2, X } from "lucide-react"
 import { bulkUpdateApplicationStatus, bulkDeleteApplications } from "@/lib/actions/application"
@@ -26,6 +27,7 @@ export function BulkActionsBar({
 }) {
   const [isPending, startTransition] = useTransition()
   const [bulkStatus, setBulkStatus] = useState("")
+  const [confirm, confirmDialog] = useConfirm()
 
   if (selectedIds.length === 0) return null
 
@@ -43,9 +45,15 @@ export function BulkActionsBar({
     })
   }
 
-  function handleBulkDelete() {
+  async function handleBulkDelete() {
     const count = selectedIds.length
-    if (!confirm(`選んだ${count}件の応募を削除します。\n元に戻せません。本当に削除しますか？`)) return
+    const ok = await confirm({
+      title: `選んだ${count}件の応募を削除しますか？`,
+      description: "提出された写真・動画も一緒に消え、元に戻せません。",
+      confirmLabel: "削除する",
+      danger: true,
+    })
+    if (!ok) return
     startTransition(async () => {
       await bulkDeleteApplications(selectedIds)
       toast.success(`${count}件の応募を削除しました`)
@@ -117,6 +125,7 @@ export function BulkActionsBar({
           {NO_LINE_NOTE}お知らせを送りたいときは、1件ずつ状況を変えてください。
         </p>
       )}
+      {confirmDialog}
     </div>
   )
 }

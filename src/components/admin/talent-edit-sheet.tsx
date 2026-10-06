@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useConfirm } from "@/components/admin/confirm-dialog"
 import { Pencil } from "lucide-react"
 import {
   Dialog,
@@ -12,7 +13,7 @@ import {
 import { TalentEditorForm, type TalentWithRelations } from "@/components/admin/talent-editor-form"
 import { BTN_PRIMARY } from "@/components/admin/styles"
 
-const UNSAVED_MESSAGE = "変更した内容はまだ保存されていません。保存せずに閉じますか？"
+const UNSAVED_MESSAGE = "変更した内容はまだ保存されていません。閉じると、変更は消えます。"
 
 export function TalentEditSheet({
   talent,
@@ -26,8 +27,10 @@ export function TalentEditSheet({
   const router = useRouter()
 
   // 書き換えた内容があるのに閉じようとしたら、確認してから閉じる
-  function requestClose() {
-    if (dirty && !window.confirm(UNSAVED_MESSAGE)) return
+  const [confirm, confirmDialog] = useConfirm()
+
+  async function requestClose() {
+    if (dirty && !(await confirm({ title: "保存せずに閉じますか？", description: UNSAVED_MESSAGE, confirmLabel: "保存せずに閉じる", cancelLabel: "編集に戻る" }))) return
     setOpen(false)
     setDirty(false)
   }
@@ -64,6 +67,7 @@ export function TalentEditSheet({
           />
         </DialogContent>
       </Dialog>
+      {confirmDialog}
     </>
   )
 }

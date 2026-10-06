@@ -2,6 +2,8 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { useConfirm } from "@/components/admin/confirm-dialog"
 import { MoreVertical, Copy, Download, Trash2, Check, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -37,6 +39,7 @@ export function ApplicationRowActions({
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
   const { copy, fallback } = useCopyWithFallback()
+  const [confirm, confirmDialog] = useConfirm()
 
   const copyText = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -61,9 +64,9 @@ export function ApplicationRowActions({
         if (!res.ok) {
           const json = await res.json().catch(() => ({}))
           if (res.status === 404 || json.error === "not_found") {
-            alert("PDFファイルが見つかりません。\nファイルが削除されているか、まだ登録されていない可能性があります。")
+            toast.error("PDFファイルが見つかりません", { description: "ファイルが削除されたか、まだ登録されていない可能性があります。" })
           } else {
-            alert("サーバーエラーが発生しました。\nしばらく待ってから再試行してください。")
+            toast.error("PDFを取得できませんでした", { description: "少し時間をおいて、もう一度お試しください。" })
           }
           return
         }
@@ -74,9 +77,9 @@ export function ApplicationRowActions({
         if (!res.ok) {
           const json = await res.json().catch(() => ({}))
           if (res.status === 404 || json.error === "not_found") {
-            alert("PDFファイルが見つかりません。\nファイルが削除されているか、まだ登録されていない可能性があります。")
+            toast.error("PDFファイルが見つかりません", { description: "ファイルが削除されたか、まだ登録されていない可能性があります。" })
           } else {
-            alert("サーバーエラーが発生しました。\nしばらく待ってから再試行してください。")
+            toast.error("PDFを取得できませんでした", { description: "少し時間をおいて、もう一度お試しください。" })
           }
           return
         }
@@ -89,17 +92,31 @@ export function ApplicationRowActions({
         URL.revokeObjectURL(objectUrl)
       }
     } catch {
-      alert("通信エラーが発生しました。\nネットワーク接続を確認して再試行してください。")
+      toast.error("通信できませんでした", { description: "インターネットの接続を確認して、もう一度お試しください。" })
     } finally {
       setDownloadingPdf(false)
     }
   }
 
-  function handleDelete(e: React.MouseEvent) {
+  async function handleDelete(e: React.MouseEvent) {
     e.preventDefault()
-    if (!confirm(`${talent.name}さんのこの応募を削除します。\n元に戻せません。本当に削除しますか？`)) return
+    const ok = await confirm({
+      title: `${talent.name}さんのこの応募を削除しますか？`,
+      description: "提出された写真・動画も一緒に消え、元に戻せません。",
+      confirmLabel: "削除する",
+      danger: true,
+    })
+    if (!ok) return
     startTransition(async () => {
-      await deleteApplication(applicationId)
+      try {
+        await deleteApplication(applicationId)
+      } catch {
+        toast.error("削除できませんでした", {
+          description: "この応募には予定や請求書があるため、削除できない可能性があります。",
+        })
+        return
+      }
+      toast.success("応募を削除しました")
       router.refresh()
     })
   }
@@ -138,6 +155,7 @@ export function ApplicationRowActions({
         </DropdownMenuContent>
       </DropdownMenu>
       {fallback}
+      {confirmDialog}
     </>
   )
 }

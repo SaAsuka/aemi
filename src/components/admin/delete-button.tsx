@@ -2,6 +2,8 @@
 
 import { useTransition } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { useConfirm } from "@/components/admin/confirm-dialog"
 import { Button } from "@/components/ui/button"
 import { deleteTalent } from "@/lib/actions/talent"
 import { deleteClient } from "@/lib/actions/client"
@@ -39,13 +41,25 @@ export function DeleteButton({
 }) {
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  const [confirm, confirmDialog] = useConfirm()
 
-  function handleDelete() {
-    if (!confirm(confirmMessage)) return
+  async function handleDelete() {
+    // 1行目を見出し、2行目以降を説明として小窓に出す
+    const [title, ...rest] = confirmMessage.split("\n")
+    const ok = await confirm({ title, description: rest.join("\n") || undefined, confirmLabel: "削除する", danger: true })
+    if (!ok) return
     startTransition(async () => {
-      const result = await deleteActions[type](id)
-      if (result && "error" in result && typeof result.error === "string") {
-        alert(result.error)
+      let result: unknown
+      try {
+        result = await deleteActions[type](id)
+      } catch {
+        toast.error("削除できませんでした", {
+          description: "関係するデータ（応募・請求書など）が残っている可能性があります。",
+        })
+        return
+      }
+      if (result && typeof result === "object" && "error" in result && typeof result.error === "string") {
+        toast.error("削除できませんでした", { description: result.error })
         return
       }
       const defaultRedirects: Record<string, string> = {
@@ -56,6 +70,7 @@ export function DeleteButton({
   }
 
   return (
+    <>
     <Button
       variant="destructive"
       size="sm"
@@ -65,5 +80,7 @@ export function DeleteButton({
     >
       {isPending ? "削除中..." : label}
     </Button>
+    {confirmDialog}
+    </>
   )
 }

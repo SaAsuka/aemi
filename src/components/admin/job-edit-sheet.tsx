@@ -2,13 +2,14 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useConfirm } from "@/components/admin/confirm-dialog"
 import { Pencil } from "lucide-react"
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
 import { JobEditorForm } from "@/components/admin/job-editor-form"
 import { BTN_PRIMARY } from "@/components/admin/styles"
 import type { Job, JobRequirement } from "@/generated/prisma/client"
 
-const UNSAVED_MESSAGE = "変更した内容はまだ保存されていません。保存せずに閉じますか？"
+const UNSAVED_MESSAGE = "変更した内容はまだ保存されていません。閉じると、変更は消えます。"
 
 // 案件詳細の「編集」。押すと小窓で案件の内容を編集する
 export function JobEditSheet({
@@ -24,8 +25,10 @@ export function JobEditSheet({
   const [dirty, setDirty] = useState(false)
   const router = useRouter()
 
-  function requestClose() {
-    if (dirty && !window.confirm(UNSAVED_MESSAGE)) return
+  const [confirm, confirmDialog] = useConfirm()
+
+  async function requestClose() {
+    if (dirty && !(await confirm({ title: "保存せずに閉じますか？", description: UNSAVED_MESSAGE, confirmLabel: "保存せずに閉じる", cancelLabel: "編集に戻る" }))) return
     setOpen(false)
     setDirty(false)
   }
@@ -63,6 +66,7 @@ export function JobEditSheet({
           />
         </DialogContent>
       </Dialog>
+      {confirmDialog}
     </>
   )
 }
