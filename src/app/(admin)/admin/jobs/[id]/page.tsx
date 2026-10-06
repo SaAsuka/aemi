@@ -16,7 +16,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { JobForm } from "@/components/admin/job-form"
+import { JobEditSheet } from "@/components/admin/job-edit-sheet"
 import { DeleteButton } from "@/components/admin/delete-button"
 import { StatusBadge } from "@/components/admin/status-badge"
 import { APPLICATION_STATUS_LABELS, GENDER_LABELS } from "@/types"
@@ -56,17 +56,11 @@ export default async function JobDetailPage({
           </Link>
           <h1 className="text-xl sm:text-2xl font-bold">{job.title}</h1>
         </div>
-        <DeleteButton id={job.id} type="job" />
+        <div className="flex items-center gap-2">
+          <JobEditSheet job={job} requirements={job.requirements} />
+          <DeleteButton id={job.id} type="job" />
+        </div>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>案件情報</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <JobForm job={job} requirements={job.requirements} />
-        </CardContent>
-      </Card>
 
       {job.genderReq || job.ageMin || job.ageMax || job.heightMin || job.heightMax ? (
         <Card>
