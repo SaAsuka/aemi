@@ -53,6 +53,7 @@ export default async function SchedulePage({
     endTime: s.endTime,
     location: s.location,
     status: s.status,
+    note: s.note,
     talentId: s.application.talent.id,
     talentName: s.application.talent.name,
     jobId: s.application.job.id,
