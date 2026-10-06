@@ -10,9 +10,12 @@ export function SearchForm({
   placeholder,
   defaultValue,
   className,
+  id,
 }: {
   placeholder: string
   defaultValue?: string
+  // id を固定すると、ラベルと結び付き、自動で振られる id のずれ（ハイドレーション警告）も防げる
+  id?: string
   // 見た目を画面ごとに変えたいとき用（未指定なら従来どおり）
   className?: string
 }) {
@@ -44,6 +47,7 @@ export function SearchForm({
 
   return (
     <Input
+      id={id}
       placeholder={placeholder}
       defaultValue={defaultValue}
       onChange={(e) => handleSearch(e.target.value)}

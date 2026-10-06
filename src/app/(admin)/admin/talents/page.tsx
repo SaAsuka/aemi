@@ -191,6 +191,7 @@ export default async function TalentsPage({
             aria-hidden="true"
           />
           <SearchForm
+            id="talent-search"
             placeholder="名前・フリガナ・メールで検索"
             defaultValue={params.q}
             className={SEARCH_FIELD}
