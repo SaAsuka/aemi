@@ -3,6 +3,7 @@ import { requireTalent } from "@/lib/auth"
 import { prisma } from "@/lib/db"
 import { createOptionCheckout } from "@/lib/actions/option-purchase"
 import { resolveStorageUrl } from "@/lib/storage-url"
+import { isOptionClosed } from "@/lib/option-deadline"
 import { TalentNav } from "@/components/talent-nav"
 import { CheckCircle2, Clock, ArrowLeft } from "lucide-react"
 import Link from "next/link"
@@ -35,6 +36,7 @@ export default async function OptionDetailPage({
   if (!option) notFound()
 
   const purchaseStatus = purchase?.status ?? null
+  const closed = isOptionClosed(option.deadline)
   const imageUrl = await resolveStorageUrl(option.imageUrl)
 
   return (
@@ -82,6 +84,11 @@ export default async function OptionDetailPage({
             <div className="flex items-center gap-2 rounded-lg border p-4 text-muted-foreground">
               <Clock className="h-5 w-5 shrink-0" />
               <p className="text-sm">決済処理中</p>
+            </div>
+          ) : closed ? (
+            <div className="flex items-center gap-2 rounded-lg border p-4 text-muted-foreground">
+              <Clock className="h-5 w-5 shrink-0" />
+              <p className="text-sm">申込締切を過ぎたため、受付を終了しました</p>
             </div>
           ) : (
             <form action={createOptionCheckout.bind(null, option.id)}>
