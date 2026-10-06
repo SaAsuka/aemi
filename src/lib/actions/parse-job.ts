@@ -1,5 +1,6 @@
 "use server"
 
+import { requireAdmin } from "@/lib/auth"
 import { getGemini } from "@/lib/gemini"
 import { parsedJobResponseSchema, parsedJobSchema } from "@/lib/validations/parsed-job"
 import type { ParseResult } from "@/lib/validations/parsed-job"
@@ -153,6 +154,7 @@ function isFallbackError(e: unknown): boolean {
 export async function parseJobText(text: string): Promise<
   { success: true; data: ParseResult } | { success: false; error: string }
 > {
+  await requireAdmin()
   if (!text.trim()) {
     return { success: false, error: "テキストを入力してください" }
   }
