@@ -21,7 +21,7 @@ import { SortableHeader } from "@/components/admin/sortable-header"
 import { Pagination } from "@/components/admin/pagination"
 import { InvoiceCreateDialog } from "@/components/admin/invoice-create-dialog"
 import { TalentAvatar } from "@/components/admin/talent-avatar"
-import { StatusChip } from "@/components/admin/status-chip"
+import { INVOICE_STATUS_LABELS, INVOICE_TONE, StatusChip } from "@/components/admin/status-chip"
 
 type AppRow = {
   id: string
@@ -143,7 +143,12 @@ export function ApplicationTable({
   const invoice = (app: AppRow) =>
     app.status === "ACCEPTED" ? (
       <span className="flex flex-wrap items-center gap-1.5">
-        {app.invoices.length > 0 && <StatusChip tone="green" label="発行済" />}
+        {app.invoices[0] && (
+          <StatusChip
+            tone={INVOICE_TONE[app.invoices[0].status] ?? "gray"}
+            label={`請求書 ${INVOICE_STATUS_LABELS[app.invoices[0].status] ?? app.invoices[0].status}`}
+          />
+        )}
         <InvoiceCreateDialog
           applicationId={app.id}
           jobTitle={app.job.title}
