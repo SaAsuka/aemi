@@ -26,8 +26,16 @@ async function generatePdf(talentId: string, force = false): Promise<string | nu
     throw new Error(`PDF生成に失敗しました:\n${detail}`)
   }
 
-  const blobError = res.headers.get("X-Blob-Error")
-  if (blobError) throw new Error(`PDF生成は成功しましたが保存に失敗しました:\n${blobError}`)
+  const blobErrorRaw = res.headers.get("X-Blob-Error")
+  if (blobErrorRaw) {
+    let blobError = blobErrorRaw
+    try {
+      blobError = decodeURIComponent(blobErrorRaw)
+    } catch {
+      // 古い形式（エンコードされていない）のときはそのまま表示
+    }
+    throw new Error(`PDF生成は成功しましたが保存に失敗しました:\n${blobError}`)
+  }
 
   return res.headers.get("X-Blob-Url")
 }
