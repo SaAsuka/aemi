@@ -73,6 +73,11 @@ export default async function OptionsPage({
                         <Clock className="h-3.5 w-3.5" />
                         決済処理中
                       </div>
+                    ) : opt.closed ? (
+                      <div className="flex items-center gap-1 text-muted-foreground text-xs">
+                        <Clock className="h-3.5 w-3.5" />
+                        受付終了
+                      </div>
                     ) : null}
                   </div>
                 </div>
