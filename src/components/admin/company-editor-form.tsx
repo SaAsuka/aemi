@@ -45,7 +45,7 @@ function fromServer(error: Record<string, string[] | undefined> | undefined): Er
   const out: Errors = {}
   for (const [k, v] of Object.entries(error)) {
     if (!v?.[0]) continue
-    out[k] = v[0].includes("Freee")
+    out[k] = /freee/i.test(v[0])
       ? "freeeに取引先を登録できなかったため、保存しませんでした。設定ページでfreeeとの連携を確認してから、もう一度押してください。"
       : /[a-zA-Z]/.test(v[0])
         ? "入力内容を確認してください"

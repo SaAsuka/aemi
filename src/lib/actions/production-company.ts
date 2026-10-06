@@ -88,7 +88,7 @@ export async function createProductionCompany(formData: FormData) {
       freeePartnerId = partner.id
     } catch (e) {
       console.error("[ProductionCompany] Freee取引先登録失敗:", e)
-      return { error: { companyName: ["Freeeへの取引先登録に失敗しました。Freee連携を確認してください。"] } }
+      return { error: { companyName: ["freeeへの取引先登録に失敗しました。freeeとの連携を確認してください。"] } }
     }
   }
 
@@ -141,7 +141,7 @@ export async function updateProductionCompany(id: string, formData: FormData) {
 export async function syncFreeePartners(): Promise<{ synced: number; created: number; error?: string }> {
   const connected = await isFreeeConnected()
   if (!connected) {
-    return { synced: 0, created: 0, error: "Freee未連携です" }
+    return { synced: 0, created: 0, error: "freeeと連携していません" }
   }
 
   try {
@@ -172,7 +172,7 @@ export async function syncFreeePartners(): Promise<{ synced: number; created: nu
     return { synced: partners.length, created }
   } catch (e) {
     console.error("[Freee] 取引先同期失敗:", e)
-    return { synced: 0, created: 0, error: "Freee取引先の同期に失敗しました" }
+    return { synced: 0, created: 0, error: "freeeの取引先を取り込めませんでした" }
   }
 }
 

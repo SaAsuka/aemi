@@ -308,7 +308,7 @@ export function InvoiceCreateDialog({
           <DialogFooter>
             <Button type="submit" disabled={isPending} className="gap-1">
               <Receipt className="h-4 w-4" />
-              {isPending ? "発行中..." : "Freeeで請求書を発行"}
+              {isPending ? "発行中..." : "freeeで請求書を発行"}
             </Button>
           </DialogFooter>
         </form>
