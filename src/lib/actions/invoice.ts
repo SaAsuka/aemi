@@ -67,22 +67,6 @@ export async function createInvoice(input: CreateInvoiceInput) {
     return { error: "freeeと連携していません。設定ページでfreeeと連携してください。" }
   }
 
-  const existing = await prisma.invoice.findMany({
-    where: {
-      applicationId: input.applicationId,
-      status: { not: "CANCELLED" },
-    },
-  })
-  if (existing.length > 0) {
-    await prisma.invoice.updateMany({
-      where: {
-        applicationId: input.applicationId,
-        status: { not: "CANCELLED" },
-      },
-      data: { status: "CANCELLED" },
-    })
-  }
-
   const company = await prisma.productionCompany.findUnique({
     where: { id: input.productionCompanyId },
   })
@@ -106,21 +90,29 @@ export async function createInvoice(input: CreateInvoiceInput) {
       taxRate: input.taxRate,
     })
 
-    const invoice = await prisma.invoice.create({
-      data: {
-        applicationId: input.applicationId,
-        productionCompanyId: input.productionCompanyId,
-        subject: input.subject,
-        description: input.description,
-        amount: input.amount,
-        taxRate: input.taxRate,
-        issueDate: new Date(input.issueDate),
-        dueDate: new Date(input.dueDate),
-        freeeInvoiceId: freeeResult.invoice.id,
-        freeeInvoiceNumber: freeeResult.invoice.invoice_number,
-        status: "ISSUED",
-      },
-    })
+    // freeeで発行できてから、前の請求書（取消以外）を取消にして新しい請求書を登録する。
+    // 先に取消にすると、発行に失敗したとき請求書が1枚も無い状態になるため
+    const [, invoice] = await prisma.$transaction([
+      prisma.invoice.updateMany({
+        where: { applicationId: input.applicationId, status: { not: "CANCELLED" } },
+        data: { status: "CANCELLED" },
+      }),
+      prisma.invoice.create({
+        data: {
+          applicationId: input.applicationId,
+          productionCompanyId: input.productionCompanyId,
+          subject: input.subject,
+          description: input.description,
+          amount: input.amount,
+          taxRate: input.taxRate,
+          issueDate: new Date(input.issueDate),
+          dueDate: new Date(input.dueDate),
+          freeeInvoiceId: freeeResult.invoice.id,
+          freeeInvoiceNumber: freeeResult.invoice.invoice_number,
+          status: "ISSUED",
+        },
+      }),
+    ])
 
     revalidatePath("/admin/applications")
     revalidatePath("/admin/invoices")
