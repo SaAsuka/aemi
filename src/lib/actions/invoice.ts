@@ -2,6 +2,7 @@
 
 import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
+import { requireAdmin } from "@/lib/auth"
 import {
   createFreeeInvoice,
   isFreeeConnected,
@@ -132,6 +133,8 @@ export async function createInvoice(input: CreateInvoiceInput) {
 }
 
 export async function updateInvoiceStatus(id: string, status: string) {
+  // 管理画面の一覧から呼ぶので、管理者以外は受け付けない
+  await requireAdmin()
   const validStatuses = ["DRAFT", "ISSUED", "SENT", "PAID", "CANCELLED"]
   if (!validStatuses.includes(status)) {
     return { error: "無効なステータスです" }
