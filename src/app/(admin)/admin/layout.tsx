@@ -16,7 +16,7 @@ export default function AdminLayout({
         メインコンテンツへ移動
       </a>
       <AdminSidebar />
-      <div className="flex min-w-0 flex-1 flex-col bg-background">
+      <div className="flex min-w-0 flex-1 flex-col bg-white">
         <AdminMobileHeader />
         <AdminHeader />
         <main id="admin-main" tabIndex={-1} className="min-h-0 flex-1 overflow-auto p-3 outline-none sm:p-6">
