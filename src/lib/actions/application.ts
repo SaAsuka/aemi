@@ -291,36 +291,56 @@ export async function bulkUpdateApplicationStatus(ids: string[], status: string)
   return { success: true, count: ids.length }
 }
 
+// 請求書はお金の記録なので、請求書がある応募は消さない（取消の請求書も含む）
+const INVOICE_BLOCK_MESSAGE = "請求書がある応募は削除できません。選考をやめる場合は、状況を「キャンセル」にしてください。"
+
 export async function bulkDeleteApplications(ids: string[]) {
   if (ids.length === 0) return { error: "対象が選択されていません" }
+  const withInvoice = await prisma.application.count({ where: { id: { in: ids }, invoices: { some: {} } } })
+  if (withInvoice > 0) {
+    return { error: `選んだうち${withInvoice}件に請求書があるため、削除しませんでした。${INVOICE_BLOCK_MESSAGE}` }
+  }
   const submissions = await prisma.applicationSubmission.findMany({
     where: { applicationId: { in: ids } },
     select: { fileUrl: true },
   })
-  await prisma.application.deleteMany({ where: { id: { in: ids } } })
+  // 予定は応募と一緒には消えない（DBの設定）ので、先に消す
+  await prisma.$transaction([
+    prisma.schedule.deleteMany({ where: { applicationId: { in: ids } } }),
+    prisma.application.deleteMany({ where: { id: { in: ids } } }),
+  ])
   const allUrls = submissions.map((s) => s.fileUrl).filter((url): url is string => !!url)
   const vercelUrls = allUrls.filter((u) => u.includes("blob.vercel-storage.com"))
   const supabaseUrls = allUrls.filter((u) => isSupabaseStorageUrl(u))
   if (vercelUrls.length > 0) await del(vercelUrls).catch(() => {})
   if (supabaseUrls.length > 0) await deleteFromStorage(supabaseUrls).catch(() => {})
   revalidatePath("/admin/applications")
+  revalidatePath("/admin/schedule")
   updateTag("talents")
   updateTag("jobs")
   return { success: true, count: ids.length }
 }
 
 export async function deleteApplication(id: string) {
+  if ((await prisma.invoice.count({ where: { applicationId: id } })) > 0) {
+    return { error: INVOICE_BLOCK_MESSAGE }
+  }
   const submissions = await prisma.applicationSubmission.findMany({
     where: { applicationId: id },
     select: { fileUrl: true },
   })
-  await prisma.application.delete({ where: { id } })
+  // 予定は応募と一緒には消えない（DBの設定）ので、先に消す
+  await prisma.$transaction([
+    prisma.schedule.deleteMany({ where: { applicationId: id } }),
+    prisma.application.delete({ where: { id } }),
+  ])
   const allUrls = submissions.map((s) => s.fileUrl).filter((url): url is string => !!url)
   const vercelUrls = allUrls.filter((u) => u.includes("blob.vercel-storage.com"))
   const supabaseUrls = allUrls.filter((u) => isSupabaseStorageUrl(u))
   if (vercelUrls.length > 0) await del(vercelUrls).catch(() => {})
   if (supabaseUrls.length > 0) await deleteFromStorage(supabaseUrls).catch(() => {})
   revalidatePath("/admin/applications")
+  revalidatePath("/admin/schedule")
   updateTag("talents")
   updateTag("jobs")
   return { success: true }

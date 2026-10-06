@@ -49,13 +49,17 @@ export function BulkActionsBar({
     const count = selectedIds.length
     const ok = await confirm({
       title: `選んだ${count}件の応募を削除しますか？`,
-      description: "提出された写真・動画も一緒に消え、元に戻せません。",
+      description: "提出された写真・動画と、登録済みの予定も一緒に消え、元に戻せません。",
       confirmLabel: "削除する",
       danger: true,
     })
     if (!ok) return
     startTransition(async () => {
-      await bulkDeleteApplications(selectedIds)
+      const res = await bulkDeleteApplications(selectedIds)
+      if (res && "error" in res && res.error) {
+        toast.error("削除できませんでした", { description: res.error })
+        return
+      }
       toast.success(`${count}件の応募を削除しました`)
       onClear()
     })

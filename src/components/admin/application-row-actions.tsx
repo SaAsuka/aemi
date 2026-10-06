@@ -102,18 +102,21 @@ export function ApplicationRowActions({
     e.preventDefault()
     const ok = await confirm({
       title: `${talent.name}さんのこの応募を削除しますか？`,
-      description: "提出された写真・動画も一緒に消え、元に戻せません。",
+      description: "提出された写真・動画と、登録済みの予定も一緒に消え、元に戻せません。",
       confirmLabel: "削除する",
       danger: true,
     })
     if (!ok) return
     startTransition(async () => {
+      let res: Awaited<ReturnType<typeof deleteApplication>>
       try {
-        await deleteApplication(applicationId)
+        res = await deleteApplication(applicationId)
       } catch {
-        toast.error("削除できませんでした", {
-          description: "この応募には予定や請求書があるため、削除できない可能性があります。",
-        })
+        toast.error("削除できませんでした", { description: "少し時間をおいて、もう一度お試しください。" })
+        return
+      }
+      if ("error" in res && res.error) {
+        toast.error("削除できませんでした", { description: res.error })
         return
       }
       toast.success("応募を削除しました")
