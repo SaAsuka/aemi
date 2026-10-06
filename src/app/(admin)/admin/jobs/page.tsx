@@ -260,7 +260,7 @@ export default async function JobsPage({
                     <ClickableRow
                       key={job.id}
                       href={`/admin/jobs/${job.id}`}
-                      className="group border-neutral-100 align-top hover:bg-neutral-50"
+                      className="group border-neutral-100 align-middle hover:bg-neutral-50"
                     >
                       <TableCell className={`${CELL} min-w-[14rem] max-w-[22rem] whitespace-normal`}>
                         <Link
