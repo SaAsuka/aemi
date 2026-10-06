@@ -33,6 +33,7 @@ export function ApplicationStatusSelect({
   applicationId,
   currentStatus,
   scheduleDate = null,
+  scheduleStatus = null,
   talentName,
   jobTitle,
 }: {
@@ -40,6 +41,8 @@ export function ApplicationStatusSelect({
   currentStatus: string
   // すでに登録されている予定の日付（あれば、合格にしても予定登録の小窓は出さない）
   scheduleDate?: Date | string | null
+  // その予定の状況（キャンセルなら、合格に戻したときにそう伝える）
+  scheduleStatus?: string | null
   talentName: string
   jobTitle: string
 }) {
@@ -60,11 +63,17 @@ export function ApplicationStatusSelect({
       }
       if (value === "ACCEPTED" && scheduleDate) {
         toast.success("「合格」にしました", {
-          description: `予定は登録済みです（${formatScheduleDate(scheduleDate)}）。変えるときはスケジュールのページから。`,
+          description:
+            scheduleStatus === "CANCELLED"
+              ? `予定（${formatScheduleDate(scheduleDate)}）は「キャンセル」のままです。戻すときは、スケジュールのページで「確定」にしてください。`
+              : `予定は登録済みです（${formatScheduleDate(scheduleDate)}）。変えるときはスケジュールのページから。`,
         })
         return
       }
-      toast.success(`「${label}」にしました`, { description: `${talentName}さん ／ ${jobTitle}` })
+      const cancelled = res && "cancelledSchedules" in res ? (res.cancelledSchedules ?? 0) : 0
+      toast.success(`「${label}」にしました`, {
+        description: cancelled > 0 ? "登録済みの予定も「キャンセル」にしました。" : `${talentName}さん ／ ${jobTitle}`,
+      })
       if (value === "ACCEPTED") {
         setScheduleErrors({})
         setShowScheduleDialog(true)
