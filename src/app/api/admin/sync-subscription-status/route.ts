@@ -68,12 +68,16 @@ export async function GET(request: NextRequest) {
     }
 
     try {
+      // limit:1だと「作成日が一番新しい契約」を拾ってしまい、二重決済で後から
+      // 解約した方を拾って上書きする事故が起きたため、有効な契約を優先して探す
       const subscriptions = await stripe.subscriptions.list({
         customer: target.stripeCustomerId,
-        limit: 1,
+        limit: 10,
         expand: ["data.items"],
       })
-      const subscription = subscriptions.data[0]
+      const subscription =
+        subscriptions.data.find((s) => s.status === "active" || s.status === "trialing") ??
+        subscriptions.data[0]
 
       if (!subscription) {
         results.push({ talentId, stripeCustomerId: target.stripeCustomerId, error: "Stripe側に契約が見つかりません" })

@@ -66,13 +66,16 @@ async function main() {
       continue
     }
 
-    // 顧客に紐づくアクティブな契約を取得（複数ある場合は最新のものを使う）
+    // limit:1だと「作成日が一番新しい契約」を拾ってしまい、二重決済で後から
+    // 解約した方を拾って上書きする事故が起きたため、有効な契約を優先して探す
     const subscriptions = await stripe.subscriptions.list({
       customer: sub.stripeCustomerId,
-      limit: 1,
+      limit: 10,
       expand: ["data.items"],
     })
-    const subscription = subscriptions.data[0]
+    const subscription =
+      subscriptions.data.find((s) => s.status === "active" || s.status === "trialing") ??
+      subscriptions.data[0]
 
     if (!subscription) {
       console.log(`✗ talentId=${talentId} customer=${sub.stripeCustomerId} → Stripe側に契約が見つかりません`)
