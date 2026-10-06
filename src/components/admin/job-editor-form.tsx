@@ -1,14 +1,15 @@
 "use client"
 
-// 管理画面の案件作成フォーム（案件管理の「新規作成」ページで使う）
-// 送り先・項目名は共通の JobForm と同じ（createJob）。案件詳細の編集は JobForm のまま
+// 管理画面の案件の作成・編集フォーム（「新規作成」ページと、案件詳細の「編集」で使う）
+// 送り先は createJob / updateJob（項目名は従来の JobForm と同じ）
 
 import { startTransition, useActionState, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { AlertCircle, AlertTriangle, Check, ChevronDown, Loader2, Paperclip, X } from "lucide-react"
-import { createJob } from "@/lib/actions/job"
+import { createJob, updateJob } from "@/lib/actions/job"
+import type { Job, JobRequirement } from "@/generated/prisma/client"
 import { SUBMISSION_CATEGORY_LABELS } from "@/types"
 import { BTN_PRIMARY, BTN_SECONDARY, FIELD, PANEL } from "@/components/admin/styles"
 
@@ -35,6 +36,25 @@ const TIME_OPTIONS = [
     return { value: v, label: `${h}:${m}まで` }
   }),
 ]
+
+// 既存の締切（日本時間）を「日付」と「時刻（終日なら空）」に分ける
+function splitDeadline(deadline: Date | null | undefined) {
+  if (!deadline) return { date: "", time: "" }
+  const jst = new Date(new Date(deadline).getTime() + 9 * 60 * 60 * 1000)
+  const pad = (n: number) => String(n).padStart(2, "0")
+  const date = `${jst.getUTCFullYear()}-${pad(jst.getUTCMonth() + 1)}-${pad(jst.getUTCDate())}`
+  const h = jst.getUTCHours()
+  const m = jst.getUTCMinutes()
+  return { date, time: h === 23 && m === 59 ? "" : `${pad(h)}:${pad(m)}` }
+}
+
+const STATUS_OPTIONS = {
+  DRAFT: { title: "下書き", desc: "タレントには公開されません。" },
+  OPEN: { title: "募集中", desc: "タレントに公開され、応募を受け付けます。" },
+  CLOSED: { title: "募集終了", desc: "応募の受け付けを締め切ります。" },
+  CANCELLED: { title: "キャンセル", desc: "案件自体が中止になったときに選びます。" },
+} as const
+type JobStatus = keyof typeof STATUS_OPTIONS
 
 function toHalfWidthNumber(value: string) {
   return value.replace(/[０-９]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 0xfee0)).replace(/[,，\s]/g, "")
@@ -119,9 +139,20 @@ function Field({
   )
 }
 
-function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+// plain：小窓（編集）の中では枠を付けず、区切り線だけで分ける
+function Section({
+  title,
+  description,
+  plain,
+  children,
+}: {
+  title: string
+  description?: string
+  plain?: boolean
+  children: React.ReactNode
+}) {
   return (
-    <section className={`${PANEL} p-5 sm:p-6`}>
+    <section className={plain ? "border-t border-neutral-200 pt-6 first-of-type:border-t-0 first-of-type:pt-0" : `${PANEL} p-5 sm:p-6`}>
       <h2 className="text-base font-semibold text-neutral-950">{title}</h2>
       {description && <p className="mt-1 text-sm text-neutral-500">{description}</p>}
       <div className="mt-5 grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">{children}</div>
@@ -176,21 +207,53 @@ function Choice({
   )
 }
 
-export function JobEditorForm() {
+export function JobEditorForm({
+  job,
+  requirements,
+  inDialog = false,
+  onSuccess,
+  onCancel,
+  onDirtyChange,
+}: {
+  // 編集のときに渡す。無ければ新規作成
+  job?: Job
+  requirements?: Pick<JobRequirement, "category" | "description" | "referenceUrl" | "referenceFile">[]
+  inDialog?: boolean
+  onSuccess?: () => void
+  onCancel?: () => void
+  onDirtyChange?: (dirty: boolean) => void
+}) {
+  const isEdit = Boolean(job)
   const router = useRouter()
   const formRef = useRef<HTMLFormElement>(null)
   const [state, action, isPending] = useActionState(
-    async (_prev: ActionResult, fd: FormData): Promise<ActionResult> => createJob(fd),
+    async (_prev: ActionResult, fd: FormData): Promise<ActionResult> => (job ? updateJob(job.id, fd) : createJob(fd)),
     null
   )
+  const initialDeadline = useMemo(() => splitDeadline(job?.deadline), [job])
+  const reqMap = useMemo(() => new Map((requirements ?? []).map((r) => [r.category as string, r])), [requirements])
   const [clientErrors, setClientErrors] = useState<Errors>({})
   const [dirty, setDirty] = useState(false)
-  const [status, setStatus] = useState<"DRAFT" | "OPEN">("DRAFT")
-  const [gender, setGender] = useState("")
-  const [deadlineDate, setDeadlineDate] = useState("")
-  const [deadlineTime, setDeadlineTime] = useState("")
-  const [enabled, setEnabled] = useState<Set<string>>(new Set(["PROFILE_PHOTO"]))
-  const [refFiles, setRefFiles] = useState<Record<string, string>>({})
+  const [status, setStatus] = useState<JobStatus>((job?.status as JobStatus) ?? "DRAFT")
+  const [gender, setGender] = useState<string>(job?.genderReq ?? "")
+  const [deadlineDate, setDeadlineDate] = useState(initialDeadline.date)
+  const [deadlineTime, setDeadlineTime] = useState(initialDeadline.time)
+  const [enabled, setEnabled] = useState<Set<string>>(
+    () => new Set(job ? (requirements ?? []).map((r) => r.category) : ["PROFILE_PHOTO"])
+  )
+  const [refFiles, setRefFiles] = useState<Record<string, string>>(() =>
+    Object.fromEntries((requirements ?? []).filter((r) => r.referenceFile).map((r) => [r.category, r.referenceFile!]))
+  )
+  // 既存の締切の時刻が選択肢に無ければ、選択肢に足して表示できるようにする
+  const timeOptions = useMemo(
+    () =>
+      initialDeadline.time && !TIME_OPTIONS.some((t) => t.value === initialDeadline.time)
+        ? [...TIME_OPTIONS, { value: initialDeadline.time, label: `${initialDeadline.time.replace(/^0/, "")}まで` }].sort((a, b) =>
+            a.value.localeCompare(b.value)
+          )
+        : TIME_OPTIONS,
+    [initialDeadline]
+  )
   const [uploading, setUploading] = useState<string | null>(null)
 
   const serverErrors = useMemo(() => fromServer(state?.error), [state])
@@ -204,7 +267,7 @@ export function JobEditorForm() {
     return d.getTime() < Date.now()
   }, [deadlineDate, deadlineTime])
 
-  const submitLabel = status === "OPEN" ? "作成して募集を始める" : "下書きとして保存"
+  const submitLabel = isEdit ? "保存する" : status === "OPEN" ? "作成して募集を始める" : "下書きとして保存"
 
   // 入力途中で画面を閉じよう・再読み込みしようとしたら確認を出す
   const saved = Boolean(state?.success)
@@ -221,6 +284,11 @@ export function JobEditorForm() {
     if (!state || handledRef.current === state) return
     handledRef.current = state
     if (state.success) {
+      if (job) {
+        toast.success("案件を保存しました")
+        onSuccess?.()
+        return
+      }
       toast.success(status === "OPEN" ? "案件を作成し、募集を始めました" : "案件を下書きとして保存しました", {
         description: "続けて、オーディション日・撮影日などの日程を追加できます。",
       })
@@ -228,7 +296,7 @@ export function JobEditorForm() {
     } else if (state.error) {
       focusFirstError(formRef.current, fromServer(state.error))
     }
-  }, [state, router, status])
+  }, [state, router, status, job, onSuccess])
 
   const handleRefFileUpload = useCallback(async (cat: string, file: File) => {
     setUploading(cat)
@@ -267,9 +335,22 @@ export function JobEditorForm() {
     startTransition(() => action(fd))
   }
 
+  const defaults: Record<string, string> = {
+    title: job?.title ?? "",
+    description: job?.description ?? "",
+    location: job?.location ?? "",
+    fee: job?.fee?.toString() ?? "",
+    capacity: job?.capacity?.toString() ?? "",
+    ageMin: job?.ageMin?.toString() ?? "",
+    ageMax: job?.ageMax?.toString() ?? "",
+    heightMin: job?.heightMin?.toString() ?? "",
+    heightMax: job?.heightMax?.toString() ?? "",
+    note: job?.note ?? "",
+  }
   const fieldProps = (name: string) => ({
     id: name,
     name,
+    defaultValue: defaults[name] ?? "",
     "data-field": name,
     "aria-invalid": Boolean(errors[name]) || undefined,
     "aria-describedby": errors[name] ? `${name}-error` : undefined,
@@ -288,7 +369,16 @@ export function JobEditorForm() {
   }
 
   return (
-    <form ref={formRef} onSubmit={handleSubmit} onChange={() => setDirty(true)} noValidate className="space-y-5">
+    <form
+      ref={formRef}
+      onSubmit={handleSubmit}
+      onChange={() => {
+        if (!dirty) onDirtyChange?.(true)
+        setDirty(true)
+      }}
+      noValidate
+      className="space-y-5"
+    >
       {errorCount > 0 && (
         <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
@@ -296,7 +386,11 @@ export function JobEditorForm() {
         </div>
       )}
 
-      <Section title="案件の内容" description="「必須」は案件名だけです。それ以外はあとから追加・変更できます。">
+      <Section
+        plain={inDialog}
+        title="案件の内容"
+        description={isEdit ? "「必須」の項目は空にできません。" : "「必須」は案件名だけです。それ以外はあとから追加・変更できます。"}
+      >
         <Field id="title" label="案件名" required error={errors.title} className="sm:col-span-2" hint="一覧やタレントへのお知らせに表示されます">
           <input {...fieldProps("title")} autoComplete="off" placeholder="例: 飲料メーカー TVCM 家族役" className={FIELD} />
         </Field>
@@ -317,6 +411,7 @@ export function JobEditorForm() {
       </Section>
 
       <Section
+        plain={inDialog}
         title="応募できる人の条件"
         description="入れた条件に合うタレントが「条件に合う人」として表示され、募集開始のお知らせが届きます。空欄なら条件なしです。"
       >
@@ -353,7 +448,15 @@ export function JobEditorForm() {
         </div>
       </Section>
 
-      <Section title="応募締切" description="締切を過ぎると、自動で「募集終了」になります。オーディション日・撮影日は、作成後の画面で追加できます。">
+      <Section
+        plain={inDialog}
+        title="応募締切"
+        description={
+          isEdit
+            ? "締切を過ぎると、自動で「募集終了」になります。「募集終了」の案件は、締切を先の日付に延ばして保存すると「募集中」に戻ります。"
+            : "締切を過ぎると、自動で「募集終了」になります。オーディション日・撮影日は、作成後の案件ページで追加できます。"
+        }
+      >
         <input type="hidden" name="deadline" value={deadlineValue} />
         <Field id="deadlineDate" label="日付" hint={deadlineDate ? undefined : "空欄なら締切なし"}>
           <input
@@ -373,7 +476,7 @@ export function JobEditorForm() {
               disabled={!deadlineDate}
               className={`${FIELD} appearance-none pr-9 disabled:bg-neutral-50 disabled:text-neutral-400`}
             >
-              {TIME_OPTIONS.map((t) => (
+              {timeOptions.map((t) => (
                 <option key={t.value} value={t.value}>
                   {t.label}
                 </option>
@@ -390,7 +493,7 @@ export function JobEditorForm() {
         )}
       </Section>
 
-      <section className={`${PANEL} p-5 sm:p-6`}>
+      <section className={inDialog ? "border-t border-neutral-200 pt-6" : `${PANEL} p-5 sm:p-6`}>
         <h2 className="text-base font-semibold text-neutral-950">応募時に提出してもらうもの</h2>
         <p className="mt-1 text-sm text-neutral-500">チェックを入れたものを、タレントが応募するときに提出します。</p>
         <ul className="mt-5 space-y-2">
@@ -426,6 +529,7 @@ export function JobEditorForm() {
                       <input
                         id={`req_${cat}_description`}
                         name={`req_${cat}_description`}
+                        defaultValue={reqMap.get(cat)?.description ?? ""}
                         autoComplete="off"
                         placeholder={CATEGORY_HINTS[cat]}
                         className={FIELD}
@@ -435,6 +539,7 @@ export function JobEditorForm() {
                       <input
                         id={`req_${cat}_referenceUrl`}
                         name={`req_${cat}_referenceUrl`}
+                        defaultValue={reqMap.get(cat)?.referenceUrl ?? ""}
                         type="url"
                         inputMode="url"
                         autoComplete="off"
@@ -501,20 +606,26 @@ export function JobEditorForm() {
         </ul>
       </section>
 
-      <Section title="備考" description="社内用のメモです。">
+      <Section plain={inDialog} title="備考" description="社内用のメモです。">
         <Field id="note" label="備考" error={errors.note} className="sm:col-span-2">
           <textarea {...fieldProps("note")} rows={3} className={TEXTAREA} />
         </Field>
       </Section>
 
-      <section className={`${PANEL} p-5 sm:p-6`}>
-        <h2 className="text-base font-semibold text-neutral-950">作成したあとの状態</h2>
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup" aria-label="作成したあとの状態">
-          {(
-            [
-              { value: "DRAFT", title: "下書きとして保存", desc: "まだタレントには公開されません。内容を見直してから募集を始められます。" },
-              { value: "OPEN", title: "すぐに募集を始める", desc: "タレントに公開され、条件に合うタレントにLINEでお知らせが届きます。" },
-            ] as const
+      <section className={inDialog ? "border-t border-neutral-200 pt-6" : `${PANEL} p-5 sm:p-6`}>
+        <h2 className="text-base font-semibold text-neutral-950">{isEdit ? "募集の状態" : "作成したあとの状態"}</h2>
+        {isEdit && (
+          <p className="mt-1 text-sm text-neutral-500">
+            ここで「募集中」にしても、LINEのお知らせは自動では送られません。送るときは案件ページの「条件に合うタレント」から送れます。
+          </p>
+        )}
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2" role="radiogroup" aria-label="募集の状態">
+          {(isEdit
+            ? (["DRAFT", "OPEN", "CLOSED", "CANCELLED"] as const).map((v) => ({ value: v, ...STATUS_OPTIONS[v] }))
+            : [
+                { value: "DRAFT" as const, title: "下書きとして保存", desc: "まだタレントには公開されません。内容を見直してから募集を始められます。" },
+                { value: "OPEN" as const, title: "すぐに募集を始める", desc: "タレントに公開され、条件に合うタレントにLINEでお知らせが届きます。" },
+              ]
           ).map((o) => {
             const active = status === o.value
             return (
@@ -542,12 +653,24 @@ export function JobEditorForm() {
         </div>
       </section>
 
-      {/* 長いフォームなので、作成ボタンは画面の下に常に出しておく */}
-      <div className="sticky -bottom-3 z-10 -mx-3 border-t border-neutral-200 bg-white/95 px-3 py-3 sm:-bottom-6 sm:-mx-6 sm:px-6">
+      {/* 長いフォームなので、保存ボタンは画面（小窓）の下に常に出しておく */}
+      <div
+        className={
+          inDialog
+            ? "sticky -bottom-6 z-10 -mx-6 -mb-6 border-t border-neutral-200 bg-white px-6 py-3"
+            : "sticky -bottom-3 z-10 -mx-3 border-t border-neutral-200 bg-white/95 px-3 py-3 sm:-bottom-6 sm:-mx-6 sm:px-6"
+        }
+      >
         <div className="mx-auto flex max-w-3xl items-center justify-end gap-2">
-          <Link href="/admin/jobs" className={`${BTN_SECONDARY} h-10 flex-1 sm:flex-none`}>
-            キャンセル
-          </Link>
+          {onCancel ? (
+            <button type="button" onClick={onCancel} className={`${BTN_SECONDARY} h-10 flex-1 sm:flex-none`}>
+              キャンセル
+            </button>
+          ) : (
+            <Link href="/admin/jobs" className={`${BTN_SECONDARY} h-10 flex-1 sm:flex-none`}>
+              キャンセル
+            </Link>
+          )}
           <button type="submit" disabled={isPending || Boolean(uploading)} className={`${BTN_PRIMARY} h-10 flex-[2] sm:flex-none sm:px-8`}>
             {isPending ? (
               <>
