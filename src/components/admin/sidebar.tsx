@@ -1,20 +1,29 @@
 "use client"
 
-import Link from "next/link"
+import { useEffect, useState } from "react"
+import Link, { useLinkStatus } from "next/link"
 import { usePathname } from "next/navigation"
+import { Dialog } from "@base-ui/react/dialog"
 import {
-  Sidebar,
-  SidebarContent,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarHeader,
-  SidebarFooter,
-} from "@/components/ui/sidebar"
-import { BarChart3, Users, Briefcase, FileText, CalendarDays, ShoppingBag, Building2, Receipt, Settings, ExternalLink } from "lucide-react"
+  ArrowUpRight,
+  BarChart3,
+  Briefcase,
+  Building2,
+  CreditCard,
+  CalendarDays,
+  FileText,
+  Globe,
+  Loader2,
+  LogOut,
+  Menu,
+  Receipt,
+  Settings,
+  ShoppingBag,
+  Users,
+  X,
+  type LucideIcon,
+} from "lucide-react"
+import { LumitalLogo } from "@/components/brand/lumital-logo"
 
 const navItems = [
   { title: "ダッシュボード", href: "/admin", icon: BarChart3 },
@@ -27,64 +36,173 @@ const navItems = [
   { title: "請求書", href: "/admin/invoices", icon: Receipt },
 ]
 
-export function AdminSidebar() {
+const ITEM =
+  "flex h-10 items-center gap-3 rounded-md px-3 text-sm transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+const ITEM_IDLE = "text-neutral-400 hover:bg-white/[0.06] hover:text-white"
+const ITEM_ACTIVE = "bg-white font-medium text-neutral-950"
+
+function isActivePath(pathname: string, href: string) {
+  return href === "/admin" ? pathname === "/admin" : pathname.startsWith(href)
+}
+
+// 押してから画面が切り替わるまでの間、アイコンをくるくるに変えて「反応している」ことを伝える
+function NavIcon({ icon: Icon }: { icon: LucideIcon }) {
+  const { pending } = useLinkStatus()
+  return pending ? (
+    <Loader2 className="size-[18px] shrink-0 animate-spin" aria-hidden="true" />
+  ) : (
+    <Icon className="size-[18px] shrink-0" aria-hidden="true" />
+  )
+}
+
+function NavLink({
+  href,
+  icon,
+  title,
+  active,
+  onNavigate,
+}: {
+  href: string
+  icon: LucideIcon
+  title: string
+  active: boolean
+  onNavigate?: () => void
+}) {
+  return (
+    <Link
+      href={href}
+      onClick={onNavigate}
+      aria-current={active ? "page" : undefined}
+      className={`${ITEM} ${active ? ITEM_ACTIVE : ITEM_IDLE}`}
+    >
+      <NavIcon icon={icon} />
+      <span className="truncate">{title}</span>
+    </Link>
+  )
+}
+
+function Brand() {
+  return (
+    <Link
+      href="/admin"
+      aria-label="Lumital ダッシュボード"
+      className="inline-flex flex-col rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+    >
+      <LumitalLogo className="h-6 w-auto self-start" />
+      <span className="mt-2 text-[11px] tracking-[0.2em] text-neutral-500">案件管理システム</span>
+    </Link>
+  )
+}
+
+function AdminNav({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname()
 
   return (
-    <Sidebar collapsible="none">
-      <SidebarHeader className="border-b p-4">
-        <Link href="/admin" className="font-bold text-xl">
-          Lumital
-        </Link>
-        <p className="text-xs text-muted-foreground">案件管理システム</p>
-      </SidebarHeader>
-          <SidebarContent>
-            <SidebarGroup>
-              <SidebarGroupLabel>メニュー</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {navItems.map((item) => {
-                    const isActive =
-                      item.href === "/admin"
-                        ? pathname === "/admin"
-                        : pathname.startsWith(item.href)
-                    return (
-                      <SidebarMenuItem key={item.href}>
-                        <SidebarMenuButton
-                          render={<Link href={item.href} />}
-                          isActive={isActive}
-                        >
-                          <item.icon className="h-4 w-4 shrink-0" />
-                          <span>{item.title}</span>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    )
-                  })}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </SidebarContent>
-      <SidebarFooter className="border-t p-4 space-y-2">
-        <Link href="/admin/settings" className="text-sm text-muted-foreground hover:underline flex items-center gap-2">
-          <Settings className="h-4 w-4 shrink-0" />
-          <span>設定</span>
-        </Link>
+    <>
+      <nav aria-label="メインメニュー" className="min-h-0 flex-1 overflow-y-auto px-3 py-2">
+        <ul className="space-y-1">
+          {navItems.map((item) => (
+            <li key={item.href}>
+              <NavLink
+                {...item}
+                active={isActivePath(pathname, item.href)}
+                onNavigate={onNavigate}
+              />
+            </li>
+          ))}
+        </ul>
+      </nav>
+
+      <div className="space-y-1 border-t border-white/10 px-3 py-3">
+        <NavLink
+          href="/admin/settings"
+          icon={Settings}
+          title="設定"
+          active={isActivePath(pathname, "/admin/settings")}
+          onNavigate={onNavigate}
+        />
         <a
           href="https://dashboard.stripe.com/products"
           target="_blank"
           rel="noopener noreferrer"
-          className="text-sm text-muted-foreground hover:underline flex items-center gap-2"
+          className={`${ITEM} ${ITEM_IDLE}`}
         >
-          <ExternalLink className="h-4 w-4 shrink-0" />
-          <span>Stripe商品管理</span>
+          <CreditCard className="size-[18px] shrink-0" aria-hidden="true" />
+          <span className="truncate">Stripe商品管理</span>
+          <ArrowUpRight className="ml-auto size-4 shrink-0 text-neutral-500" aria-hidden="true" />
+          <span className="sr-only">（新しいタブで開きます）</span>
         </a>
-        <Link href="/" className="text-sm text-muted-foreground hover:underline block">
-          LP を表示
+        <Link href="/" onClick={onNavigate} className={`${ITEM} ${ITEM_IDLE}`}>
+          <Globe className="size-[18px] shrink-0" aria-hidden="true" />
+          <span className="truncate">LP を表示</span>
         </Link>
-        <a href="/auth/logout" className="text-sm text-muted-foreground hover:underline block">
-          ログアウト
+        <a href="/auth/logout" className={`${ITEM} ${ITEM_IDLE}`}>
+          <LogOut className="size-[18px] shrink-0" aria-hidden="true" />
+          <span className="truncate">ログアウト</span>
         </a>
-      </SidebarFooter>
-    </Sidebar>
+      </div>
+    </>
+  )
+}
+
+// PC：画面の高さいっぱいに固定した黒のサイドバー
+export function AdminSidebar() {
+  return (
+    <aside className="hidden h-dvh w-64 shrink-0 flex-col bg-neutral-950 text-white lg:flex">
+      <div className="px-6 pb-6 pt-7">
+        <Brand />
+      </div>
+      <AdminNav />
+    </aside>
+  )
+}
+
+// スマホ・タブレット：上部のヘッダーと、左から開くメニュー
+export function AdminMobileHeader() {
+  const [open, setOpen] = useState(false)
+
+  // メニューを開いたまま画面を広げたとき（タブレットの回転など）は閉じる
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)")
+    const close = () => mq.matches && setOpen(false)
+    mq.addEventListener("change", close)
+    return () => mq.removeEventListener("change", close)
+  }, [])
+
+  return (
+    <Dialog.Root open={open} onOpenChange={setOpen}>
+      <header className="flex shrink-0 items-center gap-2 bg-neutral-950 pl-2 pr-4 pt-[env(safe-area-inset-top)] text-white lg:hidden">
+        <Dialog.Trigger className="flex h-14 items-center gap-2 rounded-md px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/60">
+          <Menu className="size-5" aria-hidden="true" />
+          メニュー
+        </Dialog.Trigger>
+        <Link
+          href="/admin"
+          aria-label="Lumital ダッシュボード"
+          className="ml-auto rounded-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+        >
+          <LumitalLogo className="h-5 w-auto" />
+        </Link>
+      </header>
+
+      <Dialog.Portal>
+        <Dialog.Backdrop className="fixed inset-0 z-50 bg-black/50 transition-opacity duration-200 data-ending-style:opacity-0 data-starting-style:opacity-0 lg:hidden" />
+        <Dialog.Popup className="fixed inset-y-0 left-0 z-50 flex w-72 max-w-[85vw] flex-col bg-neutral-950 pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] text-white shadow-2xl outline-none transition-transform duration-200 ease-out data-ending-style:-translate-x-full data-starting-style:-translate-x-full lg:hidden">
+          <Dialog.Title className="sr-only">メニュー</Dialog.Title>
+          <div className="flex items-start justify-between pb-5 pl-6 pr-2 pt-4">
+            <div className="pt-3">
+              <Brand />
+            </div>
+            <Dialog.Close
+              aria-label="メニューを閉じる"
+              className="flex size-11 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-white/[0.06] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+            >
+              <X className="size-5" aria-hidden="true" />
+            </Dialog.Close>
+          </div>
+          <AdminNav onNavigate={() => setOpen(false)} />
+        </Dialog.Popup>
+      </Dialog.Portal>
+    </Dialog.Root>
   )
 }
