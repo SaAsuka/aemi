@@ -3,7 +3,7 @@
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Check, ChevronDown, Loader2 } from "lucide-react"
+import { AlertCircle, Check, ChevronDown, Loader2 } from "lucide-react"
 import { updateApplicationStatus } from "@/lib/actions/application"
 import { createSchedule } from "@/lib/actions/schedule"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
@@ -45,8 +45,8 @@ export function ApplicationStatusSelect({
 }) {
   const [isPending, startTransition] = useTransition()
   const [showScheduleDialog, setShowScheduleDialog] = useState(false)
-  const [scheduleError, setScheduleError] = useState<string | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [scheduleErrors, setScheduleErrors] = useState<Record<string, string>>({})
+  const [isSubmitting, startSubmit] = useTransition()
   const router = useRouter()
 
   function handleChange(value: string | null) {
@@ -66,26 +66,50 @@ export function ApplicationStatusSelect({
       }
       toast.success(`「${label}」にしました`, { description: `${talentName}さん ／ ${jobTitle}` })
       if (value === "ACCEPTED") {
+        setScheduleErrors({})
         setShowScheduleDialog(true)
       }
     })
   }
 
-  async function handleScheduleSubmit(formData: FormData) {
-    setScheduleError(null)
-    setIsSubmitting(true)
+  // フォームの action に渡すと送信後に入力欄が空になる（React 19）ため、ここで受け取って送る
+  function handleScheduleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    if (isSubmitting) return
+    const formData = new FormData(e.currentTarget)
+    const errs: Record<string, string> = {}
+    if (!formData.get("date")) errs.date = "日付を選んでください"
+    const start = String(formData.get("startTime") ?? "")
+    const end = String(formData.get("endTime") ?? "")
+    if (start && end && start > end) errs.endTime = "終了は開始より後の時刻にしてください"
+    setScheduleErrors(errs)
+    if (Object.keys(errs).length) return
     formData.set("applicationId", applicationId)
     formData.set("status", "CONFIRMED")
-    const result = await createSchedule(formData)
-    setIsSubmitting(false)
-    if (result.error) {
-      const firstError = Object.values(result.error)[0]
-      setScheduleError(Array.isArray(firstError) ? firstError[0] : String(firstError))
-      return
-    }
-    setShowScheduleDialog(false)
-    router.refresh()
+    startSubmit(async () => {
+      const result = await createSchedule(formData)
+      if (result.error) {
+        const next: Record<string, string> = {}
+        for (const [k, v] of Object.entries(result.error)) {
+          const msg = Array.isArray(v) ? v[0] : String(v)
+          if (msg) next[k === "date" || k === "endTime" ? k : "form"] = msg
+        }
+        setScheduleErrors(next)
+        return
+      }
+      toast.success("予定を登録しました", { description: `${talentName}さん ／ ${jobTitle}` })
+      setShowScheduleDialog(false)
+      router.refresh()
+    })
   }
+
+  const fieldError = (key: string) =>
+    scheduleErrors[key] ? (
+      <p className="mt-1.5 flex items-start gap-1 text-xs text-red-600">
+        <AlertCircle className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+        {scheduleErrors[key]}
+      </p>
+    ) : null
 
   const current = statuses.find((s) => s.value === currentStatus)
 
@@ -141,14 +165,21 @@ export function ApplicationStatusSelect({
           <DialogDescription className="mt-1.5 text-sm text-neutral-500">
             {talentName}さん ／ {jobTitle}
           </DialogDescription>
-          <form action={handleScheduleSubmit} className="mt-5 space-y-4">
+          <form onSubmit={handleScheduleSubmit} noValidate className="mt-5 space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div>
                 <label htmlFor={`as-date-${applicationId}`} className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-neutral-900">
                   日付
                   <span className="rounded bg-red-600 px-1.5 py-px text-[10px] font-semibold leading-4 text-white">必須</span>
                 </label>
-                <input id={`as-date-${applicationId}`} name="date" type="date" required className={FIELD} />
+                <input
+                  id={`as-date-${applicationId}`}
+                  name="date"
+                  type="date"
+                  aria-invalid={Boolean(scheduleErrors.date) || undefined}
+                  className={FIELD}
+                />
+                {fieldError("date")}
               </div>
               <div>
                 <label htmlFor={`as-start-${applicationId}`} className="mb-1.5 block text-sm font-medium text-neutral-900">
@@ -160,7 +191,14 @@ export function ApplicationStatusSelect({
                 <label htmlFor={`as-end-${applicationId}`} className="mb-1.5 block text-sm font-medium text-neutral-900">
                   終了
                 </label>
-                <input id={`as-end-${applicationId}`} name="endTime" type="time" className={FIELD} />
+                <input
+                  id={`as-end-${applicationId}`}
+                  name="endTime"
+                  type="time"
+                  aria-invalid={Boolean(scheduleErrors.endTime) || undefined}
+                  className={FIELD}
+                />
+                {fieldError("endTime")}
               </div>
             </div>
             <div>
@@ -175,13 +213,25 @@ export function ApplicationStatusSelect({
               </label>
               <textarea id={`as-note-${applicationId}`} name="note" rows={3} placeholder="集合時間・持ち物など" className={`${FIELD} h-auto py-2 leading-relaxed`} />
             </div>
-            {scheduleError && <p className="text-sm text-red-600">{scheduleError}</p>}
+            {scheduleErrors.form && (
+              <p role="alert" className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+                <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                {scheduleErrors.form}
+              </p>
+            )}
             <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
               <button type="button" className={BTN_SECONDARY} onClick={() => setShowScheduleDialog(false)}>
                 あとで登録する
               </button>
               <button type="submit" disabled={isSubmitting} className={`${BTN_PRIMARY} sm:px-6`}>
-                {isSubmitting ? "登録中…" : "予定を登録する"}
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="animate-spin" aria-hidden="true" />
+                    登録中…
+                  </>
+                ) : (
+                  "予定を登録する"
+                )}
               </button>
             </div>
           </form>
