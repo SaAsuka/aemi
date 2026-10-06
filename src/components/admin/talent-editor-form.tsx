@@ -1,19 +1,75 @@
 "use client"
 
-// タレント新規登録フォーム（管理画面の新規登録ページ専用）
-// 送り先・項目名は共通の TalentForm と同じ（createTalent）。編集画面・マイページは TalentForm のまま
+// 管理画面のタレント登録・編集フォーム（新規登録ページと、詳細ページの「編集」で使う）
+// 送り先は createTalent / updateTalent。タレント本人のマイページは従来の TalentForm のまま
 
 import { startTransition, useActionState, useEffect, useMemo, useRef, useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { AlertCircle, ChevronDown, Loader2 } from "lucide-react"
-import { createTalent } from "@/lib/actions/talent"
+import { createTalent, updateTalent } from "@/lib/actions/talent"
+import type { Talent, TalentBankAccount, TalentSocialLink } from "@/generated/prisma/client"
 import { TALENT_STATUS_LABELS } from "@/types"
 import { BTN_PRIMARY, BTN_SECONDARY, FIELD, PANEL } from "@/components/admin/styles"
 
 type ActionResult = { success?: boolean; error?: Record<string, string[] | undefined> } | null
 type Errors = Record<string, string>
+
+export type TalentWithRelations = Talent & {
+  bankAccount?: TalentBankAccount | null
+  socialLinks?: TalentSocialLink[]
+}
+
+// 各欄の初期値（新規は空、編集はいまの登録内容）
+function defaultsOf(t?: TalentWithRelations): Record<string, string> {
+  if (!t) return { status: "ACTIVE" }
+  const str = (v: string | number | null | undefined) => (v === null || v === undefined ? "" : String(v))
+  const social = (platform: string) => t.socialLinks?.find((l) => l.platform === platform)?.url ?? ""
+  return {
+    lastName: str(t.lastName),
+    firstName: str(t.firstName),
+    lastNameKana: str(t.lastNameKana),
+    firstNameKana: str(t.firstNameKana),
+    email: str(t.email),
+    phone: str(t.phone),
+    stageName: str(t.stageName),
+    nameRomaji: str(t.nameRomaji),
+    gender: str(t.gender),
+    height: str(t.height),
+    bust: str(t.bust),
+    waist: str(t.waist),
+    hip: str(t.hip),
+    shoeSize: str(t.shoeSize),
+    category: str(t.category),
+    birthplace: str(t.birthplace),
+    nearestStation: str(t.nearestStation),
+    address: str(t.address),
+    skills: str(t.skills),
+    hobbies: str(t.hobbies),
+    qualifications: str(t.qualifications),
+    career: str(t.career),
+    representativeWork: str(t.representativeWork),
+    instagramUrl: social("INSTAGRAM"),
+    xUrl: social("X"),
+    tiktokUrl: social("TIKTOK"),
+    websiteUrl: social("WEBSITE"),
+    bankName: str(t.bankAccount?.bankName),
+    bankBranch: str(t.bankAccount?.branchName),
+    bankAccountType: str(t.bankAccount?.accountType),
+    bankAccountNumber: str(t.bankAccount?.accountNumber),
+    bankAccountHolder: str(t.bankAccount?.accountHolder),
+    status: str(t.status) || "ACTIVE",
+    lineUserId: str(t.lineUserId),
+    note: str(t.note),
+  }
+}
+
+function birthOf(t?: TalentWithRelations) {
+  if (!t?.birthDate) return { y: "", m: "", d: "" }
+  const [y, m, d] = new Date(t.birthDate).toISOString().split("T")[0].split("-")
+  return { y, m: String(Number(m)), d: String(Number(d)) }
+}
 
 const TEXTAREA = `${FIELD} h-auto py-2 leading-relaxed`
 const NUMBER_FIELDS = [
@@ -120,9 +176,20 @@ function Field({
   )
 }
 
-function Section({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) {
+function Section({
+  title,
+  description,
+  plain,
+  children,
+}: {
+  title: string
+  description?: string
+  plain?: boolean
+  children: React.ReactNode
+}) {
   return (
-    <section className={`${PANEL} p-5 sm:p-6`}>
+    // plain：小窓（編集）の中では枠を付けず、区切り線だけで分ける
+    <section className={plain ? "border-t border-neutral-200 pt-6 first-of-type:border-t-0 first-of-type:pt-0" : `${PANEL} p-5 sm:p-6`}>
       <h2 className="text-base font-semibold text-neutral-950">{title}</h2>
       {description && <p className="mt-1 text-sm text-neutral-500">{description}</p>}
       <div className="mt-5 grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">{children}</div>
@@ -153,16 +220,34 @@ function UnitInput({ unit, ...props }: React.ComponentProps<"input"> & { unit: s
   )
 }
 
-export function NewTalentForm() {
+export function TalentEditorForm({
+  talent,
+  inDialog = false,
+  onSuccess,
+  onCancel,
+  onDirtyChange,
+}: {
+  // 編集のときに渡す。無ければ新規登録
+  talent?: TalentWithRelations
+  // 小窓（詳細ページの「編集」）の中で使うとき
+  inDialog?: boolean
+  onSuccess?: () => void
+  onCancel?: () => void
+  onDirtyChange?: (dirty: boolean) => void
+}) {
+  const isEdit = Boolean(talent)
+  const submitLabel = isEdit ? "保存する" : "登録する"
   const router = useRouter()
   const formRef = useRef<HTMLFormElement>(null)
   const [state, action, isPending] = useActionState(
-    async (_prev: ActionResult, fd: FormData): Promise<ActionResult> => createTalent(fd),
+    async (_prev: ActionResult, fd: FormData): Promise<ActionResult> =>
+      talent ? updateTalent(talent.id, fd) : createTalent(fd),
     null
   )
   const [clientErrors, setClientErrors] = useState<Errors>({})
   const [dirty, setDirty] = useState(false)
-  const [birth, setBirth] = useState({ y: "", m: "", d: "" })
+  const [birth, setBirth] = useState(() => birthOf(talent))
+  const defaults = useMemo(() => defaultsOf(talent), [talent])
 
   const serverErrors = useMemo(() => fromServer(state?.error), [state])
   const errors = Object.keys(clientErrors).length ? clientErrors : serverErrors
@@ -189,10 +274,20 @@ export function NewTalentForm() {
     return () => window.removeEventListener("beforeunload", onBeforeUnload)
   }, [dirty, saved])
 
-  // 登録できたら一覧へ。できなかったら最初のエラー欄へ移動
+  // 登録できたら一覧へ（編集なら小窓を閉じる）。できなかったら最初のエラー欄へ移動
+  const handledRef = useRef<ActionResult>(null)
   useEffect(() => {
-    if (!state) return
+    // 同じ結果を二度処理しない（親の再描画で通知が二重に出ないように）
+    if (!state || handledRef.current === state) return
+    handledRef.current = state
     if (state.success) {
+      if (talent) {
+        // コンポジ作成済みなら、新しい情報で作り直しておく（従来の編集フォームと同じ）
+        if (talent.resume) fetch(`/api/talents/${talent.id}/composite`).catch(() => {})
+        toast.success("タレント情報を保存しました")
+        onSuccess?.()
+        return
+      }
       const fd = formRef.current ? new FormData(formRef.current) : null
       const name = fd ? `${fd.get("lastName") ?? ""} ${fd.get("firstName") ?? ""}`.trim() : ""
       toast.success(name ? `${name}さんを登録しました` : "タレントを登録しました")
@@ -200,7 +295,7 @@ export function NewTalentForm() {
     } else if (state.error) {
       focusFirstError(formRef.current, fromServer(state.error))
     }
-  }, [state, router])
+  }, [state, router, talent, onSuccess])
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     // フォームの action に渡すと、送信後に入力欄が空になってしまう（React 19 の仕様）ため、
@@ -227,6 +322,7 @@ export function NewTalentForm() {
     "data-field": name,
     "aria-invalid": Boolean(errors[name]) || undefined,
     "aria-describedby": describedBy(name),
+    defaultValue: defaults[name] ?? "",
   })
   const clearError = (name: string) => {
     if (!clientErrors[name]) return
@@ -249,7 +345,10 @@ export function NewTalentForm() {
     <form
       ref={formRef}
       onSubmit={handleSubmit}
-      onChange={() => setDirty(true)}
+      onChange={() => {
+        if (!dirty) onDirtyChange?.(true)
+        setDirty(true)
+      }}
       noValidate
       className="space-y-5"
     >
@@ -257,12 +356,20 @@ export function NewTalentForm() {
         <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
           <p>
-            入力内容に確認が必要な項目が{errorCount}件あります。赤字の項目を直してから、もう一度「登録する」を押してください。
+            入力内容に確認が必要な項目が{errorCount}件あります。赤字の項目を直してから、もう一度「{submitLabel}」を押してください。
           </p>
         </div>
       )}
 
-      <Section title="基本情報" description="「必須」の項目だけ入れれば登録できます。それ以外はあとから追加・変更できます。">
+      <Section
+        plain={inDialog}
+        title="基本情報"
+        description={
+          isEdit
+            ? "「必須」の項目は空にできません。"
+            : "「必須」の項目だけ入れれば登録できます。それ以外はあとから追加・変更できます。"
+        }
+      >
         <Field id="lastName" label="姓" required error={errors.lastName}>
           <input {...fieldProps("lastName")} autoComplete="off" placeholder="例: 山田" className={FIELD} onInput={() => clearError("lastName")} />
         </Field>
@@ -299,9 +406,9 @@ export function NewTalentForm() {
         </Field>
       </Section>
 
-      <Section title="プロフィール">
+      <Section plain={inDialog} title="プロフィール">
         <Field id="gender" label="性別" error={errors.gender}>
-          <SelectBox {...fieldProps("gender")} defaultValue="">
+          <SelectBox {...fieldProps("gender")}>
             <option value="">選択してください</option>
             <option value="FEMALE">女性</option>
             <option value="MALE">男性</option>
@@ -399,7 +506,7 @@ export function NewTalentForm() {
         </Field>
       </Section>
 
-      <Section title="経歴・特技">
+      <Section plain={inDialog} title="経歴・特技">
         <Field id="skills" label="特技" error={errors.skills}>
           <input {...fieldProps("skills")} autoComplete="off" placeholder="例: インドネシア語、殺陣" className={FIELD} />
         </Field>
@@ -417,7 +524,7 @@ export function NewTalentForm() {
         </Field>
       </Section>
 
-      <Section title="SNS・Webサイト">
+      <Section plain={inDialog} title="SNS・Webサイト">
         <Field id="instagramUrl" label="Instagram" error={errors.instagramUrl}>
           <input {...fieldProps("instagramUrl")} type="url" inputMode="url" autoComplete="off" autoCapitalize="none" placeholder="https://instagram.com/..." className={FIELD} />
         </Field>
@@ -432,7 +539,7 @@ export function NewTalentForm() {
         </Field>
       </Section>
 
-      <Section title="振込先" description="ギャラのお振込みに使います。わからなければ空欄のまま登録できます。">
+      <Section plain={inDialog} title="振込先" description="ギャラのお振込みに使います。わからなければ空欄のまま登録できます。">
         <Field id="bankName" label="銀行名" error={errors.bankName}>
           <input {...fieldProps("bankName")} autoComplete="off" placeholder="例: 三菱UFJ銀行" className={FIELD} />
         </Field>
@@ -440,7 +547,7 @@ export function NewTalentForm() {
           <input {...fieldProps("bankBranch")} autoComplete="off" placeholder="例: 渋谷支店" className={FIELD} />
         </Field>
         <Field id="bankAccountType" label="種別" error={errors.bankAccountType}>
-          <SelectBox {...fieldProps("bankAccountType")} defaultValue="">
+          <SelectBox {...fieldProps("bankAccountType")}>
             <option value="">選択してください</option>
             <option value="普通">普通</option>
             <option value="当座">当座</option>
@@ -454,9 +561,9 @@ export function NewTalentForm() {
         </Field>
       </Section>
 
-      <Section title="管理用" description="タレント本人には表示されません。">
+      <Section plain={inDialog} title="管理用" description="タレント本人には表示されません。">
         <Field id="status" label="ステータス" error={errors.status}>
-          <SelectBox {...fieldProps("status")} defaultValue="ACTIVE">
+          <SelectBox {...fieldProps("status")}>
             {Object.entries(TALENT_STATUS_LABELS).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
@@ -472,20 +579,32 @@ export function NewTalentForm() {
         </Field>
       </Section>
 
-      {/* 長いフォームなので、登録ボタンは画面の下に常に出しておく */}
-      <div className="sticky -bottom-3 z-10 -mx-3 border-t border-neutral-200 bg-white/95 px-3 py-3 sm:-bottom-6 sm:-mx-6 sm:px-6">
+      {/* 長いフォームなので、登録ボタンは画面（小窓）の下に常に出しておく */}
+      <div
+        className={
+          inDialog
+            ? "sticky -bottom-6 z-10 -mx-6 -mb-6 border-t border-neutral-200 bg-white px-6 py-3"
+            : "sticky -bottom-3 z-10 -mx-3 border-t border-neutral-200 bg-white/95 px-3 py-3 sm:-bottom-6 sm:-mx-6 sm:px-6"
+        }
+      >
         <div className="mx-auto flex max-w-3xl items-center justify-end gap-2">
-          <Link href="/admin/talents" className={`${BTN_SECONDARY} h-10 flex-1 sm:flex-none`}>
-            キャンセル
-          </Link>
+          {onCancel ? (
+            <button type="button" onClick={onCancel} className={`${BTN_SECONDARY} h-10 flex-1 sm:flex-none`}>
+              キャンセル
+            </button>
+          ) : (
+            <Link href="/admin/talents" className={`${BTN_SECONDARY} h-10 flex-1 sm:flex-none`}>
+              キャンセル
+            </Link>
+          )}
           <button type="submit" disabled={isPending} className={`${BTN_PRIMARY} h-10 flex-[2] sm:flex-none sm:px-8`}>
             {isPending ? (
               <>
                 <Loader2 className="animate-spin" aria-hidden="true" />
-                登録中…
+                {isEdit ? "保存中…" : "登録中…"}
               </>
             ) : (
-              "登録する"
+              submitLabel
             )}
           </button>
         </div>

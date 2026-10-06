@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { toast } from "sonner"
 import { Pencil } from "lucide-react"
 import {
   Dialog,
@@ -10,31 +9,56 @@ import {
   DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog"
-import { TalentForm } from "@/components/admin/talent-form"
+import { TalentEditorForm, type TalentWithRelations } from "@/components/admin/talent-editor-form"
 import { BTN_PRIMARY } from "@/components/admin/styles"
-import type { Talent } from "@/generated/prisma/client"
 
-export function TalentEditSheet({ talent, className = BTN_PRIMARY }: { talent: Talent; className?: string }) {
+const UNSAVED_MESSAGE = "変更した内容はまだ保存されていません。保存せずに閉じますか？"
+
+export function TalentEditSheet({
+  talent,
+  className = BTN_PRIMARY,
+}: {
+  talent: TalentWithRelations
+  className?: string
+}) {
   const [open, setOpen] = useState(false)
+  const [dirty, setDirty] = useState(false)
   const router = useRouter()
+
+  // 書き換えた内容があるのに閉じようとしたら、確認してから閉じる
+  function requestClose() {
+    if (dirty && !window.confirm(UNSAVED_MESSAGE)) return
+    setOpen(false)
+    setDirty(false)
+  }
 
   return (
     <>
-      <button type="button" className={className} onClick={() => setOpen(true)}>
+      <button
+        type="button"
+        className={className}
+        onClick={() => {
+          setDirty(false)
+          setOpen(true)
+        }}
+      >
         <Pencil aria-hidden="true" />
         編集
       </button>
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-h-[85dvh] gap-0 overflow-y-auto bg-white p-6 sm:max-w-2xl">
+      <Dialog open={open} onOpenChange={(next) => (next ? setOpen(true) : requestClose())}>
+        <DialogContent className="max-h-[90dvh] gap-0 overflow-y-auto bg-white p-6 sm:max-w-3xl">
           <DialogTitle className="text-lg font-semibold">{talent.name}さんの情報を編集</DialogTitle>
-          <DialogDescription className="mt-1 mb-5 text-sm text-neutral-500">
-            変更したい項目を書き換えて、いちばん下の「更新」を押してください。
+          <DialogDescription className="mt-1 mb-6 text-sm text-neutral-500">
+            変更したい項目を書き換えて、下の「保存する」を押してください。
           </DialogDescription>
-          <TalentForm
+          <TalentEditorForm
             talent={talent}
+            inDialog
+            onDirtyChange={setDirty}
+            onCancel={requestClose}
             onSuccess={() => {
+              setDirty(false)
               setOpen(false)
-              toast.success("タレント情報を更新しました")
               router.refresh()
             }}
           />

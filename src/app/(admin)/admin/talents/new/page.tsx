@@ -1,6 +1,6 @@
 import Link from "next/link"
 import { ChevronLeft } from "lucide-react"
-import { NewTalentForm } from "./new-talent-form"
+import { TalentEditorForm } from "@/components/admin/talent-editor-form"
 
 export default function NewTalentPage() {
   return (
@@ -21,7 +21,7 @@ export default function NewTalentPage() {
           </span>
         </p>
       </div>
-      <NewTalentForm />
+      <TalentEditorForm />
     </div>
   )
 }
