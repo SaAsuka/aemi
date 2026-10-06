@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
+import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { FileText, RefreshCw, ExternalLink, Loader2, Upload } from "lucide-react"
@@ -171,7 +172,9 @@ export function CompositePdfIconButton({
     e.preventDefault()
     e.stopPropagation()
     if (photoCount < 6) {
-      alert(`宣材写真が${photoCount}枚しか登録されていません。コンポジ生成には6枚以上必要です。`)
+      toast.error("コンポジを作れません", {
+        description: `宣材写真が${photoCount}枚です。コンポジには6枚以上必要です。`,
+      })
       return
     }
     setGenerating(true)
@@ -180,9 +183,12 @@ export function CompositePdfIconButton({
       if (blobUrl) {
         await saveResumeUrl(talentId, blobUrl, "auto")
       }
+      toast.success("コンポジPDFを作成しました")
       router.refresh()
     } catch (err) {
-      alert(err instanceof Error ? err.message : "エラーが発生しました")
+      toast.error("コンポジPDFを作成できませんでした", {
+        description: err instanceof Error ? err.message : undefined,
+      })
     } finally {
       setGenerating(false)
     }

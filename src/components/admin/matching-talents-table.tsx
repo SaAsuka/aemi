@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useConfirm } from "@/components/admin/confirm-dialog"
 import Link from "next/link"
 import { toast } from "sonner"
 import { Check, Loader2, Send } from "lucide-react"
@@ -46,6 +47,7 @@ export function MatchingTalentsTable({
     return new Set(talents.filter((t) => t.hasLine).map((t) => t.id))
   })
   const [sending, setSending] = useState(false)
+  const [confirm, confirmDialog] = useConfirm()
 
   // お知らせを送れる人（LINE連携済み）→ 条件に一致 の順で上に並べる
   const sorted = [...talents].sort(
@@ -70,7 +72,12 @@ export function MatchingTalentsTable({
   const handleSend = async () => {
     const ids = [...selected]
     if (ids.length === 0) return
-    if (!confirm(`選んだ${ids.length}名に、この案件のお知らせをLINEで送ります。よろしいですか？`)) return
+    const ok = await confirm({
+      title: `${ids.length}名にLINEでお知らせを送りますか？`,
+      description: "この案件の募集のお知らせが、選んだタレントのLINEに届きます。送ったあとは取り消せません。",
+      confirmLabel: "送る",
+    })
+    if (!ok) return
     setSending(true)
     const res = await sendLineNotification(jobId, ids)
     setSending(false)
@@ -166,6 +173,7 @@ export function MatchingTalentsTable({
           </li>
         ))}
       </ul>
+      {confirmDialog}
     </div>
   )
 }

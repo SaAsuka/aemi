@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useTransition } from "react"
+import { useConfirm } from "@/components/admin/confirm-dialog"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { AlertCircle, CalendarPlus, ChevronDown, Loader2, MapPin, Trash2 } from "lucide-react"
@@ -45,6 +46,7 @@ export function JobDates({ jobId, dates }: { jobId: string; dates: JobDateItem[]
   const [saving, setSaving] = useState(false)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [, startTransition] = useTransition()
+  const [confirm, confirmDialog] = useConfirm()
 
   const set = (key: keyof typeof EMPTY, value: string) => {
     setForm((f) => ({ ...f, [key]: value }))
@@ -76,7 +78,13 @@ export function JobDates({ jobId, dates }: { jobId: string; dates: JobDateItem[]
   }
 
   async function handleDelete(item: JobDateItem) {
-    if (!window.confirm(`${TYPE_LABELS[item.type] ?? "日程"}（${formatDay(item.date)}）を削除しますか？`)) return
+    const ok = await confirm({
+      title: `${TYPE_LABELS[item.type] ?? "日程"}（${formatDay(item.date)}）を削除しますか？`,
+      description: "タレントの案件ページからも消えます。",
+      confirmLabel: "削除する",
+      danger: true,
+    })
+    if (!ok) return
     setDeletingId(item.id)
     const res = await deleteJobDate(item.id)
     setDeletingId(null)
@@ -249,6 +257,7 @@ export function JobDates({ jobId, dates }: { jobId: string; dates: JobDateItem[]
           日程を追加
         </button>
       )}
+      {confirmDialog}
     </div>
   )
 }
