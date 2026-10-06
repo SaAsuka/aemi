@@ -144,7 +144,7 @@ export async function updateProductionCompany(id: string, formData: FormData) {
   return { success: true }
 }
 
-export async function syncFreeePartners(): Promise<{ synced: number; created: number; error?: string }> {
+export async function syncFreeePartners(): Promise<{ synced: number; created: number; linked?: number; error?: string }> {
   await requireAdmin()
   const connected = await isFreeeConnected()
   if (!connected) {
@@ -159,28 +159,77 @@ export async function syncFreeePartners(): Promise<{ synced: number; created: nu
     const partners = data.partners
 
     let created = 0
+    let linked = 0
     for (const partner of partners) {
       const existing = await prisma.productionCompany.findUnique({
         where: { freeePartnerId: partner.id },
       })
-      if (!existing) {
-        await prisma.productionCompany.create({
-          data: {
-            companyName: partner.name,
-            freeePartnerId: partner.id,
-          },
-        })
-        created++
+      if (existing) continue
+      // 同じ名前でまだfreeeと結び付いていない会社があれば、新しく作らずにその会社と結び付ける（二重登録を防ぐ）
+      const sameName = await prisma.productionCompany.findFirst({
+        where: { companyName: partner.name, freeePartnerId: null },
+        orderBy: { createdAt: "asc" },
+      })
+      if (sameName) {
+        await prisma.productionCompany.update({ where: { id: sameName.id }, data: { freeePartnerId: partner.id } })
+        linked++
+        continue
       }
+      await prisma.productionCompany.create({
+        data: {
+          companyName: partner.name,
+          freeePartnerId: partner.id,
+        },
+      })
+      created++
     }
 
     revalidatePath("/admin/production-companies")
     updateTag("production-companies")
-    return { synced: partners.length, created }
+    return { synced: partners.length, created, linked }
   } catch (e) {
     console.error("[Freee] 取引先同期失敗:", e)
     return { synced: 0, created: 0, error: "freeeの取引先を取り込めませんでした" }
   }
+}
+
+// freeeと連携する前に登録した会社を、あとからfreeeの取引先と結び付ける
+// （同じ名前の取引先がfreeeにあればそれと、無ければfreeeに新しく取引先を作って結び付ける）
+export async function linkProductionCompanyToFreee(id: string) {
+  await requireAdmin()
+  if (!(await isFreeeConnected())) {
+    return { error: "freeeと連携していません。設定ページでfreeeと連携してください。" }
+  }
+  const company = await prisma.productionCompany.findUnique({ where: { id } })
+  if (!company) return { error: "制作会社が見つかりません" }
+  if (company.freeePartnerId) return { success: true, partnerId: company.freeePartnerId }
+
+  let partner: FreeePartner
+  try {
+    partner = await findOrCreateFreeePartner(company.companyName, {
+      zipCode: company.zipCode || undefined,
+      address: company.address || undefined,
+      contactName: company.contactName || undefined,
+      email: company.contactEmail || undefined,
+      phone: company.contactPhone || undefined,
+    })
+  } catch (e) {
+    console.error("[ProductionCompany] freee取引先の結び付け失敗:", e)
+    return { error: "freeeに取引先を登録できませんでした。少し時間をおいて、もう一度お試しください。" }
+  }
+
+  const other = await prisma.productionCompany.findUnique({ where: { freeePartnerId: partner.id } })
+  if (other && other.id !== id) {
+    return {
+      error: `freeeの取引先「${partner.name}」は、すでに別の制作会社「${other.companyName}」と結び付いています。同じ会社が二重に登録されていないか確認してください。`,
+    }
+  }
+
+  await prisma.productionCompany.update({ where: { id }, data: { freeePartnerId: partner.id } })
+  revalidatePath("/admin/production-companies")
+  revalidatePath(`/admin/production-companies/${id}`)
+  updateTag("production-companies")
+  return { success: true, partnerId: partner.id }
 }
 
 export async function deleteProductionCompany(id: string) {

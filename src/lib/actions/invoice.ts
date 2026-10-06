@@ -79,7 +79,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
 
   const freeePartnerId = company.freeePartnerId
   if (!freeePartnerId) {
-    return { error: "この制作会社はfreeeと連携していません。freeeと連携した状態で、制作会社管理から登録し直してください。" }
+    return { error: "この制作会社はfreeeの取引先と結び付いていません。制作会社のページで「freeeと結び付ける」を押してから、もう一度発行してください。" }
   }
 
   try {
