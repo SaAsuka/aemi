@@ -12,6 +12,9 @@ const STATUS_OPTIONS = [
   { value: "REJECTED", label: "不合格" },
   { value: "CANCELLED", label: "キャンセル" },
 ]
+// 1件ずつ変えたときはLINEでお知らせが届く状況（まとめて変えたときは届かない）
+const LINE_NOTIFY_STATUSES = new Set(["RESUME_SENT", "ACCEPTED", "REJECTED"])
+const NO_LINE_NOTE = "まとめて変えたときは、タレントにLINEのお知らせは届きません。"
 
 // 応募を選ぶと画面の下に出る、まとめて操作するためのバー
 export function BulkActionsBar({
@@ -32,7 +35,9 @@ export function BulkActionsBar({
     const count = selectedIds.length
     startTransition(async () => {
       await bulkUpdateApplicationStatus(selectedIds, bulkStatus)
-      toast.success(`${count}件を「${label}」にしました`)
+      toast.success(`${count}件を「${label}」にしました`, {
+        description: LINE_NOTIFY_STATUSES.has(bulkStatus) ? NO_LINE_NOTE : undefined,
+      })
       onClear()
       setBulkStatus("")
     })
@@ -106,6 +111,12 @@ export function BulkActionsBar({
           </button>
         </div>
       </div>
+      {/* 1件ずつ変えたときとの違い（LINEのお知らせ）を、変える前に伝える */}
+      {LINE_NOTIFY_STATUSES.has(bulkStatus) && (
+        <p className="mt-2 rounded-lg bg-yellow-50 px-3 py-2 text-xs leading-relaxed text-yellow-900 ring-1 ring-yellow-200">
+          {NO_LINE_NOTE}お知らせを送りたいときは、1件ずつ状況を変えてください。
+        </p>
+      )}
     </div>
   )
 }
