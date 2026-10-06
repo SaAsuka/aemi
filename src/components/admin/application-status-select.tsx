@@ -2,33 +2,24 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
+import { Check, ChevronDown, Loader2 } from "lucide-react"
 import { updateApplicationStatus } from "@/lib/actions/application"
 import { createSchedule } from "@/lib/actions/schedule"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog"
+import { BTN_PRIMARY, BTN_SECONDARY, FIELD } from "@/components/admin/styles"
 
+// 色は他の画面の札と同じ：応募済み＝青・書類送付済＝黄・合格＝緑・不合格＝赤・キャンセル＝グレー
 const statuses = [
-  { value: "APPLIED", label: "応募済み", className: "bg-gray-100 text-gray-700 border-gray-200" },
-  { value: "RESUME_SENT", label: "書類送付済", className: "bg-blue-100 text-blue-700 border-blue-200" },
-  { value: "ACCEPTED", label: "合格", className: "bg-green-100 text-green-700 border-green-200" },
-  { value: "REJECTED", label: "不合格", className: "bg-red-100 text-red-700 border-red-200" },
-  { value: "CANCELLED", label: "キャンセル", className: "bg-gray-50 text-gray-400 border-gray-100" },
+  { value: "APPLIED", label: "応募済み", desc: "まだ選考していない", bg: "bg-blue-600" },
+  { value: "RESUME_SENT", label: "書類送付済", desc: "制作会社に書類を送った", bg: "bg-yellow-700" },
+  { value: "ACCEPTED", label: "合格", desc: "出演が決まった", bg: "bg-green-700" },
+  { value: "REJECTED", label: "不合格", desc: "今回は見送り", bg: "bg-red-600" },
+  { value: "CANCELLED", label: "キャンセル", desc: "応募を取り下げた", bg: "bg-neutral-500" },
 ]
+
+const CHIP =
+  "inline-flex h-7 w-full items-center justify-between gap-1 whitespace-nowrap rounded-full pl-3 pr-2 text-xs font-medium text-white"
 
 export function ApplicationStatusSelect({
   applicationId,
@@ -73,70 +64,102 @@ export function ApplicationStatusSelect({
     router.refresh()
   }
 
-  const currentConfig = statuses.find((s) => s.value === currentStatus)
+  const current = statuses.find((s) => s.value === currentStatus)
 
+  // 自動不合格（締切から7日たっても応募済みのままだと自動で付く）は、ここでは変えられない
   if (currentStatus === "AUTO_REJECTED") {
-    return <span className="inline-block rounded px-1.5 py-0.5 text-xs bg-orange-100 text-orange-700 border border-orange-200">自動不合格</span>
+    return (
+      <span className={`${CHIP} bg-red-600`} title="締切から7日たっても選考されなかったため、自動で不合格になりました">
+        自動不合格
+      </span>
+    )
   }
 
   return (
     <>
-      <Select defaultValue={currentStatus} onValueChange={handleChange}>
-        <SelectTrigger className={`w-full h-7 text-xs border ${isPending ? "opacity-50" : ""} ${currentConfig?.className ?? ""}`}>
-          <SelectValue>{(v) => statuses.find((s) => s.value === v)?.label ?? v}</SelectValue>
-        </SelectTrigger>
-        <SelectContent>
-          {statuses.map((s) => (
-            <SelectItem key={s.value} value={s.value}>
-              <span className={`inline-block rounded px-1.5 py-0.5 text-xs ${s.className}`}>{s.label}</span>
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          disabled={isPending}
+          aria-label={`選考の状況：${current?.label ?? currentStatus}（押すと変えられます）`}
+          className={`${CHIP} transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950/30 focus-visible:ring-offset-1 disabled:opacity-70 ${
+            current?.bg ?? "bg-neutral-500"
+          }`}
+        >
+          {current?.label ?? currentStatus}
+          {isPending ? <Loader2 className="size-3.5 animate-spin" aria-hidden="true" /> : <ChevronDown className="size-3.5" aria-hidden="true" />}
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-56 bg-white p-1">
+          <p className="px-2 pb-1 pt-1.5 text-xs text-neutral-500">選考の状況を変える</p>
+          {statuses.map((s) => {
+            const active = s.value === currentStatus
+            return (
+              <DropdownMenuItem
+                key={s.value}
+                onClick={() => {
+                  if (!active) handleChange(s.value)
+                }}
+                className="items-start gap-2.5 rounded-md px-2 py-2 focus:bg-neutral-100"
+              >
+                <span className={`mt-1 size-2.5 shrink-0 rounded-full ${s.bg}`} aria-hidden="true" />
+                <span className="min-w-0 flex-1">
+                  <span className={`block text-sm ${active ? "font-semibold text-neutral-950" : "text-neutral-900"}`}>{s.label}</span>
+                  <span className="block text-xs text-neutral-500">{s.desc}</span>
+                </span>
+                {active && <Check className="mt-0.5 size-4 text-neutral-950" aria-label="いまの状況" />}
+              </DropdownMenuItem>
+            )
+          })}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       <Dialog open={showScheduleDialog} onOpenChange={setShowScheduleDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>スケジュール登録</DialogTitle>
-          </DialogHeader>
-          <p className="text-sm text-muted-foreground">
-            {talentName} / {jobTitle}
-          </p>
-          <form action={handleScheduleSubmit} className="space-y-4">
+        <DialogContent className="gap-0 bg-white p-6 sm:max-w-lg">
+          <DialogTitle className="text-lg font-semibold">撮影などの予定を登録</DialogTitle>
+          <DialogDescription className="mt-1.5 text-sm text-neutral-500">
+            {talentName}さん ／ {jobTitle}
+          </DialogDescription>
+          <form action={handleScheduleSubmit} className="mt-5 space-y-4">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label>日付 *</Label>
-                <Input name="date" type="date" required />
+              <div>
+                <label htmlFor={`as-date-${applicationId}`} className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-neutral-900">
+                  日付
+                  <span className="rounded bg-red-600 px-1.5 py-px text-[10px] font-semibold leading-4 text-white">必須</span>
+                </label>
+                <input id={`as-date-${applicationId}`} name="date" type="date" required className={FIELD} />
               </div>
-              <div className="space-y-2">
-                <Label>開始時刻</Label>
-                <Input name="startTime" type="time" />
+              <div>
+                <label htmlFor={`as-start-${applicationId}`} className="mb-1.5 block text-sm font-medium text-neutral-900">
+                  開始
+                </label>
+                <input id={`as-start-${applicationId}`} name="startTime" type="time" className={FIELD} />
               </div>
-              <div className="space-y-2">
-                <Label>終了時刻</Label>
-                <Input name="endTime" type="time" />
+              <div>
+                <label htmlFor={`as-end-${applicationId}`} className="mb-1.5 block text-sm font-medium text-neutral-900">
+                  終了
+                </label>
+                <input id={`as-end-${applicationId}`} name="endTime" type="time" className={FIELD} />
               </div>
             </div>
-            <div className="space-y-2">
-              <Label>場所</Label>
-              <Input name="location" />
+            <div>
+              <label htmlFor={`as-location-${applicationId}`} className="mb-1.5 block text-sm font-medium text-neutral-900">
+                場所
+              </label>
+              <input id={`as-location-${applicationId}`} name="location" placeholder="例: 渋谷スタジオ" className={FIELD} />
             </div>
-            <div className="space-y-2">
-              <Label>備考</Label>
-              <Textarea name="note" />
+            <div>
+              <label htmlFor={`as-note-${applicationId}`} className="mb-1.5 block text-sm font-medium text-neutral-900">
+                備考
+              </label>
+              <textarea id={`as-note-${applicationId}`} name="note" rows={3} placeholder="集合時間・持ち物など" className={`${FIELD} h-auto py-2 leading-relaxed`} />
             </div>
-            {scheduleError && <p className="text-sm text-destructive">{scheduleError}</p>}
-            <div className="flex gap-2">
-              <Button type="submit" disabled={isSubmitting} className="flex-1">
-                {isSubmitting ? "登録中..." : "登録"}
-              </Button>
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => setShowScheduleDialog(false)}
-              >
-                スキップ
-              </Button>
+            {scheduleError && <p className="text-sm text-red-600">{scheduleError}</p>}
+            <div className="flex flex-col-reverse gap-2 pt-1 sm:flex-row sm:justify-end">
+              <button type="button" className={BTN_SECONDARY} onClick={() => setShowScheduleDialog(false)}>
+                あとで登録する
+              </button>
+              <button type="submit" disabled={isSubmitting} className={`${BTN_PRIMARY} sm:px-6`}>
+                {isSubmitting ? "登録中…" : "予定を登録する"}
+              </button>
             </div>
           </form>
         </DialogContent>
