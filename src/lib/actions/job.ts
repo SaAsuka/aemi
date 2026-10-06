@@ -331,3 +331,52 @@ export async function deleteJob(id: string) {
   updateTag("jobs")
   return { success: true }
 }
+
+// ── 日程（オーディション日・撮影日など）──────────────────────────
+// 日付は「YYYY-MM-DD」をそのまま日付として保存する（テキストから登録・KAMITE連携と同じ形）
+
+const JOB_DATE_TYPES = ["AUDITION", "SHOOTING", "OTHER"] as const
+const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/
+
+export async function addJobDate(
+  jobId: string,
+  input: { type: string; date: string; startTime?: string; endTime?: string; location?: string; note?: string }
+) {
+  const errors: Record<string, string> = {}
+  if (!JOB_DATE_TYPES.includes(input.type as (typeof JOB_DATE_TYPES)[number])) errors.type = "種類を選んでください"
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date ?? "")) errors.date = "日付を選んでください"
+  if (input.startTime && !TIME_PATTERN.test(input.startTime)) errors.startTime = "時刻の形式が正しくありません"
+  if (input.endTime && !TIME_PATTERN.test(input.endTime)) errors.endTime = "時刻の形式が正しくありません"
+  if (input.startTime && input.endTime && input.startTime > input.endTime) errors.endTime = "終了は開始より後の時刻にしてください"
+  if (Object.keys(errors).length) return { error: errors }
+
+  const job = await prisma.job.findUnique({ where: { id: jobId }, select: { id: true } })
+  if (!job) return { error: { date: "案件が見つかりません" } }
+
+  await prisma.jobDate.create({
+    data: {
+      jobId,
+      type: input.type as (typeof JOB_DATE_TYPES)[number],
+      date: new Date(input.date),
+      startTime: input.startTime || null,
+      endTime: input.endTime || null,
+      location: input.location?.trim() || null,
+      note: input.note?.trim() || null,
+    },
+  })
+
+  revalidatePath("/admin/jobs")
+  revalidatePath(`/admin/jobs/${jobId}`)
+  updateTag("jobs")
+  return { success: true }
+}
+
+export async function deleteJobDate(id: string) {
+  const d = await prisma.jobDate.findUnique({ where: { id }, select: { jobId: true } })
+  if (!d) return { error: "日程が見つかりません" }
+  await prisma.jobDate.delete({ where: { id } })
+  revalidatePath("/admin/jobs")
+  revalidatePath(`/admin/jobs/${d.jobId}`)
+  updateTag("jobs")
+  return { success: true }
+}
