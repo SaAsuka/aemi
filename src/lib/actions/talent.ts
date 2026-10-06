@@ -380,6 +380,21 @@ export async function saveResumeUrl(talentId: string, url: string, source: "auto
 }
 
 export async function deleteTalent(id: string) {
+  // 請求書と、支払い・返金があったオプション購入はお金の記録なので、残っていれば消さない
+  const [invoiceCount, paidPurchaseCount] = await Promise.all([
+    prisma.invoice.count({ where: { application: { talentId: id } } }),
+    prisma.optionPurchase.count({ where: { talentId: id, status: { in: ["PAID", "REFUNDED"] } } }),
+  ])
+  if (invoiceCount > 0 || paidPurchaseCount > 0) {
+    const reasons = [
+      invoiceCount > 0 ? `請求書が${invoiceCount}件` : null,
+      paidPurchaseCount > 0 ? `支払い済み・返金済みのオプション購入が${paidPurchaseCount}件` : null,
+    ].filter(Boolean)
+    return {
+      error: `${reasons.join("、")}あるため削除できません。やめたタレントは、編集で状態を「退会」にしてください。`,
+    }
+  }
+
   const [photos, works, applications, talent] = await Promise.all([
     prisma.talentPhoto.findMany({ where: { talentId: id }, select: { url: true } }),
     prisma.talentWork.findMany({ where: { talentId: id }, select: { imageUrl: true } }),
@@ -396,6 +411,8 @@ export async function deleteTalent(id: string) {
       await tx.schedule.deleteMany({ where: { applicationId: { in: appIds } } })
       await tx.application.deleteMany({ where: { talentId: id } })
     }
+    // 支払いまで進まなかったオプション購入（未払い・失敗）は一緒に消す（タレントと一緒には消えないDBの設定）
+    await tx.optionPurchase.deleteMany({ where: { talentId: id } })
     await tx.talent.delete({ where: { id } })
   })
 
