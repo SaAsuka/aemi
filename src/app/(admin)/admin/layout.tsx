@@ -19,7 +19,8 @@ export default function AdminLayout({
       <div className="flex min-w-0 flex-1 flex-col bg-white">
         <AdminMobileHeader />
         <AdminHeader />
-        <main id="admin-main" tabIndex={-1} className="min-h-0 flex-1 overflow-auto p-3 outline-none sm:p-6">
+        {/* relative：読み上げ用の隠し文字（sr-only）などがページ全体を伸ばさないよう、この枠の中に留める */}
+        <main id="admin-main" tabIndex={-1} className="relative min-h-0 flex-1 overflow-auto p-3 outline-none sm:p-6">
           {children}
         </main>
       </div>
