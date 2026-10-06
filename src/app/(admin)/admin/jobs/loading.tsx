@@ -1,31 +1,43 @@
-import { Card, CardContent, CardHeader } from "@/components/ui/card"
+import { PANEL } from "@/components/admin/styles"
 
-function Skeleton({ className }: { className?: string }) {
-  return <div className={`animate-pulse rounded bg-muted ${className ?? ""}`} />
+function Bone({ className }: { className: string }) {
+  return <div className={`animate-pulse rounded bg-neutral-100 ${className}`} />
 }
 
 export default function JobsLoading() {
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <Skeleton className="h-8 w-28" />
-        <Skeleton className="h-9 w-24" />
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <Bone className="h-8 w-28" />
+          <Bone className="mt-2 h-4 w-36" />
+        </div>
+        <Bone className="h-9 w-full sm:w-80" />
       </div>
-      <div className="flex flex-col gap-4 sm:flex-row">
-        <Skeleton className="h-10 w-full max-w-md" />
-        <Skeleton className="h-10 w-32" />
-      </div>
-      <Card>
-        <CardHeader>
-          <Skeleton className="h-6 w-40" />
-        </CardHeader>
-        <CardContent className="space-y-3">
-          <Skeleton className="h-10 w-full" />
+      <div className={`${PANEL} space-y-4 p-4 sm:p-5`}>
+        <div className="flex flex-col gap-4 sm:flex-row">
+          <Bone className="h-9 flex-1" />
+          <Bone className="h-9 w-full sm:w-64" />
+        </div>
+        <div className="flex gap-2">
           {Array.from({ length: 5 }).map((_, i) => (
-            <Skeleton key={i} className="h-12 w-full" />
+            <Bone key={i} className="h-8 w-16 rounded-full" />
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+      <div className={`${PANEL} divide-y divide-neutral-100`}>
+        <div className="px-5 py-3">
+          <Bone className="h-4 w-40" />
+        </div>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="flex items-center gap-6 px-5 py-4">
+            <Bone className="h-4 w-56" />
+            <Bone className="h-6 w-16 rounded-full" />
+            <Bone className="hidden h-4 w-20 sm:block" />
+            <Bone className="hidden h-4 w-24 sm:block" />
+          </div>
+        ))}
+      </div>
     </div>
   )
 }

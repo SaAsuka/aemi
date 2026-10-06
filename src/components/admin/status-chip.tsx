@@ -17,6 +17,13 @@ export const SUBSCRIPTION_TONE: Record<string, ChipTone> = {
   CANCELED: "gray",
   UNPAID: "red",
 }
+// 案件の状態（下書き＝まだ公開していないので黄）
+export const JOB_STATUS_TONE: Record<string, ChipTone> = {
+  DRAFT: "yellow",
+  OPEN: "green",
+  CLOSED: "gray",
+  CANCELLED: "red",
+}
 // 応募の状況（ダッシュボードのグラフと同じ色：応募中＝青・書類送付済＝黄・合格＝緑・不合格＝赤）
 export const APPLICATION_TONE: Record<string, ChipTone> = {
   APPLIED: "blue",
