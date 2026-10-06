@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { Check, ChevronDown, Loader2 } from "lucide-react"
 import { updateApplicationStatus } from "@/lib/actions/application"
 import { createSchedule } from "@/lib/actions/schedule"
@@ -40,8 +41,14 @@ export function ApplicationStatusSelect({
 
   function handleChange(value: string | null) {
     if (!value) return
+    const label = statuses.find((st) => st.value === value)?.label ?? value
     startTransition(async () => {
-      await updateApplicationStatus(applicationId, value)
+      const res = await updateApplicationStatus(applicationId, value)
+      if (res && "error" in res && res.error) {
+        toast.error("選考の状況を変えられませんでした", { description: String(res.error) })
+        return
+      }
+      toast.success(`「${label}」にしました`, { description: `${talentName}さん ／ ${jobTitle}` })
       if (value === "ACCEPTED") {
         setShowScheduleDialog(true)
       }
