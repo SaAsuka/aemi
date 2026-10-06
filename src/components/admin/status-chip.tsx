@@ -34,6 +34,16 @@ export const APPLICATION_TONE: Record<string, ChipTone> = {
   CANCELLED: "gray",
 }
 
+// 請求書の状態（請求書管理と同じ：下書き＝グレー・発行済＝青・送付済＝黄・入金済＝緑・取消＝赤）
+export const INVOICE_TONE: Record<string, ChipTone> = { DRAFT: "gray", ISSUED: "blue", SENT: "yellow", PAID: "green", CANCELLED: "red" }
+export const INVOICE_STATUS_LABELS: Record<string, string> = {
+  DRAFT: "下書き",
+  ISSUED: "発行済",
+  SENT: "送付済",
+  PAID: "入金済",
+  CANCELLED: "取消",
+}
+
 export function StatusChip({ tone, label }: { tone: ChipTone; label: string }) {
   return (
     <span
