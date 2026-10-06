@@ -1,6 +1,6 @@
 export const dynamic = "force-dynamic"
 
-import { AdminMobileHeader, AdminSidebar } from "@/components/admin/sidebar"
+import { AdminHeader, AdminMobileHeader, AdminSidebar } from "@/components/admin/sidebar"
 
 export default function AdminLayout({
   children,
@@ -18,6 +18,7 @@ export default function AdminLayout({
       <AdminSidebar />
       <div className="flex min-w-0 flex-1 flex-col bg-background">
         <AdminMobileHeader />
+        <AdminHeader />
         <main id="admin-main" tabIndex={-1} className="min-h-0 flex-1 overflow-auto p-3 outline-none sm:p-6">
           {children}
         </main>
