@@ -31,7 +31,7 @@ export function FreeeSyncButton({
       const result = await syncFreeePartners()
       if (result.error) {
         toast.error("freeeから取り込めませんでした", {
-          description: result.error.includes("未連携")
+          description: result.error.includes("連携していません")
             ? "freeeとの連携が切れています。設定ページで連携し直してください。"
             : "少し時間をおいて、もう一度お試しください。",
         })

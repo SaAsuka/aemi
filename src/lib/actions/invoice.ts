@@ -64,7 +64,7 @@ type CreateInvoiceInput = {
 export async function createInvoice(input: CreateInvoiceInput) {
   const connected = await isFreeeConnected()
   if (!connected) {
-    return { error: "Freee未連携です。設定画面から連携してください。" }
+    return { error: "freeeと連携していません。設定ページでfreeeと連携してください。" }
   }
 
   const existing = await prisma.invoice.findMany({
@@ -92,7 +92,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
 
   const freeePartnerId = company.freeePartnerId
   if (!freeePartnerId) {
-    return { error: "この制作会社はFreee未連携です。制作会社管理から再登録してください。" }
+    return { error: "この制作会社はfreeeと連携していません。freeeと連携した状態で、制作会社管理から登録し直してください。" }
   }
 
   try {
@@ -128,7 +128,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
     return { success: true, invoiceId: invoice.id }
   } catch (e) {
     console.error("[Invoice] Freee請求書作成失敗:", e)
-    return { error: "Freeeでの請求書作成に失敗しました" }
+    return { error: "freeeで請求書を作成できませんでした。少し時間をおいて、もう一度お試しください。" }
   }
 }
 
