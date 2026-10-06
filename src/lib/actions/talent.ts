@@ -181,6 +181,13 @@ export async function getTalent(id: string) {
   return talent
 }
 
+const EMAIL_TAKEN_MESSAGE = "このメールアドレスはすでに登録されています"
+
+function isUniqueEmailError(e: unknown) {
+  const err = e as { code?: string; meta?: { target?: unknown } }
+  return err?.code === "P2002" && JSON.stringify(err.meta?.target ?? "").includes("email")
+}
+
 export async function createTalent(formData: FormData) {
   const raw = Object.fromEntries(formData)
   const parsed = talentBaseSchema.safeParse(raw)
@@ -190,42 +197,58 @@ export async function createTalent(formData: FormData) {
   }
 
   const data = parsed.data
-  const talent = await prisma.talent.create({
-    data: {
-      lastName: data.lastName,
-      firstName: data.firstName,
-      lastNameKana: data.lastNameKana,
-      firstNameKana: data.firstNameKana,
-      name: data.lastName + " " + data.firstName,
-      nameKana: data.lastNameKana + " " + data.firstNameKana,
-      stageName: data.stageName || null,
-      nameRomaji: data.nameRomaji || null,
-      emailVerified: true,
-      email: data.email || null,
-      phone: data.phone || null,
-      gender: data.gender || null,
-      birthDate: data.birthDate ? new Date(data.birthDate) : null,
-      height: typeof data.height === "number" ? data.height : null,
-      bust: typeof data.bust === "number" ? data.bust : null,
-      waist: typeof data.waist === "number" ? data.waist : null,
-      hip: typeof data.hip === "number" ? data.hip : null,
-      shoeSize: typeof data.shoeSize === "number" ? data.shoeSize : null,
-      skills: data.skills || null,
-      hobbies: data.hobbies || null,
-      qualifications: data.qualifications || null,
-      career: data.career || null,
-      category: data.category || null,
-      birthplace: data.birthplace || null,
-      address: data.address || null,
-      representativeWork: data.representativeWork || null,
-      lineUserId: data.lineUserId || null,
-      profileImage: data.profileImage || null,
-      resume: data.resume || null,
-      nearestStation: data.nearestStation || null,
-      status: data.status,
-      note: data.note || null,
-    },
-  })
+
+  // メールアドレスは1人につき1つ（本番DBは一意制約あり）。重複したらエラー画面にせず、欄の下に理由を返す
+  if (data.email) {
+    const existing = await prisma.talent.findFirst({ where: { email: data.email }, select: { id: true } })
+    if (existing) {
+      return { error: { email: [EMAIL_TAKEN_MESSAGE] } }
+    }
+  }
+
+  let talent
+  try {
+    talent = await prisma.talent.create({
+      data: {
+        lastName: data.lastName,
+        firstName: data.firstName,
+        lastNameKana: data.lastNameKana,
+        firstNameKana: data.firstNameKana,
+        name: data.lastName + " " + data.firstName,
+        nameKana: data.lastNameKana + " " + data.firstNameKana,
+        stageName: data.stageName || null,
+        nameRomaji: data.nameRomaji || null,
+        emailVerified: true,
+        email: data.email || null,
+        phone: data.phone || null,
+        gender: data.gender || null,
+        birthDate: data.birthDate ? new Date(data.birthDate) : null,
+        height: typeof data.height === "number" ? data.height : null,
+        bust: typeof data.bust === "number" ? data.bust : null,
+        waist: typeof data.waist === "number" ? data.waist : null,
+        hip: typeof data.hip === "number" ? data.hip : null,
+        shoeSize: typeof data.shoeSize === "number" ? data.shoeSize : null,
+        skills: data.skills || null,
+        hobbies: data.hobbies || null,
+        qualifications: data.qualifications || null,
+        career: data.career || null,
+        category: data.category || null,
+        birthplace: data.birthplace || null,
+        address: data.address || null,
+        representativeWork: data.representativeWork || null,
+        lineUserId: data.lineUserId || null,
+        profileImage: data.profileImage || null,
+        resume: data.resume || null,
+        nearestStation: data.nearestStation || null,
+        status: data.status,
+        note: data.note || null,
+      },
+    })
+  } catch (e) {
+    // 確認と登録のすき間に同じメールアドレスが登録された場合（同時に2回押した等）
+    if (isUniqueEmailError(e)) return { error: { email: [EMAIL_TAKEN_MESSAGE] } }
+    throw e
+  }
 
   await upsertSocialLinks(talent.id, data)
   await upsertBankAccount(talent.id, data)
