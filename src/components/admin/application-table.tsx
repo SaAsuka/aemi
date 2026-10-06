@@ -51,7 +51,7 @@ type AppRow = {
     externalUrl: string | null
     fileName: string | null
   }[]
-  invoices: { id: string; status: string }[]
+  invoices: { id: string; status: string; freeeInvoiceNumber: string | null }[]
   schedule?: { date: Date } | null
 }
 
@@ -155,6 +155,7 @@ export function ApplicationTable({
           jobFee={app.job.fee}
           talentName={app.talent.name}
           productionCompanies={productionCompanies}
+          existingInvoice={app.invoices[0] ?? null}
           triggerClassName={INVOICE_BUTTON}
         />
       </span>
