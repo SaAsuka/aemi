@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 import { Check } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { calcAge } from "@/lib/utils/date"
 import { GENDER_LABELS } from "@/types"
 import { useCopyWithFallback } from "@/components/admin/copy-fallback"
@@ -39,15 +38,18 @@ export function LineCopyButton({ talent }: { talent: TalentInfo }) {
     setTimeout(() => setCopiedPdf(false), 2000)
   }
 
+  const btn =
+    "inline-flex h-7 items-center gap-1 rounded-md border border-neutral-300 bg-white px-2 text-xs font-medium text-neutral-800 transition-colors hover:border-neutral-400 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950/30"
+
   return (
     <span className="inline-flex gap-1">
-      <Button variant="outline" size="xs" onClick={copyText}>
-        {copiedText ? <><Check className="h-3 w-3 text-green-600" /> コピー済</> : "情報コピー"}
-      </Button>
+      <button type="button" className={btn} onClick={copyText} title="名前・年齢・身長などをLINEに貼り付けられる形でコピーします">
+        {copiedText ? <><Check className="size-3.5 text-green-600" aria-hidden="true" />コピー済</> : "情報コピー"}
+      </button>
       {talent.resume && (
-        <Button variant="outline" size="xs" onClick={copyPdf}>
-          {copiedPdf ? <><Check className="h-3 w-3 text-green-600" /> コピー済</> : "PDFコピー"}
-        </Button>
+        <button type="button" className={btn} onClick={copyPdf} title="コンポジPDFのURLをコピーします">
+          {copiedPdf ? <><Check className="size-3.5 text-green-600" aria-hidden="true" />コピー済</> : "PDFコピー"}
+        </button>
       )}
       {fallback}
     </span>
