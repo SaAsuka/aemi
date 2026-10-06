@@ -1,5 +1,6 @@
 "use server"
 
+import { requireAdmin } from "@/lib/auth"
 import { revalidatePath } from "next/cache"
 import { prisma } from "@/lib/db"
 import { scheduleSchema } from "@/lib/validations/schedule"
@@ -11,6 +12,7 @@ type ScheduleFilters = {
 }
 
 export async function getSchedules(filters: ScheduleFilters = {}) {
+  await requireAdmin()
   const where: Record<string, unknown> = {}
 
   if (filters.month) {
@@ -55,6 +57,7 @@ export async function getSchedules(filters: ScheduleFilters = {}) {
 }
 
 export async function createSchedule(formData: FormData) {
+  await requireAdmin()
   const raw = Object.fromEntries(formData)
   const parsed = scheduleSchema.safeParse(raw)
 
@@ -88,6 +91,7 @@ export async function createSchedule(formData: FormData) {
 }
 
 export async function updateScheduleStatus(id: string, status: string) {
+  await requireAdmin()
   const validStatuses = ["CONFIRMED", "COMPLETED", "NO_SHOW", "CANCELLED"]
   if (!validStatuses.includes(status)) {
     return { error: "無効なステータスです" }
@@ -105,6 +109,7 @@ export async function updateScheduleStatus(id: string, status: string) {
 }
 
 export async function updateSchedule(id: string, formData: FormData) {
+  await requireAdmin()
   const raw = Object.fromEntries(formData)
   const parsed = scheduleSchema.safeParse(raw)
 
@@ -130,6 +135,7 @@ export async function updateSchedule(id: string, formData: FormData) {
 }
 
 export async function deleteSchedule(id: string) {
+  await requireAdmin()
   await prisma.schedule.delete({ where: { id } })
   revalidatePath("/admin/schedule")
   return { success: true }

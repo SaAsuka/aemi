@@ -1,5 +1,6 @@
 "use server"
 
+import { requireAdmin } from "@/lib/auth"
 import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
 import type { SubscriptionStatus } from "@/generated/prisma/client"
@@ -24,6 +25,7 @@ async function stripeFetch(path: string, key: string) {
 }
 
 export async function syncStripeCustomers(): Promise<{ totalCustomers: number; matched: number; updated: number } | { error: string }> {
+  await requireAdmin()
   try {
     const key = process.env.STRIPE_SECRET_KEY
     if (!key) return { error: "STRIPE_SECRET_KEY が未設定" }

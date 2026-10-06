@@ -1,5 +1,6 @@
 "use server"
 
+import { requireAdmin } from "@/lib/auth"
 import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
 import { getDefaultClientId } from "@/lib/queries"
@@ -40,6 +41,7 @@ type ApplyInput = {
 export async function applyParsedJob(input: ApplyInput): Promise<
   { success: true } | { success: false; error: string }
 > {
+  await requireAdmin()
   try {
     const clientId = await getDefaultClientId()
 
@@ -98,6 +100,7 @@ export async function applyParsedJob(input: ApplyInput): Promise<
 export async function applyParsedJobs(inputs: ApplyInput[]): Promise<
   { success: true; count: number } | { success: false; error: string }
 > {
+  await requireAdmin()
   try {
     const clientId = await getDefaultClientId()
 

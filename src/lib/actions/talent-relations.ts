@@ -1,4 +1,5 @@
-"use server"
+// サーバーの処理（talent.ts・talent-mypage.ts など）の中からだけ使う部品。
+// "use server" を付けると画面から直接呼べる処理として公開されてしまう（任意のタレントの口座を書き換えられる）ため付けない
 
 import { prisma } from "@/lib/db"
 import type { SocialPlatform } from "@/generated/prisma/client"

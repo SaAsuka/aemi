@@ -1,5 +1,6 @@
 "use server"
 
+import { requireAdmin } from "@/lib/auth"
 import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
 import { jobSchema } from "@/lib/validations/job"
@@ -18,11 +19,13 @@ function buildJobWhere(search?: string, status?: string) {
 }
 
 export async function getJobCount(search?: string, status?: string) {
+  await requireAdmin()
   return prisma.job.count({ where: buildJobWhere(search, status) })
 }
 
 // 締切を過ぎた案件の「募集終了」への更新は、呼び出す画面側で syncJobStatusByDeadline() を先に行う
 export async function getJobs(search?: string, status?: string, talentId?: string, sort?: string, order?: string, page?: number) {
+  await requireAdmin()
   const where = buildJobWhere(search, status)
   const sortField = JOB_SORT_FIELDS.includes(sort as typeof JOB_SORT_FIELDS[number]) ? sort! : "createdAt"
   const sortOrder = order === "asc" ? "asc" : "desc"
@@ -56,6 +59,7 @@ export async function getJobs(search?: string, status?: string, talentId?: strin
 }
 
 export async function getJob(id: string) {
+  await requireAdmin()
   return prisma.job.findUnique({
     where: { id },
     include: {
@@ -158,6 +162,7 @@ function extractRequirements(formData: FormData) {
 }
 
 export async function createJob(formData: FormData) {
+  await requireAdmin()
   const raw = Object.fromEntries(formData)
   const parsed = jobSchema.safeParse(raw)
 
@@ -228,6 +233,7 @@ async function notifyMatchingTalents(job: {
 }
 
 export async function updateJob(id: string, formData: FormData) {
+  await requireAdmin()
   const raw = Object.fromEntries(formData)
   const parsed = jobSchema.safeParse(raw)
 
@@ -287,6 +293,7 @@ export async function updateJob(id: string, formData: FormData) {
 }
 
 export async function sendLineNotification(jobId: string, talentIds: string[]) {
+  await requireAdmin()
   if (talentIds.length === 0) return { error: "送信先が選択されていません" }
 
   const job = await prisma.job.findUnique({
@@ -320,6 +327,7 @@ export async function sendLineNotification(jobId: string, talentIds: string[]) {
 }
 
 export async function deleteJob(id: string) {
+  await requireAdmin()
   // 応募は案件と一緒には消えない（DBの設定）。応募がある案件は消さず、理由を返す
   const applicationCount = await prisma.application.count({ where: { jobId: id } })
   if (applicationCount > 0) {
@@ -343,6 +351,7 @@ export async function addJobDate(
   jobId: string,
   input: { type: string; date: string; startTime?: string; endTime?: string; location?: string; note?: string }
 ) {
+  await requireAdmin()
   const errors: Record<string, string> = {}
   if (!JOB_DATE_TYPES.includes(input.type as (typeof JOB_DATE_TYPES)[number])) errors.type = "種類を選んでください"
   if (!/^\d{4}-\d{2}-\d{2}$/.test(input.date ?? "")) errors.date = "日付を選んでください"
@@ -373,6 +382,7 @@ export async function addJobDate(
 }
 
 export async function deleteJobDate(id: string) {
+  await requireAdmin()
   const d = await prisma.jobDate.findUnique({ where: { id }, select: { jobId: true } })
   if (!d) return { error: "日程が見つかりません" }
   await prisma.jobDate.delete({ where: { id } })

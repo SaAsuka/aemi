@@ -1,10 +1,12 @@
 "use server"
 
+import { requireAdmin } from "@/lib/auth"
 import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
 import { clientSchema } from "@/lib/validations/client"
 
 export async function getClients(search?: string) {
+  await requireAdmin()
   const where = search
     ? {
         OR: [
@@ -29,6 +31,7 @@ export async function getClients(search?: string) {
 }
 
 export async function getClient(id: string) {
+  await requireAdmin()
   return prisma.client.findUnique({
     where: { id },
     include: {
@@ -46,6 +49,7 @@ export async function getClient(id: string) {
 }
 
 export async function createClient(formData: FormData) {
+  await requireAdmin()
   const raw = Object.fromEntries(formData)
   const parsed = clientSchema.safeParse(raw)
 
@@ -71,6 +75,7 @@ export async function createClient(formData: FormData) {
 }
 
 export async function updateClient(id: string, formData: FormData) {
+  await requireAdmin()
   const raw = Object.fromEntries(formData)
   const parsed = clientSchema.safeParse(raw)
 
@@ -98,6 +103,7 @@ export async function updateClient(id: string, formData: FormData) {
 }
 
 export async function deleteClient(id: string) {
+  await requireAdmin()
   await prisma.client.delete({ where: { id } })
   revalidatePath("/admin/clients")
   updateTag("clients")

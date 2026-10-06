@@ -9,6 +9,7 @@ import {
 } from "@/lib/freee"
 
 export async function getInvoices(status?: string) {
+  await requireAdmin()
   const where: Record<string, unknown> = {}
   if (status && status !== "ALL") where.status = status
 
@@ -36,6 +37,7 @@ export async function getInvoices(status?: string) {
 }
 
 export async function getInvoice(id: string) {
+  await requireAdmin()
   return prisma.invoice.findUnique({
     where: { id },
     include: {
@@ -62,6 +64,7 @@ type CreateInvoiceInput = {
 }
 
 export async function createInvoice(input: CreateInvoiceInput) {
+  await requireAdmin()
   const connected = await isFreeeConnected()
   if (!connected) {
     return { error: "freeeと連携していません。設定ページでfreeeと連携してください。" }

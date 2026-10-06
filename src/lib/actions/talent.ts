@@ -1,5 +1,6 @@
 "use server"
 
+import { getSession, requireAdmin } from "@/lib/auth"
 import { revalidatePath, updateTag } from "next/cache"
 import { del } from "@vercel/blob"
 import { deleteFromStorage, isSupabaseStorageUrl } from "@/lib/supabase-storage"
@@ -113,11 +114,22 @@ function buildTalentWhere(filters: TalentFilters) {
 
 const TALENT_SORT_FIELDS = ["name", "nameKana", "status", "height", "createdAt"] as const
 
+
+// タレント本人（自分のID）か管理者だけ通す（マイページと管理画面の両方から使う処理用）
+async function verifyTalentAccess(talentId: string) {
+  const session = await getSession()
+  if (session.role === "admin") return
+  if (session.role === "talent" && session.talentId === talentId) return
+  throw new Error("権限がありません")
+}
+
 export async function getTalentCount(filters: TalentFilters = {}) {
+  await requireAdmin()
   return prisma.talent.count({ where: buildTalentWhere(filters) })
 }
 
 export async function getTalents(filters: TalentFilters = {}) {
+  await requireAdmin()
   const where = buildTalentWhere(filters)
   const pageSize = filters.pageSize ?? 50
   const page = filters.page ?? 1
@@ -136,6 +148,7 @@ export async function getTalents(filters: TalentFilters = {}) {
 }
 
 export async function getActiveTalentsForMatching() {
+  await requireAdmin()
   return prisma.talent.findMany({
     where: { status: "ACTIVE" },
     orderBy: { name: "asc" },
@@ -151,6 +164,7 @@ export async function getActiveTalentsForMatching() {
 }
 
 export async function getTalent(id: string) {
+  await requireAdmin()
   const talent = await prisma.talent.findUnique({
     where: { id },
     include: {
@@ -189,6 +203,7 @@ function isUniqueEmailError(e: unknown) {
 }
 
 export async function createTalent(formData: FormData) {
+  await requireAdmin()
   const raw = Object.fromEntries(formData)
   const parsed = talentBaseSchema.safeParse(raw)
 
@@ -259,6 +274,7 @@ export async function createTalent(formData: FormData) {
 }
 
 export async function updateTalent(id: string, formData: FormData) {
+  await requireAdmin()
   const raw = Object.fromEntries(formData)
   const parsed = talentBaseSchema.safeParse(raw)
 
@@ -328,6 +344,7 @@ export async function updateTalent(id: string, formData: FormData) {
 }
 
 export async function getTalentApplications(talentId: string) {
+  await verifyTalentAccess(talentId)
   return prisma.application.findMany({
     where: { talentId },
     include: {
@@ -339,6 +356,7 @@ export async function getTalentApplications(talentId: string) {
 }
 
 export async function getTalentForProfile(talentId: string) {
+  await verifyTalentAccess(talentId)
   return prisma.talent.findUnique({
     where: { id: talentId },
     select: {
@@ -355,6 +373,7 @@ export async function getTalentForProfile(talentId: string) {
 }
 
 export async function getTalentForSettings(talentId: string) {
+  await verifyTalentAccess(talentId)
   return prisma.talent.findUnique({
     where: { id: talentId },
     include: {
@@ -374,12 +393,14 @@ export async function getTalentByToken(token: string) {
 }
 
 export async function saveResumeUrl(talentId: string, url: string, source: "auto" | "manual" = "auto") {
+  await verifyTalentAccess(talentId)
   await prisma.talent.update({ where: { id: talentId }, data: { resume: url, resumeSource: source } })
   revalidatePath(`/admin/talents/${talentId}`)
   revalidatePath("/admin/talents")
 }
 
 export async function deleteTalent(id: string) {
+  await requireAdmin()
   // 請求書と、支払い・返金があったオプション購入はお金の記録なので、残っていれば消さない
   const [invoiceCount, paidPurchaseCount] = await Promise.all([
     prisma.invoice.count({ where: { application: { talentId: id } } }),

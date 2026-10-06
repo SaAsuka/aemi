@@ -1,5 +1,6 @@
 "use server"
 
+import { requireAdmin } from "@/lib/auth"
 import { revalidatePath, updateTag } from "next/cache"
 import { del } from "@vercel/blob"
 import { deleteFromStorage, isSupabaseStorageUrl } from "@/lib/supabase-storage"
@@ -18,6 +19,7 @@ function buildAppWhere(status?: string, jobId?: string, talentId?: string) {
 }
 
 export async function getApplicationCount(status?: string, jobId?: string, talentId?: string) {
+  await requireAdmin()
   return prisma.application.count({ where: buildAppWhere(status, jobId, talentId) })
 }
 
@@ -53,6 +55,7 @@ const APP_SELECT = {
 } as const
 
 export async function getApplications(status?: string, jobId?: string, sort?: string, order?: string, page?: number, talentId?: string) {
+  await requireAdmin()
   const where = buildAppWhere(status, jobId, talentId)
   const sortOrder: "asc" | "desc" = order === "asc" ? "asc" : "desc"
   const pageSize = 50
@@ -95,6 +98,7 @@ export async function getApplications(status?: string, jobId?: string, sort?: st
 }
 
 export async function getApplication(id: string) {
+  await requireAdmin()
   return prisma.application.findUnique({
     where: { id },
     include: {
@@ -239,6 +243,7 @@ export async function createApplication(formData: FormData) {
 const NOTIFY_STATUSES = new Set(["RESUME_SENT", "ACCEPTED", "REJECTED"])
 
 export async function updateApplicationStatus(id: string, status: string) {
+  await requireAdmin()
   const validStatuses = ["APPLIED", "RESUME_SENT", "ACCEPTED", "REJECTED", "AUTO_REJECTED", "CANCELLED"]
   if (!validStatuses.includes(status)) {
     return { error: "無効なステータスです" }
@@ -273,6 +278,7 @@ export async function updateApplicationStatus(id: string, status: string) {
 }
 
 export async function bulkUpdateApplicationStatus(ids: string[], status: string) {
+  await requireAdmin()
   const validStatuses = ["APPLIED", "RESUME_SENT", "ACCEPTED", "REJECTED", "AUTO_REJECTED", "CANCELLED"]
   if (!validStatuses.includes(status)) return { error: "無効なステータスです" }
   if (ids.length === 0) return { error: "対象が選択されていません" }
@@ -295,6 +301,7 @@ export async function bulkUpdateApplicationStatus(ids: string[], status: string)
 const INVOICE_BLOCK_MESSAGE = "請求書がある応募は削除できません。選考をやめる場合は、状況を「キャンセル」にしてください。"
 
 export async function bulkDeleteApplications(ids: string[]) {
+  await requireAdmin()
   if (ids.length === 0) return { error: "対象が選択されていません" }
   const withInvoice = await prisma.application.count({ where: { id: { in: ids }, invoices: { some: {} } } })
   if (withInvoice > 0) {
@@ -322,6 +329,7 @@ export async function bulkDeleteApplications(ids: string[]) {
 }
 
 export async function deleteApplication(id: string) {
+  await requireAdmin()
   if ((await prisma.invoice.count({ where: { applicationId: id } })) > 0) {
     return { error: INVOICE_BLOCK_MESSAGE }
   }

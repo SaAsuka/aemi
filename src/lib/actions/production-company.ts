@@ -1,5 +1,6 @@
 "use server"
 
+import { requireAdmin } from "@/lib/auth"
 import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
 import { productionCompanySchema } from "@/lib/validations/production-company"
@@ -7,6 +8,7 @@ import { findOrCreateFreeePartner, isFreeeConnected, searchFreeePartners, getFre
 import type { FreeePartner } from "@/lib/freee"
 
 export async function getProductionCompanies(search?: string) {
+  await requireAdmin()
   const where = search
     ? {
         OR: [
@@ -32,6 +34,7 @@ export async function getProductionCompanies(search?: string) {
 }
 
 export async function getProductionCompany(id: string) {
+  await requireAdmin()
   return prisma.productionCompany.findUnique({
     where: { id },
     include: {
@@ -58,6 +61,7 @@ export async function getProductionCompany(id: string) {
 }
 
 export async function getProductionCompanyList() {
+  await requireAdmin()
   return prisma.productionCompany.findMany({
     orderBy: { companyName: "asc" },
     select: { id: true, companyName: true },
@@ -65,6 +69,7 @@ export async function getProductionCompanyList() {
 }
 
 export async function createProductionCompany(formData: FormData) {
+  await requireAdmin()
   const raw = Object.fromEntries(formData)
   const parsed = productionCompanySchema.safeParse(raw)
 
@@ -111,6 +116,7 @@ export async function createProductionCompany(formData: FormData) {
 }
 
 export async function updateProductionCompany(id: string, formData: FormData) {
+  await requireAdmin()
   const raw = Object.fromEntries(formData)
   const parsed = productionCompanySchema.safeParse(raw)
 
@@ -139,6 +145,7 @@ export async function updateProductionCompany(id: string, formData: FormData) {
 }
 
 export async function syncFreeePartners(): Promise<{ synced: number; created: number; error?: string }> {
+  await requireAdmin()
   const connected = await isFreeeConnected()
   if (!connected) {
     return { synced: 0, created: 0, error: "freeeと連携していません" }
@@ -177,6 +184,7 @@ export async function syncFreeePartners(): Promise<{ synced: number; created: nu
 }
 
 export async function deleteProductionCompany(id: string) {
+  await requireAdmin()
   const invoiceCount = await prisma.invoice.count({ where: { productionCompanyId: id } })
   if (invoiceCount > 0) {
     return { error: "請求書が紐づいているため削除できません" }
