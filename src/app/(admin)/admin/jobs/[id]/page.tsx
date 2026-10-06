@@ -8,6 +8,7 @@ import { matchTalentToJob } from "@/lib/utils/job-matching"
 import { calcAge, formatDate, formatDeadline } from "@/lib/utils/date"
 import { DeleteButton } from "@/components/admin/delete-button"
 import { JobEditSheet } from "@/components/admin/job-edit-sheet"
+import { JobDates } from "@/components/admin/job-dates"
 import { APPLICATION_STATUS_LABELS, GENDER_LABELS, JOB_STATUS_LABELS, SUBMISSION_CATEGORY_LABELS } from "@/types"
 import { ApplicationStatusSelect } from "@/components/admin/application-status-select"
 import { LineCopyButton } from "@/components/admin/line-copy-button"
@@ -229,6 +230,10 @@ export default async function JobDetailPage({
         </div>
 
         <aside className="min-w-0 space-y-6">
+          <Section title="日程" description="オーディション日・撮影日など。タレントの案件ページにも表示されます。">
+            <JobDates jobId={job.id} dates={job.dates} />
+          </Section>
+
           <Section title="案件の内容">
             <dl className="space-y-4 text-sm">
               <div>
