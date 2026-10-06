@@ -4,13 +4,15 @@ import { useState } from "react"
 import { Copy, Check } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
+import { useCopyWithFallback } from "@/components/admin/copy-fallback"
 
 export function TalentUrlCopy({ accessToken }: { accessToken: string }) {
   const [copied, setCopied] = useState(false)
+  const { copy: copyWithFallback, fallback } = useCopyWithFallback()
 
-  const copy = async () => {
+  const copy = async (e: React.MouseEvent<HTMLElement>) => {
     const url = `${window.location.origin}/jobs?t=${accessToken}`
-    await navigator.clipboard.writeText(url)
+    if (!(await copyWithFallback(url, e.currentTarget.parentElement))) return
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
   }
@@ -28,6 +30,7 @@ export function TalentUrlCopy({ accessToken }: { accessToken: string }) {
           {copied ? <Check className="h-4 w-4 mr-1 text-green-600" /> : <Copy className="h-4 w-4 mr-1" />}
           {copied ? "コピー済み" : "URLをコピー"}
         </Button>
+        {fallback}
       </CardContent>
     </Card>
   )
