@@ -2,6 +2,7 @@ import { notFound } from "next/navigation"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { getJob } from "@/lib/actions/job"
+import { syncJobStatusByDeadline } from "@/lib/job-status"
 import { getActiveTalentsForMatching } from "@/lib/actions/talent"
 import { matchTalentToJob } from "@/lib/utils/job-matching"
 import { calcAge } from "@/lib/utils/date"
@@ -31,6 +32,7 @@ export default async function JobDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
+  await syncJobStatusByDeadline()
   const [job, allTalents] = await Promise.all([getJob(id), getActiveTalentsForMatching()])
 
   if (!job) notFound()

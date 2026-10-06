@@ -23,6 +23,7 @@ import { CsvExportButton } from "@/components/admin/csv-export-button"
 import { ClickableCard, ClickableRow } from "@/components/admin/clickable-row"
 import { JOB_STATUS_TONE, StatusChip } from "@/components/admin/status-chip"
 import { exportJobsCsv } from "@/lib/actions/export"
+import { syncJobStatusByDeadline } from "@/lib/job-status"
 import { BTN_PRIMARY, BTN_SECONDARY, FIELD, PANEL } from "@/components/admin/styles"
 
 type JobSearchParams = { q?: string; status?: string; talentId?: string; sort?: string; order?: string; page?: string }
@@ -93,6 +94,8 @@ export default async function JobsPage({
 }) {
   const params = await searchParams
   const { q, status, talentId, sort, order, page } = params
+  // 締切を過ぎた案件をすぐ「募集終了」にしてから一覧・件数を取る
+  await syncJobStatusByDeadline()
   const [jobs, talents, totalCount] = await Promise.all([
     getJobs(q, status, talentId, sort, order, page ? Number(page) : 1),
     getActiveTalentsForMatching(),

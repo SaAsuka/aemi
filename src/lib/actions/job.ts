@@ -21,13 +21,8 @@ export async function getJobCount(search?: string, status?: string) {
   return prisma.job.count({ where: buildJobWhere(search, status) })
 }
 
+// 締切による状態の更新（募集終了／募集中に戻す）は、呼び出す画面側で syncJobStatusByDeadline() を先に行う
 export async function getJobs(search?: string, status?: string, talentId?: string, sort?: string, order?: string, page?: number) {
-  const now = new Date()
-  await prisma.job.updateMany({
-    where: { status: "CLOSED", deadline: { gte: now } },
-    data: { status: "OPEN" },
-  })
-
   const where = buildJobWhere(search, status)
   const sortField = JOB_SORT_FIELDS.includes(sort as typeof JOB_SORT_FIELDS[number]) ? sort! : "createdAt"
   const sortOrder = order === "asc" ? "asc" : "desc"
