@@ -52,6 +52,7 @@ type AppRow = {
     fileName: string | null
   }[]
   invoices: { id: string; status: string }[]
+  schedule?: { date: Date } | null
 }
 
 type ProductionCompanyOption = {
@@ -162,6 +163,7 @@ export function ApplicationTable({
     <ApplicationStatusSelect
       applicationId={app.id}
       currentStatus={app.status}
+      scheduleDate={app.schedule?.date ?? null}
       talentName={app.talent.name}
       jobTitle={app.job.title}
     />
