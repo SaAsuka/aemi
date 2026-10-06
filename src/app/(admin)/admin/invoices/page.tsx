@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table"
-import { StatusChip, type ChipTone } from "@/components/admin/status-chip"
+import { InvoiceStatusMenu } from "@/components/admin/invoice-status-menu"
 import { BTN_SECONDARY, PANEL } from "@/components/admin/styles"
 import { formatDate } from "@/lib/utils/date"
 
@@ -22,8 +22,6 @@ const STATUS_TABS = [
   { value: "CANCELLED", label: "取消" },
 ]
 const STATUS_LABELS: Record<string, string> = Object.fromEntries(STATUS_TABS.map((t) => [t.value, t.label]))
-// 色の意味は従来と同じ：下書き＝グレー・発行済＝青・送付済＝黄・入金済＝緑・取消＝赤
-const STATUS_TONE: Record<string, ChipTone> = { DRAFT: "gray", ISSUED: "blue", SENT: "yellow", PAID: "green", CANCELLED: "red" }
 // 入金を待っている状態
 const WAITING = ["ISSUED", "SENT"]
 
@@ -94,7 +92,16 @@ export default async function InvoicesPage({
 
   const subjectOf = (inv: Invoice) => inv.subject || inv.application.job.title
   const tabHref = (value: string) => (value === "ALL" ? "/admin/invoices" : `/admin/invoices?status=${value}`)
-  const chip = (inv: Invoice) => <StatusChip tone={STATUS_TONE[inv.status] ?? "gray"} label={STATUS_LABELS[inv.status] ?? inv.status} />
+  // 状態のチップを押すと、その場で状態を変えられる
+  const chip = (inv: Invoice) => (
+    <InvoiceStatusMenu
+      key={`${inv.id}-${inv.status}`}
+      invoiceId={inv.id}
+      currentStatus={inv.status}
+      subject={`${subjectOf(inv)}（${inv.productionCompany.companyName}）`}
+      hasFreee={Boolean(inv.freeeInvoiceNumber)}
+    />
+  )
 
   return (
     <div className="space-y-6 pb-4">
@@ -104,6 +111,7 @@ export default async function InvoicesPage({
         <p className="mt-1 text-sm text-neutral-500">
           制作会社あてに発行した請求書です。
           <span className="inline-block">請求書は「応募管理」で合格した応募から作成できます。金額は税込です。</span>
+          <span className="inline-block">入金を確認したら、一覧の状態（色の付いた札）を押して「入金済」にしてください。</span>
         </p>
       </div>
 
