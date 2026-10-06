@@ -1,11 +1,7 @@
 "use client"
 
 import { useRouter, useSearchParams } from "next/navigation"
-import {
-  SearchableSelect,
-  type ComboboxOption,
-} from "@/components/ui/searchable-select"
-import { Label } from "@/components/ui/label"
+import { SearchableSelect, type ComboboxOption } from "@/components/ui/searchable-select"
 
 export function ScheduleFilters({
   talentOptions,
@@ -31,25 +27,23 @@ export function ScheduleFilters({
   }
 
   return (
-    <div className="flex flex-wrap items-end gap-3">
-      <div className="space-y-1">
-        <Label className="text-xs">タレント名</Label>
+    <div className="grid grid-cols-1 gap-3 sm:flex sm:flex-wrap sm:items-end">
+      <div className="min-w-0 sm:w-60">
+        <p className="mb-1.5 text-xs font-medium text-neutral-600">タレントで絞り込む</p>
         <SearchableSelect
           options={talentOptions}
           value={talent}
           onValueChange={(v) => navigate("talent", v)}
-          placeholder="タレントで絞り込み"
-          className="w-48"
+          placeholder="名前を入れて探す"
         />
       </div>
-      <div className="space-y-1">
-        <Label className="text-xs">案件名</Label>
+      <div className="min-w-0 sm:w-72">
+        <p className="mb-1.5 text-xs font-medium text-neutral-600">案件で絞り込む</p>
         <SearchableSelect
           options={jobOptions}
           value={job}
           onValueChange={(v) => navigate("job", v)}
-          placeholder="案件で絞り込み"
-          className="w-48"
+          placeholder="案件名を入れて探す"
         />
       </div>
     </div>

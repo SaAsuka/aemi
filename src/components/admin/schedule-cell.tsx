@@ -2,92 +2,67 @@
 
 import { cn } from "@/lib/utils"
 import { ScheduleBar } from "./schedule-bar"
-import type { DayCell, JobColor, ScheduleItem } from "@/lib/utils/schedule"
+import type { DayCell, ScheduleItem } from "@/lib/utils/schedule"
 
+const VISIBLE = 3
+
+// カレンダーの1日分（PC・タブレット用）
 export function ScheduleCell({
   cell,
-  jobColorMap,
   conflictIds,
   onSelectSchedule,
   onShowAll,
 }: {
   cell: DayCell
-  jobColorMap: Map<string, JobColor>
   conflictIds: Set<string>
   onSelectSchedule: (s: ScheduleItem) => void
   onShowAll: (cell: DayCell) => void
 }) {
   const day = cell.date.getDate()
   const dow = cell.date.getDay()
-  const hasConflict = cell.schedules.some((s) => conflictIds.has(s.id))
-  const visibleDesktop = cell.schedules.slice(0, 3)
-  const visibleMobile = cell.schedules.slice(0, 2)
-  const overflowDesktop = cell.schedules.length - 3
-  const overflowMobile = cell.schedules.length - 2
+  const visible = cell.schedules.slice(0, VISIBLE)
+  const overflow = cell.schedules.length - VISIBLE
 
   return (
     <div
       className={cn(
-        "min-h-[60px] sm:min-h-[90px] border border-border p-0.5 sm:p-1",
-        !cell.isCurrentMonth && "bg-muted/30",
-        cell.isToday && "bg-blue-50"
+        "min-h-28 border-b border-r border-neutral-200 p-1.5 [&:nth-child(7n)]:border-r-0",
+        !cell.isCurrentMonth && "bg-neutral-50/70"
       )}
     >
-      <div
-        className={cn(
-          "text-xs sm:text-sm font-medium mb-0.5",
-          !cell.isCurrentMonth && "text-muted-foreground",
-          dow === 0 && "text-red-500",
-          dow === 6 && "text-blue-500"
+      <div className="mb-1 flex items-center justify-between px-0.5">
+        <span
+          className={cn(
+            "inline-flex size-6 items-center justify-center rounded-full text-xs font-medium tabular-nums",
+            cell.isToday
+              ? "bg-neutral-950 text-white"
+              : !cell.isCurrentMonth
+                ? "text-neutral-300"
+                : dow === 0
+                  ? "text-red-600"
+                  : dow === 6
+                    ? "text-blue-600"
+                    : "text-neutral-700"
+          )}
+          aria-label={cell.isToday ? `${day}日（今日）` : undefined}
+        >
+          {day}
+        </span>
+      </div>
+      <div className="space-y-1">
+        {visible.map((s) => (
+          <ScheduleBar key={s.id} schedule={s} isConflict={conflictIds.has(s.id)} onClick={() => onSelectSchedule(s)} />
+        ))}
+        {overflow > 0 && (
+          <button
+            type="button"
+            onClick={() => onShowAll(cell)}
+            className="w-full rounded-md px-1.5 py-0.5 text-left text-xs font-medium text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950"
+          >
+            ほか{overflow}件
+          </button>
         )}
-      >
-        {day}
       </div>
-      <div className="space-y-0.5">
-        <div className="hidden sm:block space-y-0.5">
-          {visibleDesktop.map((s) => (
-            <ScheduleBar
-              key={s.id}
-              schedule={s}
-              color={jobColorMap.get(s.jobId)!}
-              isConflict={conflictIds.has(s.id)}
-              onClick={() => onSelectSchedule(s)}
-            />
-          ))}
-          {overflowDesktop > 0 && (
-            <button
-              type="button"
-              onClick={() => onShowAll(cell)}
-              className="text-[10px] text-muted-foreground hover:text-foreground"
-            >
-              +{overflowDesktop}件
-            </button>
-          )}
-        </div>
-        <div className="sm:hidden space-y-0.5">
-          {visibleMobile.map((s) => (
-            <ScheduleBar
-              key={s.id}
-              schedule={s}
-              color={jobColorMap.get(s.jobId)!}
-              isConflict={conflictIds.has(s.id)}
-              onClick={() => onSelectSchedule(s)}
-            />
-          ))}
-          {overflowMobile > 0 && (
-            <button
-              type="button"
-              onClick={() => onShowAll(cell)}
-              className="text-[10px] text-muted-foreground hover:text-foreground"
-            >
-              +{overflowMobile}件
-            </button>
-          )}
-        </div>
-      </div>
-      {hasConflict && (
-        <p className="text-[9px] text-red-500 mt-0.5">重複あり</p>
-      )}
     </div>
   )
 }
