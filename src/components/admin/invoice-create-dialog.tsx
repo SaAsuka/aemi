@@ -48,12 +48,15 @@ export function InvoiceCreateDialog({
   jobFee,
   talentName,
   productionCompanies,
+  triggerClassName,
 }: {
   applicationId: string
   jobTitle: string
   jobFee: number | null
   talentName: string
   productionCompanies: ProductionCompanyOption[]
+  // ボタンの見た目を画面ごとに変えたいとき用（未指定なら従来どおり）
+  triggerClassName?: string
 }) {
   const [open, setOpen] = useState(false)
   const [isPending, startTransition] = useTransition()
@@ -139,7 +142,7 @@ export function InvoiceCreateDialog({
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger
         render={
-          <Button variant="outline" size="xs" className="gap-1">
+          <Button variant="outline" size="xs" className={`gap-1 ${triggerClassName ?? ""}`}>
             <Receipt className="h-3.5 w-3.5" />
             請求書作成
           </Button>

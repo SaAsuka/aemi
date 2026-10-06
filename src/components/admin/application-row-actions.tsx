@@ -97,7 +97,7 @@ export function ApplicationRowActions({
 
   function handleDelete(e: React.MouseEvent) {
     e.preventDefault()
-    if (!confirm("この応募を削除しますか？")) return
+    if (!confirm(`${talent.name}さんのこの応募を削除します。\n元に戻せません。本当に削除しますか？`)) return
     startTransition(async () => {
       await deleteApplication(applicationId)
       router.refresh()
@@ -109,8 +109,13 @@ export function ApplicationRowActions({
       <DropdownMenu>
         <DropdownMenuTrigger
           render={
-            <Button variant="ghost" size="xs" className="h-7 w-7 p-0">
-              <MoreVertical className="h-3.5 w-3.5" />
+            <Button
+              variant="ghost"
+              size="xs"
+              aria-label="その他の操作（情報コピー・PDF・削除）"
+              className="h-8 w-8 p-0 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-950"
+            >
+              <MoreVertical className="h-4 w-4" />
             </Button>
           }
         />
