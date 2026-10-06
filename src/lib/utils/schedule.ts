@@ -16,6 +16,7 @@ export type ScheduleItem = {
   endTime: string | null
   location: string | null
   status: string
+  note?: string | null
   talentId: string
   talentName: string
   jobId: string

@@ -46,6 +46,7 @@ export async function getSchedules(filters: ScheduleFilters = {}) {
       endTime: true,
       location: true,
       status: true,
+      note: true,
       application: {
         select: {
           talent: { select: { id: true, name: true } },
@@ -108,10 +109,13 @@ export async function updateScheduleStatus(id: string, status: string) {
   return { success: true }
 }
 
+// 予定の日時・場所・備考を変える（どの応募の予定か・状況は変えない。状況は updateScheduleStatus で変える）
+const scheduleEditSchema = scheduleSchema.pick({ date: true, startTime: true, endTime: true, location: true, note: true })
+
 export async function updateSchedule(id: string, formData: FormData) {
   await requireAdmin()
   const raw = Object.fromEntries(formData)
-  const parsed = scheduleSchema.safeParse(raw)
+  const parsed = scheduleEditSchema.safeParse(raw)
 
   if (!parsed.success) {
     return { error: parsed.error.flatten().fieldErrors }
@@ -125,7 +129,6 @@ export async function updateSchedule(id: string, formData: FormData) {
       startTime: data.startTime || null,
       endTime: data.endTime || null,
       location: data.location || null,
-      status: data.status,
       note: data.note || null,
     },
   })
