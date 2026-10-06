@@ -40,6 +40,7 @@ export async function getProductionCompany(id: string) {
           id: true,
           subject: true,
           amount: true,
+          taxRate: true,
           status: true,
           issueDate: true,
           dueDate: true,

@@ -23,6 +23,8 @@ const INVOICE_STATUS_LABELS: Record<string, string> = {
 const INVOICE_TONE: Record<string, ChipTone> = { DRAFT: "gray", ISSUED: "blue", SENT: "yellow", PAID: "green", CANCELLED: "red" }
 
 const yen = (n: number) => `¥${n.toLocaleString()}`
+// 請求額は税抜で保存されているので、表示は請求書管理と同じく税込にする
+const withTax = (amount: number, taxRate: number) => amount + Math.floor((amount * taxRate) / 100)
 
 function Section({
   title,
@@ -76,7 +78,7 @@ export default async function ProductionCompanyDetailPage({
   if (!company) notFound()
 
   const invoices = company.invoices
-  const sum = (statuses: string[]) => invoices.filter((i) => statuses.includes(i.status)).reduce((a, i) => a + i.amount, 0)
+  const sum = (statuses: string[]) => invoices.filter((i) => statuses.includes(i.status)).reduce((a, i) => a + withTax(i.amount, i.taxRate), 0)
   const unpaid = sum(["ISSUED", "SENT"])
   const facts = [
     { label: "請求書", value: `${invoices.length}件`, note: null },
@@ -146,7 +148,7 @@ export default async function ProductionCompanyDetailPage({
         <Section
           title="請求書"
           count={invoices.length}
-          description="この会社あての請求書です。新しい順に並んでいます。"
+          description="この会社あての請求書です。新しい順に並んでいます。金額は税込です。"
           action={
             invoices.length > 0 ? (
               <Link
@@ -172,7 +174,7 @@ export default async function ProductionCompanyDetailPage({
                   <tr className="border-y border-neutral-200 bg-neutral-50 text-left text-xs text-neutral-500">
                     <th scope="col" className="px-3 py-2.5 font-medium">件名</th>
                     <th scope="col" className="px-3 py-2.5 font-medium">状態</th>
-                    <th scope="col" className="px-3 py-2.5 text-right font-medium">金額</th>
+                    <th scope="col" className="px-3 py-2.5 text-right font-medium">金額（税込）</th>
                     <th scope="col" className="px-3 py-2.5 font-medium">発行日</th>
                     <th scope="col" className="px-3 py-2.5 font-medium">支払期限</th>
                   </tr>
@@ -187,12 +189,11 @@ export default async function ProductionCompanyDetailPage({
                       <td className="px-3 py-3 align-middle">
                         <StatusChip tone={INVOICE_TONE[inv.status] ?? "gray"} label={INVOICE_STATUS_LABELS[inv.status] ?? inv.status} />
                       </td>
-                      <td
-                        className={`px-3 py-3 text-right align-middle tabular-nums ${
-                          inv.status === "CANCELLED" ? "text-neutral-400 line-through" : "font-medium text-neutral-950"
-                        }`}
-                      >
-                        {yen(inv.amount)}
+                      <td className="px-3 py-3 text-right align-middle tabular-nums">
+                        <span className={inv.status === "CANCELLED" ? "text-neutral-400 line-through" : "font-medium text-neutral-950"}>
+                          {yen(withTax(inv.amount, inv.taxRate))}
+                        </span>
+                        <span className="mt-0.5 block text-xs text-neutral-400">税抜 {yen(inv.amount)}</span>
                       </td>
                       <td className="px-3 py-3 align-middle tabular-nums text-neutral-700">
                         {inv.issueDate ? formatDate(inv.issueDate) : <span className="text-neutral-400">−</span>}
@@ -224,7 +225,7 @@ export default async function ProductionCompanyDetailPage({
                       <span
                         className={`text-sm tabular-nums ${inv.status === "CANCELLED" ? "text-neutral-400 line-through" : "font-medium text-neutral-950"}`}
                       >
-                        {yen(inv.amount)}
+                        {yen(withTax(inv.amount, inv.taxRate))}
                       </span>
                     </div>
                   </li>
