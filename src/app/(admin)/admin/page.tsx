@@ -2,6 +2,7 @@ import { Suspense } from "react"
 import Link from "next/link"
 import { ArrowRight, Check, ChevronRight } from "lucide-react"
 import { prisma } from "@/lib/db"
+import { syncJobStatusByDeadline } from "@/lib/job-status"
 import { MonthlyApplicationChart } from "@/components/admin/monthly-application-chart"
 import { MonthlyJobChart } from "@/components/admin/monthly-job-chart"
 import { MonthlyAcceptRateChart } from "@/components/admin/monthly-accept-rate-chart"
@@ -422,7 +423,10 @@ function RecentSkeleton() {
   )
 }
 
-export default function AdminDashboard() {
+export default async function AdminDashboard() {
+  // 「募集中」の件数・締切間近の件数が正しくなるよう、締切を過ぎた案件を先に「募集終了」にする
+  await syncJobStatusByDeadline()
+
   const jstNow = getJstNow()
   const today = new Intl.DateTimeFormat("ja-JP", {
     timeZone: "Asia/Tokyo",
