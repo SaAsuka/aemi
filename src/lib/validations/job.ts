@@ -6,7 +6,8 @@ export const jobSchema = z.object({
   description: z.string().optional().or(z.literal("")),
   location: z.string().optional().or(z.literal("")),
   fee: z.coerce.number().int().nonnegative().optional().or(z.literal("")),
-  genderReq: z.enum(["MALE", "FEMALE", "OTHER"]).optional(),
+  // 「指定なし」のときはフォームから空文字が届くので、空も受け付ける
+  genderReq: z.enum(["MALE", "FEMALE", "OTHER"]).optional().or(z.literal("")),
   ageMin: z.coerce.number().int().nonnegative().optional().or(z.literal("")),
   ageMax: z.coerce.number().int().nonnegative().optional().or(z.literal("")),
   heightMin: z.coerce.number().int().positive().optional().or(z.literal("")),
