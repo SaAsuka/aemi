@@ -145,7 +145,8 @@ export async function GET(
         "X-Composite-Time": `${Date.now() - t0}ms`,
         "X-Composite-Size": `${buffer.byteLength}`,
         ...(blobUrl ? { "X-Blob-Url": blobUrl } : {}),
-        ...(blobError ? { "X-Blob-Error": blobError } : {}),
+        // ヘッダーには日本語（ASCII以外）を入れられないため、URLエンコードして渡す（受け取り側で戻す）
+        ...(blobError ? { "X-Blob-Error": encodeURIComponent(blobError) } : {}),
       },
     })
   } catch (e) {
