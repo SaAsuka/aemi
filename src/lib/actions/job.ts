@@ -200,7 +200,8 @@ export async function createJob(formData: FormData) {
     )
   }
 
-  return { success: true }
+  // 作成後にそのまま案件詳細（日程の追加など）へ進めるよう、id も返す
+  return { success: true, id: job.id }
 }
 
 async function notifyMatchingTalents(job: {
