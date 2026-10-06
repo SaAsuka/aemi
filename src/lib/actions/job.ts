@@ -21,7 +21,7 @@ export async function getJobCount(search?: string, status?: string) {
   return prisma.job.count({ where: buildJobWhere(search, status) })
 }
 
-// 締切による状態の更新（募集終了／募集中に戻す）は、呼び出す画面側で syncJobStatusByDeadline() を先に行う
+// 締切を過ぎた案件の「募集終了」への更新は、呼び出す画面側で syncJobStatusByDeadline() を先に行う
 export async function getJobs(search?: string, status?: string, talentId?: string, sort?: string, order?: string, page?: number) {
   const where = buildJobWhere(search, status)
   const sortField = JOB_SORT_FIELDS.includes(sort as typeof JOB_SORT_FIELDS[number]) ? sort! : "createdAt"
@@ -237,6 +237,18 @@ export async function updateJob(id: string, formData: FormData) {
   const requirements = extractRequirements(formData)
   const clientId = await getDefaultClientId()
 
+  // 募集終了の案件で、締切を先の日付に延ばして保存したときだけ「募集中」に戻す
+  // （状態を自分で変えて保存した場合はそちらを優先。人が早めに締めた案件は、締切を延ばさない限り戻さない）
+  const before = await prisma.job.findUnique({ where: { id }, select: { status: true, deadline: true } })
+  const newDeadline = data.deadline ? normalizeDeadline(data.deadline) : null
+  const deadlineExtended =
+    before?.status === "CLOSED" &&
+    data.status === "CLOSED" &&
+    newDeadline !== null &&
+    newDeadline > new Date() &&
+    (!before.deadline || newDeadline > before.deadline)
+  const status = deadlineExtended ? "OPEN" : data.status
+
   await prisma.$transaction(async (tx) => {
     await tx.job.update({
       where: { id },
@@ -251,9 +263,9 @@ export async function updateJob(id: string, formData: FormData) {
         ageMax: typeof data.ageMax === "number" ? data.ageMax : null,
         heightMin: typeof data.heightMin === "number" ? data.heightMin : null,
         heightMax: typeof data.heightMax === "number" ? data.heightMax : null,
-        deadline: data.deadline ? normalizeDeadline(data.deadline) : null,
+        deadline: newDeadline,
         capacity: typeof data.capacity === "number" ? data.capacity : null,
-        status: data.status,
+        status,
         note: data.note || null,
       },
     })

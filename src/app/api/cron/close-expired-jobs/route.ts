@@ -9,16 +9,8 @@ export async function GET(request: Request) {
 
   const now = new Date()
 
-  const reopened = await prisma.job.updateMany({
-    where: {
-      status: "CLOSED",
-      deadline: { gte: now },
-    },
-    data: {
-      status: "OPEN",
-    },
-  })
-
+  // 募集終了 → 募集中 に自動で戻すことはしない（人が早めに締めた案件まで戻ってしまうため）。
+  // 締切を延ばして保存したときだけ updateJob で戻す
   const closed = await prisma.job.updateMany({
     where: {
       status: "OPEN",
@@ -30,7 +22,6 @@ export async function GET(request: Request) {
   })
 
   return NextResponse.json({
-    reopened: reopened.count,
     closed: closed.count,
     timestamp: new Date().toISOString(),
   })
