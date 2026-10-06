@@ -342,7 +342,7 @@ export function ParsedResultForm({
                     checked={role.checked}
                     onChange={(e) => updateRole(i, { checked: e.target.checked })}
                     aria-label={`${role.title || "無題の役柄"}を登録する`}
-                    className="peer absolute inset-0 cursor-pointer appearance-none rounded-md border border-neutral-400 bg-white checked:border-neutral-950 checked:bg-neutral-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950/30"
+                    className="peer absolute inset-0 cursor-pointer appearance-none rounded-[5px] border border-neutral-400 bg-white checked:border-neutral-950 checked:bg-neutral-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950/30"
                   />
                   <Check className="pointer-events-none relative size-3.5 text-white opacity-0 peer-checked:opacity-100" aria-hidden="true" />
                 </label>
