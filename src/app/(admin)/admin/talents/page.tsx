@@ -19,6 +19,7 @@ import { RegisterLinkCopy } from "@/components/admin/register-link-copy"
 import { InviteTalentButton } from "@/components/admin/invite-talent-button"
 import { StripeSyncButton } from "@/components/admin/stripe-sync-button"
 import { ClickableCard, ClickableRow } from "@/components/admin/clickable-row"
+import { TalentAvatar } from "@/components/admin/talent-avatar"
 import { Pagination } from "@/components/admin/pagination"
 import { SortableHeader } from "@/components/admin/sortable-header"
 import { CsvExportButton } from "@/components/admin/csv-export-button"
@@ -177,6 +178,9 @@ export default async function TalentsPage({
   const lineOf = (talent: (typeof talents)[number]) =>
     talent.lineUserId ? <StatusChip tone="green" label="連携済" /> : <StatusChip tone="gray" label="未連携" />
 
+  // 宣材写真の1枚目 → なければプロフィール画像
+  const photoOf = (talent: (typeof talents)[number]) => talent.photos[0]?.url ?? talent.profileImage
+
   const statusOf = (talent: (typeof talents)[number]) => (
     <StatusChip
       tone={TALENT_STATUS_TONE[talent.status] ?? "gray"}
@@ -287,14 +291,19 @@ export default async function TalentsPage({
                       href={`/admin/talents/${talent.id}`}
                       className="group border-neutral-100 hover:bg-neutral-50"
                     >
-                      <TableCell className={CELL}>
-                        <Link
-                          href={`/admin/talents/${talent.id}`}
-                          className="font-medium text-neutral-950 underline-offset-4 hover:underline"
-                        >
-                          {talent.name}
-                        </Link>
-                        <p className="mt-0.5 text-xs text-neutral-500 xl:hidden">{talent.nameKana}</p>
+                      <TableCell className={`${CELL} py-2.5`}>
+                        <div className="flex items-center gap-3">
+                          <TalentAvatar url={photoOf(talent)} name={talent.name} />
+                          <div className="min-w-0">
+                            <Link
+                              href={`/admin/talents/${talent.id}`}
+                              className="font-medium text-neutral-950 underline-offset-4 hover:underline"
+                            >
+                              {talent.name}
+                            </Link>
+                            <p className="mt-0.5 text-xs text-neutral-500 xl:hidden">{talent.nameKana}</p>
+                          </div>
+                        </div>
                       </TableCell>
                       <TableCell className={`${CELL} hidden text-neutral-500 xl:table-cell`}>{talent.nameKana}</TableCell>
                       <TableCell className={CELL}>{statusOf(talent)}</TableCell>
@@ -325,15 +334,18 @@ export default async function TalentsPage({
                     href={`/admin/talents/${talent.id}`}
                     className="px-4 py-4 transition-colors active:bg-neutral-100 sm:px-5"
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <Link
-                          href={`/admin/talents/${talent.id}`}
-                          className="block truncate text-base font-medium text-neutral-950"
-                        >
-                          {talent.name}
-                        </Link>
-                        <p className="mt-0.5 truncate text-xs text-neutral-500">{talent.nameKana}</p>
+                    <div className="flex items-center justify-between gap-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <TalentAvatar url={photoOf(talent)} name={talent.name} className="size-12" />
+                        <div className="min-w-0">
+                          <Link
+                            href={`/admin/talents/${talent.id}`}
+                            className="block truncate text-base font-medium text-neutral-950"
+                          >
+                            {talent.name}
+                          </Link>
+                          <p className="mt-0.5 truncate text-xs text-neutral-500">{talent.nameKana}</p>
+                        </div>
                       </div>
                       <span className="flex shrink-0 items-center gap-2 text-sm">
                         {statusOf(talent)}

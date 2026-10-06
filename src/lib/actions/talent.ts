@@ -43,6 +43,13 @@ const TALENT_SELECT = {
   accessToken: true,
   resume: true,
   resumeSource: true,
+  // 一覧の顔写真：宣材写真の1枚目（なければ profileImage）。コンポジPDFと同じ優先順
+  profileImage: true,
+  photos: {
+    select: { url: true },
+    orderBy: { sortOrder: "asc" as const },
+    take: 1,
+  },
   subscription: {
     select: { status: true, currentPeriodEnd: true },
   },
