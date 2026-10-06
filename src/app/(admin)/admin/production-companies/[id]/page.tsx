@@ -1,9 +1,11 @@
 import { notFound } from "next/navigation"
 import Link from "next/link"
-import { ArrowRight, ChevronLeft, FileText, Mail, Phone } from "lucide-react"
+import { AlertTriangle, ArrowRight, ChevronLeft, FileText, Mail, Phone } from "lucide-react"
 import { getProductionCompany } from "@/lib/actions/production-company"
+import { isFreeeConnected } from "@/lib/freee"
 import { DeleteButton } from "@/components/admin/delete-button"
 import { CompanyEditSheet } from "@/components/admin/company-edit-sheet"
+import { FreeeLinkButton } from "@/components/admin/freee-link-button"
 import { CompanyMark } from "@/components/admin/company-mark"
 import { StatusChip, type ChipTone } from "@/components/admin/status-chip"
 import { BTN_PRIMARY, PANEL } from "@/components/admin/styles"
@@ -73,7 +75,7 @@ export default async function ProductionCompanyDetailPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const company = await getProductionCompany(id)
+  const [company, freeeConnected] = await Promise.all([getProductionCompany(id), isFreeeConnected()])
 
   if (!company) notFound()
 
@@ -133,6 +135,17 @@ export default async function ProductionCompanyDetailPage({
           <CompanyEditSheet company={company} className={`${BTN_PRIMARY} h-10 w-full sm:h-9 sm:w-auto`} />
         </div>
       </div>
+
+      {/* freeeの取引先と結び付いていないと、この会社あての請求書は発行できない */}
+      {freeeConnected && !company.freeePartnerId && (
+        <div className="flex flex-col gap-3 rounded-xl border border-yellow-300 bg-yellow-50 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="flex items-start gap-2 text-sm leading-relaxed text-yellow-900">
+            <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            この会社はfreeeの取引先と結び付いていないため、請求書を発行できません。
+          </p>
+          <FreeeLinkButton companyId={company.id} className={`${BTN_PRIMARY} h-10 w-full shrink-0 sm:h-9 sm:w-auto`} />
+        </div>
+      )}
 
       {/* 請求の状況 */}
       <dl className="grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-neutral-200 bg-neutral-200 sm:grid-cols-3">

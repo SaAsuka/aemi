@@ -37,10 +37,19 @@ export function FreeeSyncButton({
         })
         return
       }
-      if (result.created > 0) {
-        toast.success(`freeeから${result.created}社を取り込みました`, {
-          description: `freeeの取引先 ${result.synced}社のうち、まだ登録されていなかった会社を追加しました。`,
-        })
+      const linked = result.linked ?? 0
+      if (result.created > 0 || linked > 0) {
+        toast.success(
+          result.created > 0 ? `freeeから${result.created}社を取り込みました` : `${linked}社をfreeeの取引先と結び付けました`,
+          {
+            description: [
+              result.created > 0 ? `まだ登録されていなかった${result.created}社を追加しました。` : null,
+              linked > 0 ? `同じ名前ですでに登録されていた${linked}社は、新しく作らずにfreeeと結び付けました。` : null,
+            ]
+              .filter(Boolean)
+              .join(""),
+          }
+        )
         router.refresh()
       } else {
         toast.success("新しく取り込む会社はありませんでした", {
