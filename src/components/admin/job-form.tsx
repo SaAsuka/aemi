@@ -211,8 +211,10 @@ export function JobForm({
                       const jst = new Date(new Date(job.deadline).getTime() + 9 * 60 * 60 * 1000)
                       const pad = (n: number) => String(n).padStart(2, "0")
                       const datePart = `${jst.getUTCFullYear()}-${pad(jst.getUTCMonth() + 1)}-${pad(jst.getUTCDate())}`
+                      // 「その日の終わりまで」の締切も、日時の欄に表示できる形（23:59）で入れる
+                      // （日付だけだと日時の欄が空になり、そのまま保存すると締切が消えてしまう）
                       if (jst.getUTCHours() === 23 && jst.getUTCMinutes() === 59) {
-                        return datePart
+                        return `${datePart}T23:59`
                       }
                       return `${datePart}T${pad(jst.getUTCHours())}:${pad(jst.getUTCMinutes())}`
                     })()
@@ -319,6 +321,17 @@ export function JobForm({
         <Label htmlFor="note">備考</Label>
         <Textarea id="note" name="note" defaultValue={job?.note ?? ""} />
       </div>
+
+      {state?.error && (
+        <div role="alert" className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+          保存できませんでした。入力内容を確認してください。
+          <ul className="mt-1 list-disc pl-5">
+            {Object.values(state.error).flat().map((msg, i) => (
+              <li key={i}>{msg}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       <Button type="submit" disabled={isPending}>
         {isPending ? "保存中..." : job ? "更新" : "作成"}
