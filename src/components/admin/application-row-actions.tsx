@@ -14,6 +14,7 @@ import {
 import { deleteApplication } from "@/lib/actions/application"
 import { calcAge } from "@/lib/utils/date"
 import { GENDER_LABELS } from "@/types"
+import { useCopyWithFallback } from "@/components/admin/copy-fallback"
 
 type TalentInfo = {
   name: string
@@ -35,6 +36,7 @@ export function ApplicationRowActions({
   const [downloadingPdf, setDownloadingPdf] = useState(false)
   const [isPending, startTransition] = useTransition()
   const router = useRouter()
+  const { copy, fallback } = useCopyWithFallback()
 
   const copyText = async (e: React.MouseEvent) => {
     e.preventDefault()
@@ -43,7 +45,7 @@ export function ApplicationRowActions({
     if (talent.height) lines.push(`身長：${talent.height}`)
     if (talent.gender) lines.push(`性別：${GENDER_LABELS[talent.gender] ?? talent.gender}`)
     if (talent.nearestStation) lines.push(`最寄駅：${talent.nearestStation}`)
-    await navigator.clipboard.writeText(lines.join("\n"))
+    if (!(await copy(lines.join("\n"), e.currentTarget as HTMLElement))) return
     setCopiedText(true)
     setTimeout(() => setCopiedText(false), 2000)
   }
@@ -103,31 +105,34 @@ export function ApplicationRowActions({
   }
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger
-        render={
-          <Button variant="ghost" size="xs" className="h-7 w-7 p-0">
-            <MoreVertical className="h-3.5 w-3.5" />
-          </Button>
-        }
-      />
-      <DropdownMenuContent align="end" className="w-auto min-w-[140px]">
-        <DropdownMenuItem onClick={copyText}>
-          {copiedText ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
-          {copiedText ? "コピー済" : "情報コピー"}
-        </DropdownMenuItem>
-        {talent.resume && (
-          <DropdownMenuItem onClick={downloadPdf} disabled={downloadingPdf}>
-            {downloadingPdf ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
-            {downloadingPdf ? "取得中..." : "PDFダウンロード"}
+    <>
+      <DropdownMenu>
+        <DropdownMenuTrigger
+          render={
+            <Button variant="ghost" size="xs" className="h-7 w-7 p-0">
+              <MoreVertical className="h-3.5 w-3.5" />
+            </Button>
+          }
+        />
+        <DropdownMenuContent align="end" className="w-auto min-w-[140px]">
+          <DropdownMenuItem onClick={copyText}>
+            {copiedText ? <Check className="h-3.5 w-3.5 text-green-600" /> : <Copy className="h-3.5 w-3.5" />}
+            {copiedText ? "コピー済" : "情報コピー"}
           </DropdownMenuItem>
-        )}
-        <DropdownMenuSeparator />
-        <DropdownMenuItem variant="destructive" onClick={handleDelete} disabled={isPending}>
-          <Trash2 className="h-3.5 w-3.5" />
-          {isPending ? "削除中..." : "削除"}
-        </DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+          {talent.resume && (
+            <DropdownMenuItem onClick={downloadPdf} disabled={downloadingPdf}>
+              {downloadingPdf ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Download className="h-3.5 w-3.5" />}
+              {downloadingPdf ? "取得中..." : "PDFダウンロード"}
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuSeparator />
+          <DropdownMenuItem variant="destructive" onClick={handleDelete} disabled={isPending}>
+            <Trash2 className="h-3.5 w-3.5" />
+            {isPending ? "削除中..." : "削除"}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+      {fallback}
+    </>
   )
 }

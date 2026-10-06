@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Link2, Check, Loader2 } from "lucide-react"
+import { Link2, Check, Loader2, AlertCircle } from "lucide-react"
 import {
   Dialog,
   DialogContent,
@@ -9,6 +9,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { BTN_PRIMARY, BTN_SECONDARY } from "@/components/admin/styles"
+import { copyText } from "@/lib/utils/clipboard"
 
 type Plan = {
   token: string
@@ -36,8 +37,11 @@ export function RegisterLinkCopy({ className = BTN_SECONDARY }: { className?: st
   const [plans, setPlans] = useState<Plan[]>([])
   const [loading, setLoading] = useState(false)
   const [copied, setCopied] = useState<string | null>(null)
+  // 自動でコピーできなかったプラン（URLを画面に出して、長押しでコピーしてもらう）
+  const [copyFailed, setCopyFailed] = useState<string | null>(null)
 
   const openDialog = async () => {
+    setCopyFailed(null)
     setOpen(true)
     setLoading(true)
     try {
@@ -48,9 +52,16 @@ export function RegisterLinkCopy({ className = BTN_SECONDARY }: { className?: st
     }
   }
 
-  const copy = (token: string) => {
-    const url = `${window.location.origin}/register?t=${token}`
-    navigator.clipboard.writeText(url)
+  const urlOf = (token: string) => `${window.location.origin}/register?t=${token}`
+
+  const copy = async (token: string, button: HTMLElement) => {
+    const ok = await copyText(urlOf(token), button.parentElement)
+    if (!ok) {
+      setCopied(null)
+      setCopyFailed(token)
+      return
+    }
+    setCopyFailed(null)
     setCopied(token)
     setTimeout(() => {
       setCopied(null)
@@ -104,7 +115,7 @@ export function RegisterLinkCopy({ className = BTN_SECONDARY }: { className?: st
                       </div>
                       <button
                         type="button"
-                        onClick={() => copy(plan.token)}
+                        onClick={(e) => copy(plan.token, e.currentTarget)}
                         className={`${isCopied ? `${BTN_SECONDARY} text-green-700` : BTN_PRIMARY} mt-3 w-full`}
                       >
                         {isCopied ? (
@@ -119,6 +130,22 @@ export function RegisterLinkCopy({ className = BTN_SECONDARY }: { className?: st
                           </>
                         )}
                       </button>
+                      {copyFailed === plan.token && (
+                        <div className="mt-3 rounded-lg bg-yellow-50 p-3">
+                          <p role="alert" className="flex items-start gap-1.5 text-xs text-yellow-800">
+                            <AlertCircle className="mt-px size-4 shrink-0" aria-hidden="true" />
+                            このブラウザでは自動でコピーできませんでした。下のURLを長押し（パソコンは右クリック）してコピーしてください。
+                          </p>
+                          <textarea
+                            readOnly
+                            rows={2}
+                            value={urlOf(plan.token)}
+                            aria-label={`${plan.name}の登録フォームURL`}
+                            onFocus={(e) => e.currentTarget.select()}
+                            className="mt-2 block w-full resize-none break-all rounded-lg border border-neutral-300 bg-white px-3 py-2 font-mono text-base text-neutral-950 focus-visible:border-neutral-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950/10 sm:text-sm"
+                          />
+                        </div>
+                      )}
                     </li>
                   )
                 })}
