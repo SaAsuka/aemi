@@ -45,7 +45,7 @@ const APP_SELECT = {
     },
   },
   invoices: {
-    select: { id: true, status: true },
+    select: { id: true, status: true, freeeInvoiceNumber: true },
     where: { status: { not: "CANCELLED" } },
     take: 1,
   },

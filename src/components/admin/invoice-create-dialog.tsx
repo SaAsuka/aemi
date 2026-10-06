@@ -2,7 +2,8 @@
 
 import { useState, useTransition, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { Receipt, Search } from "lucide-react"
+import { toast } from "sonner"
+import { AlertTriangle, Receipt, Search } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -48,6 +49,7 @@ export function InvoiceCreateDialog({
   jobFee,
   talentName,
   productionCompanies,
+  existingInvoice = null,
   triggerClassName,
 }: {
   applicationId: string
@@ -55,6 +57,8 @@ export function InvoiceCreateDialog({
   jobFee: number | null
   talentName: string
   productionCompanies: ProductionCompanyOption[]
+  // この応募にすでにある請求書（取消以外）。新しく作ると、これは取消になる
+  existingInvoice?: { status: string; freeeInvoiceNumber: string | null } | null
   // ボタンの見た目を画面ごとに変えたいとき用（未指定なら従来どおり）
   triggerClassName?: string
 }) {
@@ -76,14 +80,16 @@ export function InvoiceCreateDialog({
 
   const selectedCompany = productionCompanies.find((c) => c.id === companyId)
 
-  useEffect(() => {
-    if (open) {
+  // 開くたびに前回の入力・エラーを消す
+  function handleOpenChange(next: boolean) {
+    if (next) {
       setError(null)
       setCompanySearch("")
       setCompanyId("")
       setShowDropdown(false)
     }
-  }, [open])
+    setOpen(next)
+  }
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -115,6 +121,10 @@ export function InvoiceCreateDialog({
       setError("金額を正しく入力してください")
       return
     }
+    if (!issueDate || !dueDate) {
+      setError("請求日と支払期日を入れてください")
+      return
+    }
 
     startTransition(async () => {
       const result = await createInvoice({
@@ -133,13 +143,18 @@ export function InvoiceCreateDialog({
         return
       }
 
+      toast.success("請求書を発行しました", {
+        description: existingInvoice
+          ? `${talentName}さん ／ ${jobTitle}。前の請求書は「取消」にしました。`
+          : `${talentName}さん ／ ${jobTitle}`,
+      })
       setOpen(false)
       router.refresh()
     })
   }
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger
         render={
           <Button variant="outline" size="xs" className={`gap-1 ${triggerClassName ?? ""}`}>
@@ -156,7 +171,18 @@ export function InvoiceCreateDialog({
           </p>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} noValidate className="space-y-4">
+          {/* 作り直すと前の請求書は取消になる。押す前に知らせる */}
+          {existingInvoice && (
+            <p className="flex items-start gap-2 rounded-lg border border-yellow-300 bg-yellow-50 px-3 py-2.5 text-sm leading-relaxed text-yellow-900">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              <span>
+                この応募には請求書がすでにあります
+                {existingInvoice.freeeInvoiceNumber ? `（No. ${existingInvoice.freeeInvoiceNumber}）` : ""}
+                。新しく発行すると、前の請求書はこのシステム上で「取消」になります。freeeの請求書は取り消されないので、必要ならfreeeで取り消してください。
+              </span>
+            </p>
+          )}
           <div className="space-y-2" ref={dropdownRef}>
             <Label>制作会社 *</Label>
             <div className="relative">
