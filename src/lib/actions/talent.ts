@@ -267,41 +267,58 @@ export async function updateTalent(id: string, formData: FormData) {
   }
 
   const data = parsed.data
-  await prisma.talent.update({
-    where: { id },
-    data: {
-      lastName: data.lastName,
-      firstName: data.firstName,
-      lastNameKana: data.lastNameKana,
-      firstNameKana: data.firstNameKana,
-      name: data.lastName + " " + data.firstName,
-      nameKana: data.lastNameKana + " " + data.firstNameKana,
-      stageName: data.stageName || null,
-      nameRomaji: data.nameRomaji || null,
-      email: data.email || null,
-      phone: data.phone || null,
-      gender: data.gender || null,
-      birthDate: data.birthDate ? new Date(data.birthDate) : null,
-      height: typeof data.height === "number" ? data.height : null,
-      bust: typeof data.bust === "number" ? data.bust : null,
-      waist: typeof data.waist === "number" ? data.waist : null,
-      hip: typeof data.hip === "number" ? data.hip : null,
-      shoeSize: typeof data.shoeSize === "number" ? data.shoeSize : null,
-      skills: data.skills || null,
-      hobbies: data.hobbies || null,
-      qualifications: data.qualifications || null,
-      career: data.career || null,
-      category: data.category || null,
-      birthplace: data.birthplace || null,
-      address: data.address || null,
-      representativeWork: data.representativeWork || null,
-      lineUserId: data.lineUserId || null,
-      profileImage: data.profileImage || null,
-      nearestStation: data.nearestStation || null,
-      status: data.status,
-      note: data.note || null,
-    },
-  })
+
+  // 他のタレントと同じメールアドレスにはできない（自分自身は除く）。エラー画面にせず欄の下に理由を返す
+  if (data.email) {
+    const existing = await prisma.talent.findFirst({
+      where: { email: data.email, id: { not: id } },
+      select: { id: true },
+    })
+    if (existing) {
+      return { error: { email: [EMAIL_TAKEN_MESSAGE] } }
+    }
+  }
+
+  try {
+    await prisma.talent.update({
+      where: { id },
+      data: {
+        lastName: data.lastName,
+        firstName: data.firstName,
+        lastNameKana: data.lastNameKana,
+        firstNameKana: data.firstNameKana,
+        name: data.lastName + " " + data.firstName,
+        nameKana: data.lastNameKana + " " + data.firstNameKana,
+        stageName: data.stageName || null,
+        nameRomaji: data.nameRomaji || null,
+        email: data.email || null,
+        phone: data.phone || null,
+        gender: data.gender || null,
+        birthDate: data.birthDate ? new Date(data.birthDate) : null,
+        height: typeof data.height === "number" ? data.height : null,
+        bust: typeof data.bust === "number" ? data.bust : null,
+        waist: typeof data.waist === "number" ? data.waist : null,
+        hip: typeof data.hip === "number" ? data.hip : null,
+        shoeSize: typeof data.shoeSize === "number" ? data.shoeSize : null,
+        skills: data.skills || null,
+        hobbies: data.hobbies || null,
+        qualifications: data.qualifications || null,
+        career: data.career || null,
+        category: data.category || null,
+        birthplace: data.birthplace || null,
+        address: data.address || null,
+        representativeWork: data.representativeWork || null,
+        lineUserId: data.lineUserId || null,
+        profileImage: data.profileImage || null,
+        nearestStation: data.nearestStation || null,
+        status: data.status,
+        note: data.note || null,
+      },
+    })
+  } catch (e) {
+    if (isUniqueEmailError(e)) return { error: { email: [EMAIL_TAKEN_MESSAGE] } }
+    throw e
+  }
 
   await upsertSocialLinks(id, data)
   await upsertBankAccount(id, data)
