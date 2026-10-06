@@ -226,7 +226,10 @@ export function AdminMobileHeader() {
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <header className="flex shrink-0 items-center gap-2 bg-neutral-950 pl-2 pr-4 pt-[env(safe-area-inset-top)] text-white lg:hidden">
-        <Dialog.Trigger className="flex h-14 items-center gap-2 rounded-md px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/60">
+        {/* id を固定：自動で振られる id がサーバーとブラウザでずれて警告が出るため */}
+        <Dialog.Trigger
+          id="admin-menu-trigger"
+          className="flex h-14 items-center gap-2 rounded-md px-3 text-sm font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-white/60">
           <Menu className="size-5" aria-hidden="true" />
           メニュー
         </Dialog.Trigger>
