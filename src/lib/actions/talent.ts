@@ -1,5 +1,6 @@
 "use server"
 
+import { getSession, requireAdmin } from "@/lib/auth"
 import { revalidatePath, updateTag } from "next/cache"
 import { del } from "@vercel/blob"
 import { deleteFromStorage, isSupabaseStorageUrl } from "@/lib/supabase-storage"
@@ -43,6 +44,13 @@ const TALENT_SELECT = {
   accessToken: true,
   resume: true,
   resumeSource: true,
+  // 一覧の顔写真：宣材写真の1枚目（なければ profileImage）。コンポジPDFと同じ優先順
+  profileImage: true,
+  photos: {
+    select: { url: true },
+    orderBy: { sortOrder: "asc" as const },
+    take: 1,
+  },
   subscription: {
     select: { status: true, currentPeriodEnd: true },
   },
@@ -106,11 +114,22 @@ function buildTalentWhere(filters: TalentFilters) {
 
 const TALENT_SORT_FIELDS = ["name", "nameKana", "status", "height", "createdAt"] as const
 
+
+// タレント本人（自分のID）か管理者だけ通す（マイページと管理画面の両方から使う処理用）
+async function verifyTalentAccess(talentId: string) {
+  const session = await getSession()
+  if (session.role === "admin") return
+  if (session.role === "talent" && session.talentId === talentId) return
+  throw new Error("権限がありません")
+}
+
 export async function getTalentCount(filters: TalentFilters = {}) {
+  await requireAdmin()
   return prisma.talent.count({ where: buildTalentWhere(filters) })
 }
 
 export async function getTalents(filters: TalentFilters = {}) {
+  await requireAdmin()
   const where = buildTalentWhere(filters)
   const pageSize = filters.pageSize ?? 50
   const page = filters.page ?? 1
@@ -129,6 +148,7 @@ export async function getTalents(filters: TalentFilters = {}) {
 }
 
 export async function getActiveTalentsForMatching() {
+  await requireAdmin()
   return prisma.talent.findMany({
     where: { status: "ACTIVE" },
     orderBy: { name: "asc" },
@@ -144,6 +164,7 @@ export async function getActiveTalentsForMatching() {
 }
 
 export async function getTalent(id: string) {
+  await requireAdmin()
   const talent = await prisma.talent.findUnique({
     where: { id },
     include: {
@@ -174,7 +195,15 @@ export async function getTalent(id: string) {
   return talent
 }
 
+const EMAIL_TAKEN_MESSAGE = "このメールアドレスはすでに登録されています"
+
+function isUniqueEmailError(e: unknown) {
+  const err = e as { code?: string; meta?: { target?: unknown } }
+  return err?.code === "P2002" && JSON.stringify(err.meta?.target ?? "").includes("email")
+}
+
 export async function createTalent(formData: FormData) {
+  await requireAdmin()
   const raw = Object.fromEntries(formData)
   const parsed = talentBaseSchema.safeParse(raw)
 
@@ -183,42 +212,58 @@ export async function createTalent(formData: FormData) {
   }
 
   const data = parsed.data
-  const talent = await prisma.talent.create({
-    data: {
-      lastName: data.lastName,
-      firstName: data.firstName,
-      lastNameKana: data.lastNameKana,
-      firstNameKana: data.firstNameKana,
-      name: data.lastName + " " + data.firstName,
-      nameKana: data.lastNameKana + " " + data.firstNameKana,
-      stageName: data.stageName || null,
-      nameRomaji: data.nameRomaji || null,
-      emailVerified: true,
-      email: data.email || null,
-      phone: data.phone || null,
-      gender: data.gender || null,
-      birthDate: data.birthDate ? new Date(data.birthDate) : null,
-      height: typeof data.height === "number" ? data.height : null,
-      bust: typeof data.bust === "number" ? data.bust : null,
-      waist: typeof data.waist === "number" ? data.waist : null,
-      hip: typeof data.hip === "number" ? data.hip : null,
-      shoeSize: typeof data.shoeSize === "number" ? data.shoeSize : null,
-      skills: data.skills || null,
-      hobbies: data.hobbies || null,
-      qualifications: data.qualifications || null,
-      career: data.career || null,
-      category: data.category || null,
-      birthplace: data.birthplace || null,
-      address: data.address || null,
-      representativeWork: data.representativeWork || null,
-      lineUserId: data.lineUserId || null,
-      profileImage: data.profileImage || null,
-      resume: data.resume || null,
-      nearestStation: data.nearestStation || null,
-      status: data.status,
-      note: data.note || null,
-    },
-  })
+
+  // メールアドレスは1人につき1つ（本番DBは一意制約あり）。重複したらエラー画面にせず、欄の下に理由を返す
+  if (data.email) {
+    const existing = await prisma.talent.findFirst({ where: { email: data.email }, select: { id: true } })
+    if (existing) {
+      return { error: { email: [EMAIL_TAKEN_MESSAGE] } }
+    }
+  }
+
+  let talent
+  try {
+    talent = await prisma.talent.create({
+      data: {
+        lastName: data.lastName,
+        firstName: data.firstName,
+        lastNameKana: data.lastNameKana,
+        firstNameKana: data.firstNameKana,
+        name: data.lastName + " " + data.firstName,
+        nameKana: data.lastNameKana + " " + data.firstNameKana,
+        stageName: data.stageName || null,
+        nameRomaji: data.nameRomaji || null,
+        emailVerified: true,
+        email: data.email || null,
+        phone: data.phone || null,
+        gender: data.gender || null,
+        birthDate: data.birthDate ? new Date(data.birthDate) : null,
+        height: typeof data.height === "number" ? data.height : null,
+        bust: typeof data.bust === "number" ? data.bust : null,
+        waist: typeof data.waist === "number" ? data.waist : null,
+        hip: typeof data.hip === "number" ? data.hip : null,
+        shoeSize: typeof data.shoeSize === "number" ? data.shoeSize : null,
+        skills: data.skills || null,
+        hobbies: data.hobbies || null,
+        qualifications: data.qualifications || null,
+        career: data.career || null,
+        category: data.category || null,
+        birthplace: data.birthplace || null,
+        address: data.address || null,
+        representativeWork: data.representativeWork || null,
+        lineUserId: data.lineUserId || null,
+        profileImage: data.profileImage || null,
+        resume: data.resume || null,
+        nearestStation: data.nearestStation || null,
+        status: data.status,
+        note: data.note || null,
+      },
+    })
+  } catch (e) {
+    // 確認と登録のすき間に同じメールアドレスが登録された場合（同時に2回押した等）
+    if (isUniqueEmailError(e)) return { error: { email: [EMAIL_TAKEN_MESSAGE] } }
+    throw e
+  }
 
   await upsertSocialLinks(talent.id, data)
   await upsertBankAccount(talent.id, data)
@@ -229,6 +274,7 @@ export async function createTalent(formData: FormData) {
 }
 
 export async function updateTalent(id: string, formData: FormData) {
+  await requireAdmin()
   const raw = Object.fromEntries(formData)
   const parsed = talentBaseSchema.safeParse(raw)
 
@@ -237,41 +283,58 @@ export async function updateTalent(id: string, formData: FormData) {
   }
 
   const data = parsed.data
-  await prisma.talent.update({
-    where: { id },
-    data: {
-      lastName: data.lastName,
-      firstName: data.firstName,
-      lastNameKana: data.lastNameKana,
-      firstNameKana: data.firstNameKana,
-      name: data.lastName + " " + data.firstName,
-      nameKana: data.lastNameKana + " " + data.firstNameKana,
-      stageName: data.stageName || null,
-      nameRomaji: data.nameRomaji || null,
-      email: data.email || null,
-      phone: data.phone || null,
-      gender: data.gender || null,
-      birthDate: data.birthDate ? new Date(data.birthDate) : null,
-      height: typeof data.height === "number" ? data.height : null,
-      bust: typeof data.bust === "number" ? data.bust : null,
-      waist: typeof data.waist === "number" ? data.waist : null,
-      hip: typeof data.hip === "number" ? data.hip : null,
-      shoeSize: typeof data.shoeSize === "number" ? data.shoeSize : null,
-      skills: data.skills || null,
-      hobbies: data.hobbies || null,
-      qualifications: data.qualifications || null,
-      career: data.career || null,
-      category: data.category || null,
-      birthplace: data.birthplace || null,
-      address: data.address || null,
-      representativeWork: data.representativeWork || null,
-      lineUserId: data.lineUserId || null,
-      profileImage: data.profileImage || null,
-      nearestStation: data.nearestStation || null,
-      status: data.status,
-      note: data.note || null,
-    },
-  })
+
+  // 他のタレントと同じメールアドレスにはできない（自分自身は除く）。エラー画面にせず欄の下に理由を返す
+  if (data.email) {
+    const existing = await prisma.talent.findFirst({
+      where: { email: data.email, id: { not: id } },
+      select: { id: true },
+    })
+    if (existing) {
+      return { error: { email: [EMAIL_TAKEN_MESSAGE] } }
+    }
+  }
+
+  try {
+    await prisma.talent.update({
+      where: { id },
+      data: {
+        lastName: data.lastName,
+        firstName: data.firstName,
+        lastNameKana: data.lastNameKana,
+        firstNameKana: data.firstNameKana,
+        name: data.lastName + " " + data.firstName,
+        nameKana: data.lastNameKana + " " + data.firstNameKana,
+        stageName: data.stageName || null,
+        nameRomaji: data.nameRomaji || null,
+        email: data.email || null,
+        phone: data.phone || null,
+        gender: data.gender || null,
+        birthDate: data.birthDate ? new Date(data.birthDate) : null,
+        height: typeof data.height === "number" ? data.height : null,
+        bust: typeof data.bust === "number" ? data.bust : null,
+        waist: typeof data.waist === "number" ? data.waist : null,
+        hip: typeof data.hip === "number" ? data.hip : null,
+        shoeSize: typeof data.shoeSize === "number" ? data.shoeSize : null,
+        skills: data.skills || null,
+        hobbies: data.hobbies || null,
+        qualifications: data.qualifications || null,
+        career: data.career || null,
+        category: data.category || null,
+        birthplace: data.birthplace || null,
+        address: data.address || null,
+        representativeWork: data.representativeWork || null,
+        lineUserId: data.lineUserId || null,
+        profileImage: data.profileImage || null,
+        nearestStation: data.nearestStation || null,
+        status: data.status,
+        note: data.note || null,
+      },
+    })
+  } catch (e) {
+    if (isUniqueEmailError(e)) return { error: { email: [EMAIL_TAKEN_MESSAGE] } }
+    throw e
+  }
 
   await upsertSocialLinks(id, data)
   await upsertBankAccount(id, data)
@@ -281,6 +344,7 @@ export async function updateTalent(id: string, formData: FormData) {
 }
 
 export async function getTalentApplications(talentId: string) {
+  await verifyTalentAccess(talentId)
   return prisma.application.findMany({
     where: { talentId },
     include: {
@@ -292,6 +356,7 @@ export async function getTalentApplications(talentId: string) {
 }
 
 export async function getTalentForProfile(talentId: string) {
+  await verifyTalentAccess(talentId)
   return prisma.talent.findUnique({
     where: { id: talentId },
     select: {
@@ -308,6 +373,7 @@ export async function getTalentForProfile(talentId: string) {
 }
 
 export async function getTalentForSettings(talentId: string) {
+  await verifyTalentAccess(talentId)
   return prisma.talent.findUnique({
     where: { id: talentId },
     include: {
@@ -327,12 +393,29 @@ export async function getTalentByToken(token: string) {
 }
 
 export async function saveResumeUrl(talentId: string, url: string, source: "auto" | "manual" = "auto") {
+  await verifyTalentAccess(talentId)
   await prisma.talent.update({ where: { id: talentId }, data: { resume: url, resumeSource: source } })
   revalidatePath(`/admin/talents/${talentId}`)
   revalidatePath("/admin/talents")
 }
 
 export async function deleteTalent(id: string) {
+  await requireAdmin()
+  // 請求書と、支払い・返金があったオプション購入はお金の記録なので、残っていれば消さない
+  const [invoiceCount, paidPurchaseCount] = await Promise.all([
+    prisma.invoice.count({ where: { application: { talentId: id } } }),
+    prisma.optionPurchase.count({ where: { talentId: id, status: { in: ["PAID", "REFUNDED"] } } }),
+  ])
+  if (invoiceCount > 0 || paidPurchaseCount > 0) {
+    const reasons = [
+      invoiceCount > 0 ? `請求書が${invoiceCount}件` : null,
+      paidPurchaseCount > 0 ? `支払い済み・返金済みのオプション購入が${paidPurchaseCount}件` : null,
+    ].filter(Boolean)
+    return {
+      error: `${reasons.join("、")}あるため削除できません。やめたタレントは、編集で状態を「退会」にしてください。`,
+    }
+  }
+
   const [photos, works, applications, talent] = await Promise.all([
     prisma.talentPhoto.findMany({ where: { talentId: id }, select: { url: true } }),
     prisma.talentWork.findMany({ where: { talentId: id }, select: { imageUrl: true } }),
@@ -349,6 +432,8 @@ export async function deleteTalent(id: string) {
       await tx.schedule.deleteMany({ where: { applicationId: { in: appIds } } })
       await tx.application.deleteMany({ where: { talentId: id } })
     }
+    // 支払いまで進まなかったオプション購入（未払い・失敗）は一緒に消す（タレントと一緒には消えないDBの設定）
+    await tx.optionPurchase.deleteMany({ where: { talentId: id } })
     await tx.talent.delete({ where: { id } })
   })
 

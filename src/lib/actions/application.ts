@@ -1,5 +1,6 @@
 "use server"
 
+import { requireAdmin } from "@/lib/auth"
 import { revalidatePath, updateTag } from "next/cache"
 import { del } from "@vercel/blob"
 import { deleteFromStorage, isSupabaseStorageUrl } from "@/lib/supabase-storage"
@@ -18,6 +19,7 @@ function buildAppWhere(status?: string, jobId?: string, talentId?: string) {
 }
 
 export async function getApplicationCount(status?: string, jobId?: string, talentId?: string) {
+  await requireAdmin()
   return prisma.application.count({ where: buildAppWhere(status, jobId, talentId) })
 }
 
@@ -45,13 +47,15 @@ const APP_SELECT = {
     },
   },
   invoices: {
-    select: { id: true, status: true },
+    select: { id: true, status: true, freeeInvoiceNumber: true },
     where: { status: { not: "CANCELLED" } },
     take: 1,
   },
+  schedule: { select: { date: true, status: true } },
 } as const
 
 export async function getApplications(status?: string, jobId?: string, sort?: string, order?: string, page?: number, talentId?: string) {
+  await requireAdmin()
   const where = buildAppWhere(status, jobId, talentId)
   const sortOrder: "asc" | "desc" = order === "asc" ? "asc" : "desc"
   const pageSize = 50
@@ -94,6 +98,7 @@ export async function getApplications(status?: string, jobId?: string, sort?: st
 }
 
 export async function getApplication(id: string) {
+  await requireAdmin()
   return prisma.application.findUnique({
     where: { id },
     include: {
@@ -236,8 +241,21 @@ export async function createApplication(formData: FormData) {
 }
 
 const NOTIFY_STATUSES = new Set(["RESUME_SENT", "ACCEPTED", "REJECTED"])
+// 不合格・キャンセルにしたら、登録済みの予定（確定のもの）も「キャンセル」にする。
+// 完了・無断欠席は終わった記録なので変えない
+const SCHEDULE_CANCEL_STATUSES = new Set(["REJECTED", "CANCELLED"])
+
+async function cancelSchedulesOf(applicationIds: string[]) {
+  const res = await prisma.schedule.updateMany({
+    where: { applicationId: { in: applicationIds }, status: "CONFIRMED" },
+    data: { status: "CANCELLED" },
+  })
+  if (res.count > 0) revalidatePath("/admin/schedule")
+  return res.count
+}
 
 export async function updateApplicationStatus(id: string, status: string) {
+  await requireAdmin()
   const validStatuses = ["APPLIED", "RESUME_SENT", "ACCEPTED", "REJECTED", "AUTO_REJECTED", "CANCELLED"]
   if (!validStatuses.includes(status)) {
     return { error: "無効なステータスです" }
@@ -265,13 +283,16 @@ export async function updateApplicationStatus(id: string, status: string) {
     })
   }
 
+  const cancelledSchedules = SCHEDULE_CANCEL_STATUSES.has(status) ? await cancelSchedulesOf([id]) : 0
+
   revalidatePath("/admin/applications")
   updateTag("talents")
   updateTag("jobs")
-  return { success: true }
+  return { success: true, cancelledSchedules }
 }
 
 export async function bulkUpdateApplicationStatus(ids: string[], status: string) {
+  await requireAdmin()
   const validStatuses = ["APPLIED", "RESUME_SENT", "ACCEPTED", "REJECTED", "AUTO_REJECTED", "CANCELLED"]
   if (!validStatuses.includes(status)) return { error: "無効なステータスです" }
   if (ids.length === 0) return { error: "対象が選択されていません" }
@@ -284,42 +305,65 @@ export async function bulkUpdateApplicationStatus(ids: string[], status: string)
       decidedAt: decidedStatuses.includes(status) ? new Date() : null,
     },
   })
+  const cancelledSchedules = SCHEDULE_CANCEL_STATUSES.has(status) ? await cancelSchedulesOf(ids) : 0
   revalidatePath("/admin/applications")
   updateTag("talents")
   updateTag("jobs")
-  return { success: true, count: ids.length }
+  return { success: true, count: ids.length, cancelledSchedules }
 }
 
+// 請求書はお金の記録なので、請求書がある応募は消さない（取消の請求書も含む）
+const INVOICE_BLOCK_MESSAGE = "請求書がある応募は削除できません。選考をやめる場合は、状況を「キャンセル」にしてください。"
+
 export async function bulkDeleteApplications(ids: string[]) {
+  await requireAdmin()
   if (ids.length === 0) return { error: "対象が選択されていません" }
+  const withInvoice = await prisma.application.count({ where: { id: { in: ids }, invoices: { some: {} } } })
+  if (withInvoice > 0) {
+    return { error: `選んだうち${withInvoice}件に請求書があるため、削除しませんでした。${INVOICE_BLOCK_MESSAGE}` }
+  }
   const submissions = await prisma.applicationSubmission.findMany({
     where: { applicationId: { in: ids } },
     select: { fileUrl: true },
   })
-  await prisma.application.deleteMany({ where: { id: { in: ids } } })
+  // 予定は応募と一緒には消えない（DBの設定）ので、先に消す
+  await prisma.$transaction([
+    prisma.schedule.deleteMany({ where: { applicationId: { in: ids } } }),
+    prisma.application.deleteMany({ where: { id: { in: ids } } }),
+  ])
   const allUrls = submissions.map((s) => s.fileUrl).filter((url): url is string => !!url)
   const vercelUrls = allUrls.filter((u) => u.includes("blob.vercel-storage.com"))
   const supabaseUrls = allUrls.filter((u) => isSupabaseStorageUrl(u))
   if (vercelUrls.length > 0) await del(vercelUrls).catch(() => {})
   if (supabaseUrls.length > 0) await deleteFromStorage(supabaseUrls).catch(() => {})
   revalidatePath("/admin/applications")
+  revalidatePath("/admin/schedule")
   updateTag("talents")
   updateTag("jobs")
   return { success: true, count: ids.length }
 }
 
 export async function deleteApplication(id: string) {
+  await requireAdmin()
+  if ((await prisma.invoice.count({ where: { applicationId: id } })) > 0) {
+    return { error: INVOICE_BLOCK_MESSAGE }
+  }
   const submissions = await prisma.applicationSubmission.findMany({
     where: { applicationId: id },
     select: { fileUrl: true },
   })
-  await prisma.application.delete({ where: { id } })
+  // 予定は応募と一緒には消えない（DBの設定）ので、先に消す
+  await prisma.$transaction([
+    prisma.schedule.deleteMany({ where: { applicationId: id } }),
+    prisma.application.delete({ where: { id } }),
+  ])
   const allUrls = submissions.map((s) => s.fileUrl).filter((url): url is string => !!url)
   const vercelUrls = allUrls.filter((u) => u.includes("blob.vercel-storage.com"))
   const supabaseUrls = allUrls.filter((u) => isSupabaseStorageUrl(u))
   if (vercelUrls.length > 0) await del(vercelUrls).catch(() => {})
   if (supabaseUrls.length > 0) await deleteFromStorage(supabaseUrls).catch(() => {})
   revalidatePath("/admin/applications")
+  revalidatePath("/admin/schedule")
   updateTag("talents")
   updateTag("jobs")
   return { success: true }

@@ -37,35 +37,35 @@ export function SearchableSelect({
     >
       <Combobox.InputGroup
         className={cn(
-          "flex items-center rounded-lg border border-input bg-transparent focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50 dark:bg-input/30",
+          "flex h-9 items-center rounded-lg border border-neutral-300 bg-white transition-colors hover:border-neutral-400 focus-within:border-neutral-950 focus-within:ring-2 focus-within:ring-neutral-950/10",
           className
         )}
       >
         <Combobox.Input
           placeholder={placeholder}
-          className="h-8 w-full bg-transparent px-2.5 text-sm outline-none placeholder:text-muted-foreground"
+          className="h-full w-full bg-transparent px-3 text-base text-neutral-950 outline-none placeholder:text-neutral-400 sm:text-sm"
         />
         {value && (
-          <Combobox.Clear className="flex shrink-0 items-center justify-center px-1 text-muted-foreground hover:text-foreground">
+          <Combobox.Clear aria-label="選択を外す" className="flex shrink-0 items-center justify-center px-1 text-neutral-400 hover:text-neutral-950">
             <XIcon className="size-3.5" />
           </Combobox.Clear>
         )}
-        <Combobox.Trigger className="flex shrink-0 items-center justify-center pr-2 text-muted-foreground">
+        <Combobox.Trigger className="flex shrink-0 items-center justify-center pr-2.5 text-neutral-500">
           <ChevronDownIcon className="size-4" />
         </Combobox.Trigger>
       </Combobox.InputGroup>
 
       <Combobox.Portal>
         <Combobox.Positioner sideOffset={4} className="isolate z-50">
-          <Combobox.Popup className="w-(--anchor-width) max-h-60 overflow-y-auto rounded-lg bg-popover text-popover-foreground shadow-md ring-1 ring-foreground/10 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
-            <Combobox.Empty className="py-6 text-center text-sm text-muted-foreground">
-              該当なし
+          <Combobox.Popup className="w-(--anchor-width) max-h-64 overflow-y-auto rounded-lg border border-neutral-200 bg-white text-neutral-950 shadow-xl data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95">
+            <Combobox.Empty className="py-6 text-center text-sm text-neutral-500">
+              見つかりませんでした
             </Combobox.Empty>
             <Combobox.List className="p-1">
               {(item: ComboboxOption) => (
                 <Combobox.Item
                   value={item}
-                  className="relative flex cursor-default items-center rounded-md py-1.5 pr-8 pl-2 text-sm outline-hidden select-none data-highlighted:bg-accent data-highlighted:text-accent-foreground"
+                  className="relative flex cursor-default items-center rounded-md py-2 pr-8 pl-3 text-sm outline-hidden select-none data-highlighted:bg-neutral-100"
                 >
                   {item.label}
                   <Combobox.ItemIndicator className="pointer-events-none absolute right-2 flex size-4 items-center justify-center">

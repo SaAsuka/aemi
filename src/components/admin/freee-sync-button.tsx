@@ -1,46 +1,74 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useTransition } from "react"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 import { RefreshCw } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { syncFreeePartners } from "@/lib/actions/production-company"
+import { BTN_SECONDARY } from "@/components/admin/styles"
 
-export function FreeeSyncButton() {
+// freee の取引先のうち、まだ登録されていない会社を制作会社として取り込む
+export function FreeeSyncButton({
+  connected,
+  className = BTN_SECONDARY,
+}: {
+  // freee と連携しているか（していなければ、押したときに設定ページへ案内する）
+  connected: boolean
+  className?: string
+}) {
   const [isPending, startTransition] = useTransition()
-  const [message, setMessage] = useState<string | null>(null)
   const router = useRouter()
 
   function handleSync() {
-    setMessage(null)
+    if (!connected) {
+      toast.error("freeeとまだ連携していません", {
+        description: "設定ページでfreeeと連携すると、取引先を取り込めるようになります。",
+        action: { label: "設定を開く", onClick: () => router.push("/admin/settings") },
+      })
+      return
+    }
     startTransition(async () => {
       const result = await syncFreeePartners()
       if (result.error) {
-        setMessage(result.error)
-      } else {
-        setMessage(`同期完了: ${result.created}件追加（Freee取引先: ${result.synced}件）`)
+        toast.error("freeeから取り込めませんでした", {
+          description: result.error.includes("連携していません")
+            ? "freeeとの連携が切れています。設定ページで連携し直してください。"
+            : "少し時間をおいて、もう一度お試しください。",
+        })
+        return
+      }
+      const linked = result.linked ?? 0
+      if (result.created > 0 || linked > 0) {
+        toast.success(
+          result.created > 0 ? `freeeから${result.created}社を取り込みました` : `${linked}社をfreeeの取引先と結び付けました`,
+          {
+            description: [
+              result.created > 0 ? `まだ登録されていなかった${result.created}社を追加しました。` : null,
+              linked > 0 ? `同じ名前ですでに登録されていた${linked}社は、新しく作らずにfreeeと結び付けました。` : null,
+            ]
+              .filter(Boolean)
+              .join(""),
+          }
+        )
         router.refresh()
+      } else {
+        toast.success("新しく取り込む会社はありませんでした", {
+          description: `freeeの取引先 ${result.synced}社は、すべて登録済みです。`,
+        })
       }
     })
   }
 
   return (
-    <div className="flex items-center gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={handleSync}
-        disabled={isPending}
-        className="gap-1"
-      >
-        <RefreshCw className={`h-3.5 w-3.5 ${isPending ? "animate-spin" : ""}`} />
-        {isPending ? "同期中..." : "Freee同期"}
-      </Button>
-      {message && (
-        <span className={`text-xs ${message.includes("失敗") || message.includes("未連携") ? "text-destructive" : "text-muted-foreground"}`}>
-          {message}
-        </span>
-      )}
-    </div>
+    <button
+      type="button"
+      onClick={handleSync}
+      disabled={isPending}
+      title="freeeの取引先のうち、まだ登録されていない会社を追加します"
+      className={className}
+    >
+      <RefreshCw className={isPending ? "animate-spin" : undefined} aria-hidden="true" />
+      {isPending ? "取り込み中…" : "freeeから取り込む"}
+    </button>
   )
 }

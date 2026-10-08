@@ -4,13 +4,20 @@ import { useRef, useEffect } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useTransition } from "react"
 import { Input } from "@/components/ui/input"
+import { cn } from "@/lib/utils"
 
 export function SearchForm({
   placeholder,
   defaultValue,
+  className,
+  id,
 }: {
   placeholder: string
   defaultValue?: string
+  // id を固定すると、ラベルと結び付き、自動で振られる id のずれ（ハイドレーション警告）も防げる
+  id?: string
+  // 見た目を画面ごとに変えたいとき用（未指定なら従来どおり）
+  className?: string
 }) {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -40,10 +47,12 @@ export function SearchForm({
 
   return (
     <Input
+      id={id}
       placeholder={placeholder}
       defaultValue={defaultValue}
       onChange={(e) => handleSearch(e.target.value)}
-      className={`max-w-sm ${isPending ? "opacity-50" : ""}`}
+      aria-busy={isPending}
+      className={cn("max-w-sm", isPending && "opacity-50", className)}
     />
   )
 }

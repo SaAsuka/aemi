@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
+import { Check } from "lucide-react"
 import {
   Table,
   TableBody,
@@ -18,9 +19,9 @@ import { SubmissionLinks } from "@/components/admin/submission-links"
 import { BulkActionsBar } from "@/components/admin/bulk-actions-bar"
 import { SortableHeader } from "@/components/admin/sortable-header"
 import { Pagination } from "@/components/admin/pagination"
-import { blobProxyUrl } from "@/lib/utils/blob"
 import { InvoiceCreateDialog } from "@/components/admin/invoice-create-dialog"
-import { Badge } from "@/components/ui/badge"
+import { TalentAvatar } from "@/components/admin/talent-avatar"
+import { INVOICE_STATUS_LABELS, INVOICE_TONE, StatusChip } from "@/components/admin/status-chip"
 
 type AppRow = {
   id: string
@@ -50,12 +51,63 @@ type AppRow = {
     externalUrl: string | null
     fileName: string | null
   }[]
-  invoices: { id: string; status: string }[]
+  invoices: { id: string; status: string; freeeInvoiceNumber: string | null }[]
+  schedule?: { date: Date; status?: string } | null
 }
 
 type ProductionCompanyOption = {
   id: string
   companyName: string
+}
+
+// 表の見出しはスクロールしても画面上端に残す。上端の余白（レイアウトの p-3 / sm:p-6）ぶん上にずらす
+const HEAD = "-top-3 h-11 bg-neutral-50 px-3 text-xs font-medium text-neutral-500 sm:-top-6"
+const CELL = "px-3 py-3 align-middle"
+const PAGER_BUTTON = "size-8 rounded-lg border-neutral-300 bg-white hover:bg-neutral-50"
+const INVOICE_BUTTON = "h-7 rounded-md border-neutral-300 bg-white text-xs text-neutral-800 hover:border-neutral-400 hover:bg-neutral-50"
+
+// 残り日数などの注意書きの色（オレンジ＝3日以内 → 赤、黄＝1週間以内 → 黄）
+function noteTone(className: string) {
+  return /red|orange/.test(className) ? "font-medium text-red-600" : "text-yellow-700"
+}
+
+function Checkbox({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
+  return (
+    <span className="relative flex size-5 shrink-0 items-center justify-center">
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange}
+        aria-label={label}
+        className="peer absolute inset-0 cursor-pointer appearance-none rounded-[5px] border border-neutral-400 bg-white checked:border-neutral-950 checked:bg-neutral-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950/30"
+      />
+      <Check className="pointer-events-none relative size-3.5 text-white opacity-0 peer-checked:opacity-100" aria-hidden="true" />
+    </span>
+  )
+}
+
+// 締切・オーディション・撮影を1か所にまとめて表示する
+function Schedule({ app }: { app: AppRow }) {
+  const rows: { label: string; value: string; note?: { label: string; className: string } | null }[] = []
+  if (app.job.deadline) {
+    rows.push({ label: "締切", value: formatShortDeadline(app.job.deadline), note: deadlineFollowUpStatus(app.job.deadline) })
+  }
+  const audition = firstShortDateByType(app.job.dates, "AUDITION")
+  if (audition) rows.push({ label: "オーディション", value: audition, note: dateCountdown(firstRawDateByType(app.job.dates, "AUDITION")) })
+  const shooting = firstShortDateByType(app.job.dates, "SHOOTING")
+  if (shooting) rows.push({ label: "撮影", value: shooting, note: dateCountdown(firstRawDateByType(app.job.dates, "SHOOTING")) })
+
+  if (rows.length === 0) return <span className="text-xs text-neutral-400">—</span>
+  return (
+    <span className="block space-y-0.5 text-xs">
+      {rows.map((r) => (
+        <span key={r.label} className="block whitespace-nowrap">
+          <span className="text-neutral-500">{r.label}</span> <span className="tabular-nums text-neutral-950">{r.value}</span>
+          {r.note && <span className={`ml-1.5 ${noteTone(r.note.className)}`}>{r.note.label}</span>}
+        </span>
+      ))}
+    </span>
+  )
 }
 
 export function ApplicationTable({
@@ -69,18 +121,18 @@ export function ApplicationTable({
 }) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
 
-  const allChecked = applications.length > 0 && applications.every(a => selectedIds.has(a.id))
+  const allChecked = applications.length > 0 && applications.every((a) => selectedIds.has(a.id))
 
   function toggleAll() {
     if (allChecked) {
       setSelectedIds(new Set())
     } else {
-      setSelectedIds(new Set(applications.map(a => a.id)))
+      setSelectedIds(new Set(applications.map((a) => a.id)))
     }
   }
 
   function toggleOne(id: string) {
-    setSelectedIds(prev => {
+    setSelectedIds((prev) => {
       const next = new Set(prev)
       if (next.has(id)) next.delete(id)
       else next.add(id)
@@ -88,151 +140,151 @@ export function ApplicationTable({
     })
   }
 
+  const invoice = (app: AppRow) =>
+    app.status === "ACCEPTED" ? (
+      <span className="flex flex-wrap items-center gap-1.5">
+        {app.invoices[0] && (
+          <StatusChip
+            tone={INVOICE_TONE[app.invoices[0].status] ?? "gray"}
+            label={`請求書 ${INVOICE_STATUS_LABELS[app.invoices[0].status] ?? app.invoices[0].status}`}
+          />
+        )}
+        <InvoiceCreateDialog
+          applicationId={app.id}
+          jobTitle={app.job.title}
+          jobFee={app.job.fee}
+          talentName={app.talent.name}
+          productionCompanies={productionCompanies}
+          existingInvoice={app.invoices[0] ?? null}
+          triggerClassName={INVOICE_BUTTON}
+        />
+      </span>
+    ) : (
+      <span className="text-xs text-neutral-400" title="合格した応募だけ請求書を作れます">
+        —
+      </span>
+    )
+
+  const statusSelect = (app: AppRow) => (
+    <ApplicationStatusSelect
+      applicationId={app.id}
+      currentStatus={app.status}
+      scheduleDate={app.schedule?.date ?? null}
+      scheduleStatus={app.schedule?.status ?? null}
+      talentName={app.talent.name}
+      jobTitle={app.job.title}
+    />
+  )
+
+  if (applications.length === 0) return null
+
   return (
     <>
-      <BulkActionsBar
-        selectedIds={Array.from(selectedIds)}
-        onClear={() => setSelectedIds(new Set())}
-      />
-      <Table className="table-fixed w-full text-xs">
-        <TableHeader>
-          <TableRow>
-            <TableHead className="w-7 px-1">
-              <input
-                type="checkbox"
-                checked={allChecked}
-                onChange={toggleAll}
-                className="h-3.5 w-3.5 rounded border-gray-300"
-              />
-            </TableHead>
-            <SortableHeader column="talent" label="タレント" className="w-[90px] px-2" />
-            <SortableHeader column="job" label="案件" className="w-[280px] px-2" />
-            <TableHead className="hidden sm:table-cell w-[72px] px-2">提出物</TableHead>
-            <TableHead className="hidden sm:table-cell w-[72px] px-2">締切日</TableHead>
-            <TableHead className="hidden md:table-cell w-[52px] px-2">オーディション</TableHead>
-            <TableHead className="hidden md:table-cell w-[52px] px-2">撮影</TableHead>
-            <SortableHeader column="status" label="ステータス" className="w-[108px] px-2" />
-            <TableHead className="hidden lg:table-cell w-[90px] px-2">請求書</TableHead>
-            <TableHead className="w-9 px-1" />
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {applications.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={10} className="text-center text-muted-foreground">
-                データがありません
-              </TableCell>
+      {/* 広い画面：表 */}
+      <div className="hidden xl:block">
+        <Table>
+          <TableHeader className="[&_tr]:border-neutral-200">
+            <TableRow className="hover:bg-transparent">
+              <TableHead className={`${HEAD} w-12 pl-5`}>
+                <Checkbox checked={allChecked} onChange={toggleAll} label="このページの応募をすべて選ぶ" />
+              </TableHead>
+              <SortableHeader column="talent" label="タレント" className={HEAD} />
+              <SortableHeader column="job" label="案件" className={HEAD} />
+              <TableHead className={HEAD}>日程</TableHead>
+              <TableHead className={HEAD}>提出物</TableHead>
+              <SortableHeader column="status" label="選考の状況" className={HEAD} />
+              <TableHead className={HEAD}>請求書</TableHead>
+              <TableHead className={`${HEAD} w-10 pr-5`}>
+                <span className="sr-only">その他の操作</span>
+              </TableHead>
             </TableRow>
-          ) : (
-            applications.map((app) => (
-              <TableRow key={app.id} className={selectedIds.has(app.id) ? "bg-primary/5" : ""}>
-                <TableCell className="px-1 py-1.5">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.has(app.id)}
-                    onChange={() => toggleOne(app.id)}
-                    className="h-3.5 w-3.5 rounded border-gray-300"
-                  />
-                </TableCell>
-                <TableCell className="truncate px-2 py-1.5">
-                  <Link
-                    href={`/admin/talents/${app.talent.id}`}
-                    className="inline-flex items-center gap-1 hover:underline min-w-0"
-                  >
-                    {app.talent.profileImage ? (
-                      <img src={blobProxyUrl(app.talent.profileImage)} alt="" className="h-5 w-5 shrink-0 rounded-full object-cover" />
-                    ) : (
-                      <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-muted text-[10px]">{app.talent.name.charAt(0)}</span>
-                    )}
-                    <span className="truncate">{app.talent.name}</span>
-                  </Link>
-                </TableCell>
-                <TableCell className="truncate px-2 py-1.5" title={app.job.title}>
-                  <Link
-                    href={`/admin/jobs/${app.job.id}`}
-                    className="hover:underline"
-                  >
+          </TableHeader>
+          <TableBody>
+            {applications.map((app) => {
+              const checked = selectedIds.has(app.id)
+              return (
+                <TableRow
+                  key={app.id}
+                  className={`border-neutral-100 ${checked ? "bg-neutral-50" : "hover:bg-neutral-50/60"}`}
+                >
+                  <TableCell className={`${CELL} pl-5`}>
+                    <Checkbox checked={checked} onChange={() => toggleOne(app.id)} label={`${app.talent.name}さんの応募を選ぶ`} />
+                  </TableCell>
+                  <TableCell className={CELL}>
+                    <Link
+                      href={`/admin/talents/${app.talent.id}`}
+                      className="flex items-center gap-2.5 text-sm font-medium text-neutral-950 underline-offset-4 hover:underline"
+                    >
+                      <TalentAvatar url={app.talent.profileImage} name={app.talent.name} className="size-8 text-xs" />
+                      <span className="whitespace-nowrap">{app.talent.name}</span>
+                    </Link>
+                  </TableCell>
+                  <TableCell className={`${CELL} min-w-[14rem] max-w-[20rem] whitespace-normal`}>
+                    <Link href={`/admin/jobs/${app.job.id}`} className="text-sm text-neutral-950 underline-offset-4 hover:underline">
+                      {app.job.title}
+                    </Link>
+                  </TableCell>
+                  <TableCell className={CELL}>
+                    <Schedule app={app} />
+                  </TableCell>
+                  <TableCell className={`${CELL} max-w-[10rem] whitespace-normal`}>
+                    <SubmissionLinks submissions={app.submissions} />
+                  </TableCell>
+                  <TableCell className={CELL}>
+                    <div className="w-32">{statusSelect(app)}</div>
+                  </TableCell>
+                  <TableCell className={CELL}>{invoice(app)}</TableCell>
+                  <TableCell className={`${CELL} pr-5`}>
+                    <ApplicationRowActions applicationId={app.id} talent={app.talent} />
+                  </TableCell>
+                </TableRow>
+              )
+            })}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* スマホ・タブレット・狭いPC：カード */}
+      <div className="xl:hidden">
+        <label className="flex cursor-pointer items-center gap-3 border-b border-neutral-100 px-4 py-2.5 text-xs text-neutral-600 sm:px-5">
+          <Checkbox checked={allChecked} onChange={toggleAll} label="このページの応募をすべて選ぶ" />
+          このページの応募をすべて選ぶ
+        </label>
+        <ul className="divide-y divide-neutral-100">
+          {applications.map((app) => {
+            const checked = selectedIds.has(app.id)
+            return (
+              <li key={app.id} className={`flex gap-3 px-4 py-4 sm:px-5 ${checked ? "bg-neutral-50" : ""}`}>
+                <div className="pt-1.5">
+                  <Checkbox checked={checked} onChange={() => toggleOne(app.id)} label={`${app.talent.name}さんの応募を選ぶ`} />
+                </div>
+                <div className="min-w-0 flex-1 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <Link href={`/admin/talents/${app.talent.id}`} className="flex min-w-0 items-center gap-2.5">
+                      <TalentAvatar url={app.talent.profileImage} name={app.talent.name} className="size-9 text-xs" />
+                      <span className="truncate text-sm font-medium text-neutral-950">{app.talent.name}</span>
+                    </Link>
+                    <ApplicationRowActions applicationId={app.id} talent={app.talent} />
+                  </div>
+                  <Link href={`/admin/jobs/${app.job.id}`} className="block text-sm leading-snug text-neutral-950 underline-offset-4 hover:underline">
                     {app.job.title}
                   </Link>
-                </TableCell>
-                <TableCell className="hidden sm:table-cell px-2 py-1.5">
-                  <SubmissionLinks submissions={app.submissions} />
-                </TableCell>
-                <TableCell className="hidden sm:table-cell px-2 py-1.5 whitespace-nowrap">
-                  {app.job.deadline ? (
-                    <div className="flex flex-col gap-0.5">
-                      <span>{formatShortDeadline(app.job.deadline)}</span>
-                      {(() => {
-                        const fs = deadlineFollowUpStatus(app.job.deadline)
-                        return fs ? <span className={`text-[10px] ${fs.className}`}>{fs.label}</span> : null
-                      })()}
-                    </div>
-                  ) : "−"}
-                </TableCell>
-                <TableCell className="hidden md:table-cell px-2 py-1.5 whitespace-nowrap">
-                  {(() => {
-                    const label = firstShortDateByType(app.job.dates, "AUDITION")
-                    if (!label) return "−"
-                    const cd = dateCountdown(firstRawDateByType(app.job.dates, "AUDITION"))
-                    return (
-                      <div className="flex flex-col gap-0.5">
-                        <span>{label}</span>
-                        {cd && <span className={`text-[10px] ${cd.className}`}>{cd.label}</span>}
-                      </div>
-                    )
-                  })()}
-                </TableCell>
-                <TableCell className="hidden md:table-cell px-2 py-1.5 whitespace-nowrap">
-                  {(() => {
-                    const label = firstShortDateByType(app.job.dates, "SHOOTING")
-                    if (!label) return "−"
-                    const cd = dateCountdown(firstRawDateByType(app.job.dates, "SHOOTING"))
-                    return (
-                      <div className="flex flex-col gap-0.5">
-                        <span>{label}</span>
-                        {cd && <span className={`text-[10px] ${cd.className}`}>{cd.label}</span>}
-                      </div>
-                    )
-                  })()}
-                </TableCell>
-                <TableCell className="px-2 py-1.5">
-                  <ApplicationStatusSelect
-                    applicationId={app.id}
-                    currentStatus={app.status}
-                    talentName={app.talent.name}
-                    jobTitle={app.job.title}
-                  />
-                </TableCell>
-                <TableCell className="hidden lg:table-cell px-2 py-1.5">
-                  {app.status === "ACCEPTED" ? (
-                    <div className="flex flex-col items-start gap-0.5">
-                      {app.invoices.length > 0 && (
-                        <Badge variant="outline" className="text-green-700 border-green-300 text-[10px]">発行済</Badge>
-                      )}
-                      <InvoiceCreateDialog
-                        applicationId={app.id}
-                        jobTitle={app.job.title}
-                        jobFee={app.job.fee}
-                        talentName={app.talent.name}
-                        productionCompanies={productionCompanies}
-                      />
-                    </div>
-                  ) : (
-                    <span className="text-muted-foreground">-</span>
-                  )}
-                </TableCell>
-                <TableCell className="px-1 py-1.5">
-                  <ApplicationRowActions
-                    applicationId={app.id}
-                    talent={app.talent}
-                  />
-                </TableCell>
-              </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
-      <Pagination total={totalCount} />
+                  <Schedule app={app} />
+                  {app.submissions.length > 0 && <SubmissionLinks submissions={app.submissions} />}
+                  <div className="flex flex-wrap items-center gap-2 pt-0.5">
+                    <div className="w-36">{statusSelect(app)}</div>
+                    {app.status === "ACCEPTED" && invoice(app)}
+                  </div>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      </div>
+
+      <Pagination total={totalCount} className="border-t border-neutral-200 px-4 sm:px-5" buttonClassName={PAGER_BUTTON} />
+
+      <BulkActionsBar selectedIds={Array.from(selectedIds)} onClear={() => setSelectedIds(new Set())} />
     </>
   )
 }

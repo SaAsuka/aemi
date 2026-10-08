@@ -6,7 +6,8 @@ import { NewScheduleDialog } from "@/components/admin/new-schedule-dialog"
 import { ScheduleFilters } from "@/components/admin/schedule-filters"
 import { ScheduleCalendar } from "@/components/admin/schedule-calendar"
 import { prisma } from "@/lib/db"
-import { Button } from "@/components/ui/button"
+import { Plus } from "lucide-react"
+import { BTN_PRIMARY, PANEL } from "@/components/admin/styles"
 import type { ScheduleItem } from "@/lib/utils/schedule"
 
 async function ScheduleFiltersData() {
@@ -31,7 +32,7 @@ async function ScheduleDialogData() {
     },
     orderBy: { appliedAt: "desc" },
   })
-  return <NewScheduleDialog applications={acceptedApplications} />
+  return <NewScheduleDialog applications={acceptedApplications} className={`${BTN_PRIMARY} h-10 w-full sm:h-9 sm:w-auto`} />
 }
 
 export default async function SchedulePage({
@@ -52,6 +53,7 @@ export default async function SchedulePage({
     endTime: s.endTime,
     location: s.location,
     status: s.status,
+    note: s.note,
     talentId: s.application.talent.id,
     talentName: s.application.talent.name,
     jobId: s.application.job.id,
@@ -59,19 +61,30 @@ export default async function SchedulePage({
   }))
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <h1 className="text-xl sm:text-2xl font-bold">スケジュール管理</h1>
-        <Suspense fallback={<Button variant="outline" size="sm" disabled>新規登録</Button>}>
+    <div className="space-y-6 pb-4">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-xl font-semibold tracking-tight text-neutral-950 sm:text-2xl">スケジュール</h1>
+          <p className="mt-1 text-sm text-neutral-500">合格したタレントの撮影などの予定です。予定を押すと、内容の確認と状況の変更ができます。</p>
+        </div>
+        <Suspense
+          fallback={
+            <button type="button" disabled className={`${BTN_PRIMARY} h-10 w-full sm:h-9 sm:w-auto`}>
+              <Plus aria-hidden="true" />
+              予定を登録
+            </button>
+          }
+        >
           <ScheduleDialogData />
         </Suspense>
       </div>
 
-      <MonthNav currentMonth={currentMonth} />
-
-      <Suspense fallback={<div className="h-10 animate-pulse rounded bg-muted" />}>
-        <ScheduleFiltersData />
-      </Suspense>
+      <div className={`${PANEL} space-y-4 p-4 sm:p-5`}>
+        <MonthNav currentMonth={currentMonth} />
+        <Suspense fallback={<div className="h-14 animate-pulse rounded-lg bg-neutral-100" />}>
+          <ScheduleFiltersData />
+        </Suspense>
+      </div>
 
       <ScheduleCalendar
         schedules={items}

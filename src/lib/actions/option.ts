@@ -1,5 +1,6 @@
 "use server"
 
+import { requireAdmin } from "@/lib/auth"
 import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
 import { optionSchema } from "@/lib/validations/option"
@@ -13,10 +14,12 @@ function buildOptionWhere(search?: string, status?: string) {
 }
 
 export async function getOptionCount(search?: string, status?: string) {
+  await requireAdmin()
   return prisma.option.count({ where: buildOptionWhere(search, status) })
 }
 
 export async function getOptions(search?: string, status?: string, page?: number) {
+  await requireAdmin()
   const where = buildOptionWhere(search, status)
   const pageSize = 50
   const currentPage = page ?? 1
@@ -33,6 +36,7 @@ export async function getOptions(search?: string, status?: string, page?: number
 }
 
 export async function getOption(id: string) {
+  await requireAdmin()
   return prisma.option.findUnique({
     where: { id },
     include: {
@@ -107,6 +111,7 @@ async function archiveStripeProduct(productId: string) {
 }
 
 export async function createOption(formData: FormData) {
+  await requireAdmin()
   const raw = Object.fromEntries(formData)
   const parsed = optionSchema.safeParse(raw)
 
@@ -159,6 +164,7 @@ export async function createOption(formData: FormData) {
 }
 
 export async function updateOption(id: string, formData: FormData) {
+  await requireAdmin()
   const raw = Object.fromEntries(formData)
   const parsed = optionSchema.safeParse(raw)
 
@@ -222,6 +228,7 @@ export async function updateOption(id: string, formData: FormData) {
 }
 
 export async function deleteOption(id: string) {
+  await requireAdmin()
   const paidCount = await prisma.optionPurchase.count({
     where: { optionId: id, status: "PAID" },
   })

@@ -2,12 +2,14 @@
 
 import { revalidatePath, updateTag } from "next/cache"
 import { prisma } from "@/lib/db"
+import { requireAdmin } from "@/lib/auth"
 import {
   createFreeeInvoice,
   isFreeeConnected,
 } from "@/lib/freee"
 
 export async function getInvoices(status?: string) {
+  await requireAdmin()
   const where: Record<string, unknown> = {}
   if (status && status !== "ALL") where.status = status
 
@@ -35,6 +37,7 @@ export async function getInvoices(status?: string) {
 }
 
 export async function getInvoice(id: string) {
+  await requireAdmin()
   return prisma.invoice.findUnique({
     where: { id },
     include: {
@@ -61,25 +64,10 @@ type CreateInvoiceInput = {
 }
 
 export async function createInvoice(input: CreateInvoiceInput) {
+  await requireAdmin()
   const connected = await isFreeeConnected()
   if (!connected) {
-    return { error: "Freee未連携です。設定画面から連携してください。" }
-  }
-
-  const existing = await prisma.invoice.findMany({
-    where: {
-      applicationId: input.applicationId,
-      status: { not: "CANCELLED" },
-    },
-  })
-  if (existing.length > 0) {
-    await prisma.invoice.updateMany({
-      where: {
-        applicationId: input.applicationId,
-        status: { not: "CANCELLED" },
-      },
-      data: { status: "CANCELLED" },
-    })
+    return { error: "freeeと連携していません。設定ページでfreeeと連携してください。" }
   }
 
   const company = await prisma.productionCompany.findUnique({
@@ -91,7 +79,7 @@ export async function createInvoice(input: CreateInvoiceInput) {
 
   const freeePartnerId = company.freeePartnerId
   if (!freeePartnerId) {
-    return { error: "この制作会社はFreee未連携です。制作会社管理から再登録してください。" }
+    return { error: "この制作会社はfreeeの取引先と結び付いていません。制作会社のページで「freeeと結び付ける」を押してから、もう一度発行してください。" }
   }
 
   try {
@@ -105,21 +93,29 @@ export async function createInvoice(input: CreateInvoiceInput) {
       taxRate: input.taxRate,
     })
 
-    const invoice = await prisma.invoice.create({
-      data: {
-        applicationId: input.applicationId,
-        productionCompanyId: input.productionCompanyId,
-        subject: input.subject,
-        description: input.description,
-        amount: input.amount,
-        taxRate: input.taxRate,
-        issueDate: new Date(input.issueDate),
-        dueDate: new Date(input.dueDate),
-        freeeInvoiceId: freeeResult.invoice.id,
-        freeeInvoiceNumber: freeeResult.invoice.invoice_number,
-        status: "ISSUED",
-      },
-    })
+    // freeeで発行できてから、前の請求書（取消以外）を取消にして新しい請求書を登録する。
+    // 先に取消にすると、発行に失敗したとき請求書が1枚も無い状態になるため
+    const [, invoice] = await prisma.$transaction([
+      prisma.invoice.updateMany({
+        where: { applicationId: input.applicationId, status: { not: "CANCELLED" } },
+        data: { status: "CANCELLED" },
+      }),
+      prisma.invoice.create({
+        data: {
+          applicationId: input.applicationId,
+          productionCompanyId: input.productionCompanyId,
+          subject: input.subject,
+          description: input.description,
+          amount: input.amount,
+          taxRate: input.taxRate,
+          issueDate: new Date(input.issueDate),
+          dueDate: new Date(input.dueDate),
+          freeeInvoiceId: freeeResult.invoice.id,
+          freeeInvoiceNumber: freeeResult.invoice.invoice_number,
+          status: "ISSUED",
+        },
+      }),
+    ])
 
     revalidatePath("/admin/applications")
     revalidatePath("/admin/invoices")
@@ -127,11 +123,13 @@ export async function createInvoice(input: CreateInvoiceInput) {
     return { success: true, invoiceId: invoice.id }
   } catch (e) {
     console.error("[Invoice] Freee請求書作成失敗:", e)
-    return { error: "Freeeでの請求書作成に失敗しました" }
+    return { error: "freeeで請求書を作成できませんでした。少し時間をおいて、もう一度お試しください。" }
   }
 }
 
 export async function updateInvoiceStatus(id: string, status: string) {
+  // 管理画面の一覧から呼ぶので、管理者以外は受け付けない
+  await requireAdmin()
   const validStatuses = ["DRAFT", "ISSUED", "SENT", "PAID", "CANCELLED"]
   if (!validStatuses.includes(status)) {
     return { error: "無効なステータスです" }

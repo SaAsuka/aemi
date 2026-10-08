@@ -6,6 +6,7 @@ import { prisma } from "@/lib/db"
 import { requireTalent } from "@/lib/auth"
 import { getStripe } from "@/lib/stripe"
 import { resolveStorageUrl } from "@/lib/storage-url"
+import { isOptionClosed } from "@/lib/option-deadline"
 
 async function getBaseUrl() {
   const headersList = await headers()
@@ -32,6 +33,7 @@ export async function getActiveOptionsForTalent(talentId: string) {
     ...opt,
     imageUrl: await resolveStorageUrl(opt.imageUrl),
     purchaseStatus: purchaseMap.get(opt.id) ?? null,
+    closed: isOptionClosed(opt.deadline),
   })))
 }
 
@@ -41,6 +43,10 @@ export async function createOptionCheckout(optionId: string): Promise<void> {
   const option = await prisma.option.findUnique({ where: { id: optionId } })
   if (!option || option.status !== "ACTIVE" || !option.stripePriceId) {
     redirect("/mypage/options?error=unavailable")
+  }
+  // 申込締切を過ぎたら購入できない
+  if (isOptionClosed(option.deadline)) {
+    redirect(`/mypage/options/${optionId}?error=closed`)
   }
 
   const existing = await prisma.optionPurchase.findUnique({

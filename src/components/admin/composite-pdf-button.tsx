@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useRef } from "react"
+import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { FileText, RefreshCw, ExternalLink, Loader2, Upload } from "lucide-react"
@@ -26,8 +27,16 @@ async function generatePdf(talentId: string, force = false): Promise<string | nu
     throw new Error(`PDF生成に失敗しました:\n${detail}`)
   }
 
-  const blobError = res.headers.get("X-Blob-Error")
-  if (blobError) throw new Error(`PDF生成は成功しましたが保存に失敗しました:\n${blobError}`)
+  const blobErrorRaw = res.headers.get("X-Blob-Error")
+  if (blobErrorRaw) {
+    let blobError = blobErrorRaw
+    try {
+      blobError = decodeURIComponent(blobErrorRaw)
+    } catch {
+      // 古い形式（エンコードされていない）のときはそのまま表示
+    }
+    throw new Error(`PDF生成は成功しましたが保存に失敗しました:\n${blobError}`)
+  }
 
   return res.headers.get("X-Blob-Url")
 }
@@ -37,11 +46,14 @@ export function CompositePdfButton({
   resumeUrl,
   resumeSource,
   photoCount,
+  buttonClassName,
 }: {
   talentId: string
   resumeUrl?: string | null
   resumeSource?: string | null
   photoCount: number
+  // 見た目を画面ごとに変えたいとき用（未指定なら従来どおり）
+  buttonClassName?: string
 }) {
   const [generating, setGenerating] = useState(false)
   const [uploading, setUploading] = useState(false)
@@ -115,7 +127,7 @@ export function CompositePdfButton({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button onClick={generate} disabled={busy} variant="outline" size="sm">
+      <Button onClick={generate} disabled={busy} variant="outline" size="sm" className={buttonClassName}>
         {generating ? (
           <Loader2 className="h-4 w-4 animate-spin mr-1" />
         ) : resumeUrl ? (
@@ -125,14 +137,14 @@ export function CompositePdfButton({
         )}
         {generating ? "生成中..." : resumeUrl ? "PDF再生成" : "コンポジPDF生成"}
       </Button>
-      <Button onClick={() => fileRef.current?.click()} disabled={busy} variant="outline" size="sm">
+      <Button onClick={() => fileRef.current?.click()} disabled={busy} variant="outline" size="sm" className={buttonClassName}>
         {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Upload className="h-4 w-4 mr-1" />}
         {uploading ? "アップロード中..." : "コンポジアップロード"}
       </Button>
       <input ref={fileRef} type="file" accept=".pdf" className="hidden" onChange={handleUpload} />
       {displayUrl && (
         <a href={displayUrl} target="_blank" rel="noopener noreferrer">
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" className={buttonClassName}>
             <ExternalLink className="h-4 w-4 mr-1" />
             コンポジを表示
             {source === "manual" && <span className="ml-1 text-xs text-blue-500">(手動)</span>}
@@ -143,7 +155,16 @@ export function CompositePdfButton({
   )
 }
 
-export function CompositePdfIconButton({ talentId, photoCount }: { talentId: string; photoCount: number }) {
+// タレント一覧で使う小さい生成ボタン。未作成なら「作成」、作成済みなら作り直しのアイコンだけを出す
+export function CompositePdfIconButton({
+  talentId,
+  photoCount,
+  hasResume = false,
+}: {
+  talentId: string
+  photoCount: number
+  hasResume?: boolean
+}) {
   const [generating, setGenerating] = useState(false)
   const router = useRouter()
 
@@ -151,7 +172,9 @@ export function CompositePdfIconButton({ talentId, photoCount }: { talentId: str
     e.preventDefault()
     e.stopPropagation()
     if (photoCount < 6) {
-      alert(`宣材写真が${photoCount}枚しか登録されていません。コンポジ生成には6枚以上必要です。`)
+      toast.error("コンポジを作れません", {
+        description: `宣材写真が${photoCount}枚です。コンポジには6枚以上必要です。`,
+      })
       return
     }
     setGenerating(true)
@@ -160,9 +183,12 @@ export function CompositePdfIconButton({ talentId, photoCount }: { talentId: str
       if (blobUrl) {
         await saveResumeUrl(talentId, blobUrl, "auto")
       }
+      toast.success("コンポジPDFを作成しました")
       router.refresh()
     } catch (err) {
-      alert(err instanceof Error ? err.message : "エラーが発生しました")
+      toast.error("コンポジPDFを作成できませんでした", {
+        description: err instanceof Error ? err.message : undefined,
+      })
     } finally {
       setGenerating(false)
     }
@@ -170,16 +196,36 @@ export function CompositePdfIconButton({ talentId, photoCount }: { talentId: str
 
   if (generating) {
     return (
-      <span className="inline-flex items-center gap-1 text-xs text-muted-foreground animate-pulse">
-        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-        生成中…
+      <span className="inline-flex h-8 items-center gap-1.5 text-xs text-neutral-500" role="status">
+        <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+        作成中…
       </span>
     )
   }
 
+  if (hasResume) {
+    return (
+      <button
+        type="button"
+        onClick={generate}
+        title="コンポジを作り直す"
+        aria-label="コンポジを作り直す"
+        className="inline-flex size-8 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950/30"
+      >
+        <RefreshCw className="size-4" aria-hidden="true" />
+      </button>
+    )
+  }
+
   return (
-    <Button onClick={generate} variant="ghost" size="icon" title="コンポジPDF生成">
-      <FileText className="h-4 w-4" />
-    </Button>
+    <button
+      type="button"
+      onClick={generate}
+      title="宣材写真からコンポジPDFを作成します"
+      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-neutral-300 bg-white px-2.5 text-xs font-medium text-neutral-800 transition-colors hover:border-neutral-400 hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950/30"
+    >
+      <FileText className="size-3.5" aria-hidden="true" />
+      作成
+    </button>
   )
 }
