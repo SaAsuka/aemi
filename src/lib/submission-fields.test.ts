@@ -11,6 +11,8 @@ import {
   hasMissingRequired,
   visibleFields,
   isSubmissionFileOf,
+  buildAnswerFromForm,
+  sameFieldKeys,
   type SubmissionField,
   type SubmissionAnswer,
 } from "./submission-fields"
@@ -267,6 +269,50 @@ describe("hasMissingRequired / visibleFields", () => {
 
   it("コンポジの項目はフォームに出さない", () => {
     expect(visibleFields(fields).map((f) => f.key)).toEqual(["k_00000001", "k_00000002"])
+  })
+})
+
+describe("buildAnswerFromForm", () => {
+  const owner = { talentId: "t1", jobId: "j1" }
+  const fileBase = "https://abc.supabase.co/storage/v1/object/talent-files/applications/t1/j1"
+  const getter = (values: Record<string, string>) => (name: string) => values[name] ?? null
+
+  it("文字の回答を作る（前後の空白は除く）", () => {
+    const r = buildAnswerFromForm(field(), getter({ "ans_k_00000001_value": "  渋谷駅 " }), owner)
+    expect(r).toEqual({ ok: true, answer: expect.objectContaining({ value: "渋谷駅", origin: "INPUT", label: "最寄駅" }) })
+  })
+
+  it("空なら answer: null", () => {
+    expect(buildAnswerFromForm(field(), getter({}), owner)).toEqual({ ok: true, answer: null })
+    expect(buildAnswerFromForm(field(), getter({ "ans_k_00000001_value": "   " }), owner)).toEqual({ ok: true, answer: null })
+  })
+
+  it("URLでないリンク・長すぎる文字はエラー", () => {
+    const url = field({ kind: "URL", label: "参考動画" })
+    expect(buildAnswerFromForm(url, getter({ "ans_k_00000001_value": "youtube.com" }), owner).ok).toBe(false)
+    expect(buildAnswerFromForm(field(), getter({ "ans_k_00000001_value": "あ".repeat(2001) }), owner).ok).toBe(false)
+  })
+
+  it("写真は本人のこの案件の置き場所のファイルだけ受け付ける", () => {
+    const photo = field({ kind: "PHOTO", label: "近影写真" })
+    const ok = buildAnswerFromForm(photo, getter({ "ans_k_00000001_fileUrl": `${fileBase}/k_00000001-1.jpg`, "ans_k_00000001_fileName": "IMG.HEIC" }), owner)
+    expect(ok).toEqual({ ok: true, answer: expect.objectContaining({ fileName: "IMG.HEIC", value: null }) })
+    const other = buildAnswerFromForm(photo, getter({ "ans_k_00000001_fileUrl": "https://abc.supabase.co/storage/v1/object/talent-files/applications/t2/j1/a.jpg" }), owner)
+    expect(other.ok).toBe(false)
+  })
+})
+
+describe("sameFieldKeys", () => {
+  const fields = [field({ key: "k_00000001" }), field({ key: "k_00000002" })]
+  it("同じ組なら true（順番は問わない）", () => {
+    expect(sameFieldKeys(JSON.stringify(["k_00000002", "k_00000001"]), fields)).toBe(true)
+  })
+  it("増えた・減った・重複・壊れた値は false", () => {
+    expect(sameFieldKeys(JSON.stringify(["k_00000001"]), fields)).toBe(false)
+    expect(sameFieldKeys(JSON.stringify(["k_00000001", "k_00000002", "k_00000003"]), fields)).toBe(false)
+    expect(sameFieldKeys(JSON.stringify(["k_00000001", "k_00000001"]), fields)).toBe(false)
+    expect(sameFieldKeys("not json", fields)).toBe(false)
+    expect(sameFieldKeys(null, fields)).toBe(false)
   })
 })
 

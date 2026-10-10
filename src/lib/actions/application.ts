@@ -5,6 +5,16 @@ import { revalidatePath, updateTag } from "next/cache"
 import { after } from "next/server"
 import { resolveApplicant } from "@/lib/applicant"
 import { logger } from "@/lib/logger"
+import { recordFormError } from "@/lib/form-error-log"
+import {
+  buildAnswerFromForm,
+  hasMissingRequired,
+  missingMessage,
+  parseSubmissionFields,
+  sameFieldKeys,
+  visibleFields,
+  type SubmissionAnswer,
+} from "@/lib/submission-fields"
 import { del } from "@vercel/blob"
 import { deleteFromStorage, isSupabaseStorageUrl } from "@/lib/supabase-storage"
 import { prisma } from "@/lib/db"
@@ -220,6 +230,36 @@ export async function createApplication(formData: FormData) {
     }
   }
 
+  // 案件ごとの自由な提出項目（コンポジの項目はフォームに出さないので最初から対象外）
+  const jobFields = await prisma.job.findUnique({ where: { id: data.jobId }, select: { submissionFields: true } })
+  const fields = visibleFields(parseSubmissionFields(jobFields?.submissionFields, (e, d) => logger.warn(e, d)))
+  const answers: SubmissionAnswer[] = []
+
+  // 管理者の代理応募は画面に自由項目の入力欄が無いので、必須も突き合わせも見ない（後から応募詳細で入れる）
+  if (fields.length > 0 && !applicant.isAdminProxy) {
+    if (!sameFieldKeys(formData.get("fieldKeys") as string | null, fields)) {
+      const message = "案件の内容が更新されました。画面を開き直してください"
+      const code = await recordFormError({
+        form: "application", source: "server", talentId: data.talentId, jobId: data.jobId, reason: "FIELDS_CHANGED",
+      })
+      return { error: { fieldKeys: [message] }, message, action: "RELOAD" as const, code }
+    }
+
+    const fieldErrors: Record<string, string[]> = {}
+    for (const field of fields) {
+      const built = buildAnswerFromForm(field, (name) => (formData.get(name) as string | null) ?? null, {
+        talentId: data.talentId,
+        jobId: data.jobId,
+      })
+      if (!built.ok) fieldErrors[`ans_${field.key}`] = [built.error]
+      else if (built.answer) answers.push(built.answer)
+      else if (field.required) fieldErrors[`ans_${field.key}`] = [missingMessage(field)]
+    }
+    if (Object.keys(fieldErrors).length > 0) {
+      return { error: fieldErrors, message: "入力内容を確認してください", action: "FIX_FIELDS" as const }
+    }
+  }
+
   await prisma.application.create({
     data: {
       talentId: data.talentId,
@@ -229,6 +269,10 @@ export async function createApplication(formData: FormData) {
       submissions: {
         create: submissions,
       },
+      // 自由項目のない案件は今までどおり何も入れない
+      ...(fields.length > 0
+        ? { submissionAnswers: answers, hasMissingAnswers: hasMissingRequired(fields, answers) }
+        : {}),
     },
   })
 

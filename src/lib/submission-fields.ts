@@ -208,6 +208,62 @@ export function mergeKamiteFields(prev: SubmissionField[], incoming: KamiteRequi
   })
 }
 
+// ---- 応募フォームから届いた回答を組み立てる ----
+
+export type BuiltAnswer = { ok: true; answer: SubmissionAnswer | null } | { ok: false; error: string }
+
+// フォームの ans_{key}_* から1項目ぶんの回答を作る。空なら answer: null（必須かどうかは呼び出し側で見る）
+export function buildAnswerFromForm(
+  field: SubmissionField,
+  get: (name: string) => string | null,
+  owner: { talentId: string; jobId: string }
+): BuiltAnswer {
+  const base = { key: field.key, label: field.label, kind: field.kind, origin: "INPUT" as const, errorCode: null, updatedAt: null }
+
+  if (field.kind === "PHOTO" || field.kind === "FILE") {
+    const fileUrl = get(`ans_${field.key}_fileUrl`)?.trim() || null
+    if (!fileUrl) return { ok: true, answer: null }
+    if (!isSubmissionFileOf(fileUrl, owner.talentId, owner.jobId)) {
+      return { ok: false, error: `「${field.label}」のファイルをもう一度アップロードしてください` }
+    }
+    const fileName = (get(`ans_${field.key}_fileName`) ?? "").slice(0, 255) || null
+    return { ok: true, answer: { ...base, value: null, fileUrl, fileName } }
+  }
+
+  const value = get(`ans_${field.key}_value`)?.trim() || null
+  if (!value) return { ok: true, answer: null }
+  const answer = { ...base, value, fileUrl: null, fileName: null }
+  if (!submissionAnswerSchema.safeParse(answer).success) {
+    return {
+      ok: false,
+      error:
+        field.kind === "URL"
+          ? `「${field.label}」は https:// から始まるURLを入力してください`
+          : `「${field.label}」は2000文字以内で入力してください`,
+    }
+  }
+  return { ok: true, answer }
+}
+
+export function missingMessage(field: SubmissionField): string {
+  return field.kind === "PHOTO" || field.kind === "FILE"
+    ? `「${field.label}」をアップロードしてください`
+    : `「${field.label}」を入力してください`
+}
+
+// フォームが表示していた項目と、案件の今の項目が同じか（入力中に KAMITE 再送・管理者の編集で変わっていないか）
+export function sameFieldKeys(sentJson: string | null, fields: SubmissionField[]): boolean {
+  let sent: unknown
+  try {
+    sent = sentJson ? JSON.parse(sentJson) : null
+  } catch {
+    return false
+  }
+  if (!Array.isArray(sent) || !sent.every((k) => typeof k === "string")) return false
+  const now = new Set(fields.map((f) => f.key))
+  return sent.length === now.size && new Set(sent).size === sent.length && sent.every((k) => now.has(k))
+}
+
 // ---- 提出物ファイルの置き場所 ----
 
 export function submissionStoragePrefix(talentId: string, jobId: string): string {

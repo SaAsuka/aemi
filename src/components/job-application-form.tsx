@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { SUBMISSION_CATEGORY_LABELS } from "@/types"
+import type { SubmissionField } from "@/lib/submission-fields"
+import { SubmissionFieldInput, emptyFieldState, type FieldInputState } from "@/components/submission-field-input"
 
 type Requirement = {
   id: string
@@ -31,6 +33,7 @@ export function JobApplicationForm({
   hasResume = true,
   dateConflict = null,
   token = null,
+  fields = [],
 }: {
   jobId: string
   talentId: string
@@ -40,9 +43,26 @@ export function JobApplicationForm({
   dateConflict?: string | null
   // 専用リンク（?t=）で開いたときのトークン。受け付け側で本人を確かめるのに使う
   token?: string | null
+  // 案件ごとの自由な提出項目（コンポジの項目は含まない）
+  fields?: SubmissionField[]
 }) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [message, setMessage] = useState("")
+
+  const [answers, setAnswers] = useState<Record<string, FieldInputState>>(() =>
+    Object.fromEntries(fields.map((f) => [f.key, emptyFieldState()]))
+  )
+  const updateAnswer = useCallback((key: string, update: Partial<FieldInputState>) => {
+    setAnswers((prev) => ({ ...prev, [key]: { ...prev[key], ...update } }))
+  }, [])
+
+  const isAnswered = (f: SubmissionField, a: FieldInputState | undefined) => {
+    if (!a) return false
+    if (f.kind === "PHOTO" || f.kind === "FILE") return !!a.fileUrl || a.deferred
+    return !!a.value.trim()
+  }
+  const allFieldsAnswered = fields.every((f) => !f.required || isAnswered(f, answers[f.key]))
+  const anyFieldUploading = Object.values(answers).some((a) => a.uploading)
 
   const initialSubmissions: Record<string, SubmissionData> = {}
   if (requirements) {
@@ -83,13 +103,14 @@ export function JobApplicationForm({
 
   const hasRequirements = requirements && requirements.length > 0
 
-  const allSubmitted = !hasRequirements || requirements.every((req) => {
+  const allRequirementsSubmitted = !hasRequirements || requirements.every((req) => {
     const sub = submissions[req.category]
     if (!sub) return false
     return sub.mode === "file" ? !!sub.fileUrl : !!sub.externalUrl.trim()
   })
+  const allSubmitted = allRequirementsSubmitted && allFieldsAnswered
 
-  const anyUploading = Object.values(submissions).some((s) => s.uploading)
+  const anyUploading = Object.values(submissions).some((s) => s.uploading) || anyFieldUploading
 
   const handleApply = async () => {
     setStatus("loading")
@@ -105,6 +126,24 @@ export function JobApplicationForm({
         if (sub.fileName) formData.set(`sub_${cat}_fileName`, sub.fileName)
       } else if (sub.mode === "url" && sub.externalUrl.trim()) {
         formData.set(`sub_${cat}_externalUrl`, sub.externalUrl.trim())
+      }
+    }
+
+    // 自由な提出項目。表示していた項目のキーも送る（入力中に案件の項目が変わったかを受け付け側で確かめる）
+    formData.set("fieldKeys", JSON.stringify(fields.map((f) => f.key)))
+    for (const f of fields) {
+      const a = answers[f.key]
+      if (!a) continue
+      if (f.kind === "PHOTO" || f.kind === "FILE") {
+        if (a.fileUrl) {
+          formData.set(`ans_${f.key}_fileUrl`, a.fileUrl)
+          if (a.fileName) formData.set(`ans_${f.key}_fileName`, a.fileName)
+        } else if (a.deferred) {
+          formData.set(`ans_${f.key}_deferred`, "1")
+          if (a.errorCode) formData.set(`ans_${f.key}_deferred_code`, a.errorCode)
+        }
+      } else if (a.value.trim()) {
+        formData.set(`ans_${f.key}_value`, a.value.trim())
       }
     }
 
@@ -247,6 +286,22 @@ export function JobApplicationForm({
               </div>
             )
           })}
+        </div>
+      )}
+
+      {fields.length > 0 && (
+        <div className="rounded-lg border p-4 space-y-4">
+          <p className="text-sm font-medium">{hasRequirements ? "その他の提出物" : "提出物"}</p>
+          {fields.map((f) => (
+            <SubmissionFieldInput
+              key={f.key}
+              field={f}
+              state={answers[f.key] ?? emptyFieldState()}
+              onChange={(update) => updateAnswer(f.key, update)}
+              jobId={jobId}
+              token={token}
+            />
+          ))}
         </div>
       )}
 
