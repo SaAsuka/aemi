@@ -72,7 +72,11 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
           description={app.hasMissingAnswers ? "必須の項目に未提出（別途送付待ちを含む）があります。" : undefined}
           action={<PhotoZipButton entries={zipEntries} zipName={`${app.talent.name}_${app.job.title}_写真.zip`} />}
         >
-          <ApplicationAnswers rows={rows} resumeUrl={app.talent.resume} />
+          <ApplicationAnswers
+            rows={rows}
+            resumeUrl={app.talent.resume}
+            target={{ applicationId: app.id, jobId: app.job.id, talentId: app.talent.id }}
+          />
         </Section>
       )}
 
