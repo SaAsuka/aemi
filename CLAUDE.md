@@ -148,7 +148,8 @@ KAMITE（`develop/yokai-aomidori/app` ／ https://app.kamite.jp ）に届いた�
 - 鍵は `KAMITE_API_KEY` / `KAMITE_API_SECRET`（KAMITE側の `VOZEL_API_KEY` / `VOZEL_API_SECRET` と同じ値）
 - 同じ案件は増えない：`jobs.externalSource` + `jobs.externalId` で突き合わせて上書きする。
   **人が締め切った（CLOSED）・取り下げた（CANCELLED）案件は、送られてきても募集中に戻さない**
-- 枠（roles）と提出物（requirements）は入れ物が無いので `jobs.note` に文章で入る。枠が1つのときだけ案件側の条件にも入れる
+- 枠（roles）は入れ物が無いので `jobs.note` に文章で入る。枠が1つのときだけ案件側の条件にも入れる
+- 提出物（requirements）は `jobs.submissionFields`（案件の提出項目）になり応募フォームに出る。note には入らない
 - 弾いたぶんも含めて `external_job_logs` に残る。**このテーブルを消さない**（不審なアクセスに気づくため）
 
 ## 踏んだ罠
