@@ -33,7 +33,7 @@ description: "案件ごとの提出項目を応募フォームで受け取る �
 **Purpose**: 作業ブランチ・依存追加・方式が使えるかの検証
 
 - [X] T001 `git fetch` 後、`origin/vozel-test` から作業ブランチ `001-kamite-custom-submissions` を作成する（spec-kit 一式と CLAUDE.md の追記は最初のコミットに含める）
-- [ ] T002 `fflate` を dependencies に追加する（`package.json` / `package-lock.json`）
+- [X] T002 `fflate` を dependencies に追加する（`package.json` / `package-lock.json`）
 - [ ] T003 検証スパイク①: テスト環境のストレージで `createSignedUploadUrl` で発行したURLへ、ブラウザから anon key なしで `XMLHttpRequest` の PUT ができ、`upload.onprogress` が取れるか確認する。できなければ `NEXT_PUBLIC_SUPABASE_ANON_KEY` が必要と記録し、ユーザーにテスト環境への追加を依頼する（結果を research.md R5 に追記）
 - [ ] T004 検証スパイク②: `/api/blob?sign=true` で得た署名付きURLをブラウザから `fetch` できるか（CORS）確認する（結果を research.md R8 に追記。不可なら R8 の代替手段で進める）
 - [ ] T005 [P] テスト用KAMITE送信スクリプト `scripts/send-test-kamite-job.ts` を作る。`.env.local` の `KAMITE_API_KEY` / `KAMITE_API_SECRET` で `X-Kamite-Timestamp` と `X-Kamite-Signature`（`HMAC-SHA256(secret, "<timestamp>.<本文>")` の16進）を付け、引数で渡したJSONファイルを送る。冒頭に「テスト環境専用・本番へは移植しない」とコメント
