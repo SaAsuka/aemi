@@ -118,9 +118,9 @@ description: "案件ごとの提出項目を応募フォームで受け取る �
 
 **Independent Test**: quickstart S5
 
-- [ ] T037 [P] [US5] `src/components/admin/submission-fields-editor.tsx`: 項目の追加（項目名・種類・必須・指示文）・編集・削除・上下移動、`autofill` の選択（自動判定の結果を初期値に表示し、管理者が「なし／名前／年齢／身長／コンポジ」で変更できる。変更したら `autofillOverridden: true`）。中身を JSON にして hidden `submissionFields` で送る。KAMITE由来の項目は `source` と `key` を保ったまま編集できる
-- [ ] T038 [US5] `src/components/admin/job-editor-form.tsx`: 既存の「提出物」（4種類）セクションの**下に** T037 を置く（既存セクションは変更しない）。`src/components/admin/job-edit-sheet.tsx` と案件詳細から `submissionFields` を渡す
-- [ ] T039 [US5] `src/lib/actions/job.ts` の `createJob` / `updateJob`: hidden `submissionFields` を `submissionFieldSchema` で検証して保存（新しい項目の `key` は `makeVozelFieldKey`、`autofill` 未指定なら `detectAutofill`、`source` 未指定は `VOZEL`）。送られてこない（既存の編集画面からの保存など）場合は**触らない**。既存の `extractRequirements` の処理は変えない
+- [X] T037 [P] [US5] `src/components/admin/submission-fields-editor.tsx`: 項目の追加（項目名・種類・必須・指示文）・編集・削除・上下移動、`autofill` の選択（自動判定の結果を初期値に表示し、管理者が「なし／名前／年齢／身長／コンポジ」で変更できる。変更したら `autofillOverridden: true`）。中身を JSON にして hidden `submissionFields` で送る。KAMITE由来の項目は `source` と `key` を保ったまま編集できる
+- [X] T038 [US5] `src/components/admin/job-editor-form.tsx`: 既存の「提出物」（4種類）セクションの**下に** T037 を置く（既存セクションは変更しない）。`src/components/admin/job-edit-sheet.tsx` と案件詳細から `submissionFields` を渡す
+- [X] T039 [US5] `src/lib/actions/job.ts` の `createJob` / `updateJob`: hidden `submissionFields` を `submissionFieldSchema` で検証して保存（新しい項目の `key` は `makeVozelFieldKey`、`autofill` 未指定なら `detectAutofill`、`source` 未指定は `VOZEL`）。送られてこない（既存の編集画面からの保存など）場合は**触らない**。既存の `extractRequirements` の処理は変えない
 - [ ] T040 [US5] 回帰確認: 4種類だけの案件の作成・編集・応募・管理画面表示が今までどおり／この機能より前の案件を編集して保存しても `submissionFields` が null のまま／KAMITE案件を管理画面で編集して保存しても項目が失われない
 
 **Checkpoint**: VOZEL・KAMITE どちらの案件でも自由項目が使える

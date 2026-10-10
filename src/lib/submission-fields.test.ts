@@ -15,6 +15,7 @@ import {
   sameFieldKeys,
   buildAnswerRows,
   zipEntryNames,
+  normalizeFieldsInput,
   type SubmissionField,
   type SubmissionAnswer,
 } from "./submission-fields"
@@ -376,6 +377,42 @@ describe("zipEntryNames", () => {
       answer({ key: "k_00000003", kind: "TEXT" }),
     ])
     expect(zipEntryNames("A", rows)).toEqual([])
+  })
+})
+
+describe("normalizeFieldsInput", () => {
+  it("送られてこなければ undefined（保存済みの値に触らない）", () => {
+    expect(normalizeFieldsInput(null)).toEqual({ ok: true, fields: undefined })
+  })
+
+  it("空の配列は空で保存する（全部消した）", () => {
+    expect(normalizeFieldsInput("[]")).toEqual({ ok: true, fields: [] })
+  })
+
+  it("キーが無い・壊れた・重複したキーは作り直し、出どころは VOZEL", () => {
+    const r = normalizeFieldsInput(JSON.stringify([{ label: "最寄駅", kind: "TEXT" }, { key: "bad", label: "A" }, { key: "v_aaaaaaaa", label: "B" }, { key: "v_aaaaaaaa", label: "C" }]))
+    expect(r.ok).toBe(true)
+    const keys = r.ok ? r.fields!.map((f) => f.key) : []
+    expect(new Set(keys).size).toBe(4)
+    expect(keys.every((k) => /^[kv]_[0-9a-z]{8}$/.test(k))).toBe(true)
+    expect(r.ok && r.fields![0]).toMatchObject({ source: "VOZEL", required: true })
+  })
+
+  it("自動判定が未指定なら項目名から判定し、指定があればそれを使う", () => {
+    const r = normalizeFieldsInput(JSON.stringify([{ label: "お名前", kind: "TEXT" }, { label: "身長", kind: "TEXT", autofill: null, autofillOverridden: true }]))
+    expect(r.ok && r.fields!.map((f) => f.autofill)).toEqual(["NAME", null])
+  })
+
+  it("KAMITE の項目はキーと出どころを保つ", () => {
+    const r = normalizeFieldsInput(JSON.stringify([{ key: "k_12345678", label: "近影", kind: "PHOTO", source: "KAMITE" }]))
+    expect(r.ok && r.fields![0]).toMatchObject({ key: "k_12345678", source: "KAMITE" })
+  })
+
+  it("項目名が空・長すぎる、壊れたJSONはエラー", () => {
+    expect(normalizeFieldsInput(JSON.stringify([{ label: " " }])).ok).toBe(false)
+    expect(normalizeFieldsInput(JSON.stringify([{ label: "あ".repeat(201) }])).ok).toBe(false)
+    expect(normalizeFieldsInput("{oops").ok).toBe(false)
+    expect(normalizeFieldsInput(JSON.stringify({ label: "x" })).ok).toBe(false)
   })
 })
 

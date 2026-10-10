@@ -8,6 +8,7 @@ import { getDefaultClientId } from "@/lib/queries"
 import { matchTalentToJob } from "@/lib/utils/job-matching"
 import { sendLinePush } from "@/lib/line"
 import { formatDate, normalizeDeadline } from "@/lib/utils/date"
+import { normalizeFieldsInput } from "@/lib/submission-fields"
 
 const JOB_SORT_FIELDS = ["title", "fee", "deadline", "status", "createdAt"] as const
 
@@ -173,6 +174,8 @@ export async function createJob(formData: FormData) {
 
   const data = parsed.data
   const requirements = extractRequirements(formData)
+  const fieldsInput = normalizeFieldsInput(formData.get("submissionFields"))
+  if (!fieldsInput.ok) return { error: { submissionFields: [fieldsInput.error] } }
   const clientId = await getDefaultClientId()
 
   const job = await prisma.job.create({
@@ -194,6 +197,8 @@ export async function createJob(formData: FormData) {
       requirements: {
         create: requirements,
       },
+      // 自由な提出項目。送られてこなければ入れない（今までと同じ案件になる）
+      ...(fieldsInput.fields !== undefined ? { submissionFields: fieldsInput.fields } : {}),
     },
     include: { dates: { orderBy: { date: "asc" }, take: 1 } },
   })
@@ -244,6 +249,8 @@ export async function updateJob(id: string, formData: FormData) {
 
   const data = parsed.data
   const requirements = extractRequirements(formData)
+  const fieldsInput = normalizeFieldsInput(formData.get("submissionFields"))
+  if (!fieldsInput.ok) return { error: { submissionFields: [fieldsInput.error] } }
   const clientId = await getDefaultClientId()
 
   // 募集終了の案件で、締切を先の日付に延ばして保存したときだけ「募集中」に戻す
@@ -276,6 +283,8 @@ export async function updateJob(id: string, formData: FormData) {
         capacity: typeof data.capacity === "number" ? data.capacity : null,
         status,
         note: data.note || null,
+        // 自由な提出項目。送られてこなければ保存済みの値に触らない
+        ...(fieldsInput.fields !== undefined ? { submissionFields: fieldsInput.fields } : {}),
       },
     })
 
