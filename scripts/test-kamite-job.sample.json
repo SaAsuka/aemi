@@ -1,0 +1,19 @@
+{
+  "externalId": "TEST-SUBMISSION-001",
+  "title": "【テスト】提出物つき案件",
+  "description": "提出項目の動作確認用の案件です",
+  "status": "OPEN",
+  "roles": [],
+  "dates": [],
+  "requirements": [
+    { "label": "お名前", "kind": "TEXT", "required": true },
+    { "label": "年齢", "kind": "TEXT", "required": true },
+    { "label": "身長", "kind": "TEXT", "required": true },
+    { "label": "近影写真（正面）", "kind": "PHOTO", "required": true, "note": "メイクなし・自然光で" },
+    { "label": "最寄駅", "kind": "TEXT", "required": true },
+    { "label": "参考動画", "kind": "URL", "required": false },
+    { "label": "プロフィール資料", "kind": "FILE", "required": true },
+    { "label": "プロフィール写真", "kind": "PHOTO", "required": false },
+    { "label": "保護者氏名", "kind": "TEXT", "required": false }
+  ]
+}
