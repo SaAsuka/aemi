@@ -264,6 +264,76 @@ export function sameFieldKeys(sentJson: string | null, fields: SubmissionField[]
   return sent.length === now.size && new Set(sent).size === sent.length && sent.every((k) => now.has(k))
 }
 
+// ---- 管理画面の応募詳細に並べる行 ----
+
+export type AnswerRowState = "COMPOSITE" | "ANSWERED" | "DEFERRED" | "MISSING"
+
+export type AnswerRow = {
+  key: string
+  label: string
+  kind: FieldKind
+  required: boolean
+  state: AnswerRowState
+  answer: SubmissionAnswer | null
+  // 回答した後で案件から消えた項目（回答時点の項目名で出す）
+  removed: boolean
+}
+
+// 案件の項目順に並べる。コンポジの項目はタレントの登録済みコンポジットを出す行にする。
+// 案件から消えた項目の回答は、最後に回答時点の項目名で並べる
+export function buildAnswerRows(fields: SubmissionField[], answers: SubmissionAnswer[]): AnswerRow[] {
+  const byKey = new Map(answers.map((a) => [a.key, a]))
+  const rows: AnswerRow[] = fields.map((f) => {
+    if (f.autofill === "COMPOSITE") {
+      return { key: f.key, label: f.label, kind: f.kind, required: f.required, state: "COMPOSITE", answer: null, removed: false }
+    }
+    const a = byKey.get(f.key) ?? null
+    const state: AnswerRowState = !a ? "MISSING" : a.origin === "DEFERRED" ? "DEFERRED" : "ANSWERED"
+    return { key: f.key, label: f.label, kind: f.kind, required: f.required, state, answer: a, removed: false }
+  })
+  const current = new Set(fields.map((f) => f.key))
+  for (const a of answers) {
+    if (current.has(a.key)) continue
+    rows.push({
+      key: a.key,
+      label: a.label,
+      kind: a.kind,
+      required: false,
+      state: a.origin === "DEFERRED" ? "DEFERRED" : "ANSWERED",
+      answer: a,
+      removed: true,
+    })
+  }
+  return rows
+}
+
+function safeFilePart(text: string): string {
+  return text.replace(/[\\/:*?"<>|\s]+/g, "_").replace(/^_+|_+$/g, "").slice(0, 80) || "file"
+}
+
+function extensionOf(...candidates: (string | null | undefined)[]): string {
+  for (const c of candidates) {
+    const m = c?.split("?")[0].match(/\.([a-zA-Z0-9]{1,5})$/)
+    if (m) return m[1].toLowerCase()
+  }
+  return "jpg"
+}
+
+// 写真のまとめてダウンロードで、ZIPの中のファイル名を決める（{タレント名}_{項目名}.{拡張子}、同名は _2, _3）
+export function zipEntryNames(talentName: string, rows: AnswerRow[]): { fileUrl: string; name: string }[] {
+  const used = new Map<string, number>()
+  const out: { fileUrl: string; name: string }[] = []
+  for (const row of rows) {
+    if (row.kind !== "PHOTO" || row.state !== "ANSWERED" || !row.answer?.fileUrl) continue
+    const ext = extensionOf(row.answer.fileUrl, row.answer.fileName)
+    const base = `${safeFilePart(talentName)}_${safeFilePart(row.label)}`
+    const n = (used.get(base) ?? 0) + 1
+    used.set(base, n)
+    out.push({ fileUrl: row.answer.fileUrl, name: n === 1 ? `${base}.${ext}` : `${base}_${n}.${ext}` })
+  }
+  return out
+}
+
 // ---- 提出物ファイルの置き場所 ----
 
 export function submissionStoragePrefix(talentId: string, jobId: string): string {

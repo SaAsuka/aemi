@@ -101,11 +101,11 @@ description: "案件ごとの提出項目を応募フォームで受け取る �
 
 **Independent Test**: quickstart S2
 
-- [ ] T031 [US4] `src/lib/actions/application-detail.ts`: `getApplicationDetail(id)`（`requireAdmin()`。応募・タレント名・タレントの今の `resume`・案件名と `submissionFields`・`submissionAnswers`・既存の `submissions` を返す）
-- [ ] T032 [P] [US4] `src/lib/submission-fields.ts` に `buildAnswerRows(fields, answers)`（案件の項目順に並べ、`autofill: COMPOSITE` の項目は「コンポジット（登録済みのもの）」の行、未回答は「未提出」、DEFERRED は「別途送付待ち」、案件から消えた項目の回答は末尾に「（現在の案件にない項目）」として回答時点の項目名で出す）と `zipEntryNames(talentName, rows)`（`{タレント名}_{項目名}.{拡張子}`、ファイル名に使えない文字は `_`、同名は `_2` `_3`）を追加し、`src/lib/submission-fields.test.ts` にテストを追加
-- [ ] T033 [P] [US4] `src/components/admin/application-answers.tsx`: 行ごとに項目名・回答（PHOTO はサムネイル＝`blobProxyUrl`、FILE はリンク、TEXT はそのまま、URL はリンク）と出どころの印（プロフィールから／管理者が登録）を表示
-- [ ] T034 [P] [US4] `src/components/admin/photo-zip-button.tsx`: PHOTO の回答の署名付きURLを `/api/blob?sign=true` で取得 → ブラウザで取得 → `fflate` で ZIP → `{タレント名}_{案件名}_写真.zip` でダウンロード。写真がなければボタンを出さない。取得に失敗した写真は個別ダウンロードのリンクに切り替える（research R8）
-- [ ] T035 [US4] `src/app/(admin)/admin/applications/[id]/page.tsx`（+ `loading.tsx`）: 基本情報・自由項目の回答（T033）・既存の提出物（既存の `SubmissionLinks` をそのまま使う）・ZIPボタン（T034）
+- [X] T031 [US4] `src/lib/actions/application-detail.ts`: `getApplicationDetail(id)`（`requireAdmin()`。応募・タレント名・タレントの今の `resume`・案件名と `submissionFields`・`submissionAnswers`・既存の `submissions` を返す）
+- [X] T032 [P] [US4] `src/lib/submission-fields.ts` に `buildAnswerRows(fields, answers)`（案件の項目順に並べ、`autofill: COMPOSITE` の項目は「コンポジット（登録済みのもの）」の行、未回答は「未提出」、DEFERRED は「別途送付待ち」、案件から消えた項目の回答は末尾に「（現在の案件にない項目）」として回答時点の項目名で出す）と `zipEntryNames(talentName, rows)`（`{タレント名}_{項目名}.{拡張子}`、ファイル名に使えない文字は `_`、同名は `_2` `_3`）を追加し、`src/lib/submission-fields.test.ts` にテストを追加
+- [X] T033 [P] [US4] `src/components/admin/application-answers.tsx`: 行ごとに項目名・回答（PHOTO はサムネイル＝`blobProxyUrl`、FILE はリンク、TEXT はそのまま、URL はリンク）と出どころの印（プロフィールから／管理者が登録）を表示
+- [X] T034 [P] [US4] `src/components/admin/photo-zip-button.tsx`: PHOTO の回答の署名付きURLを `/api/blob?sign=true` で取得 → ブラウザで取得 → `fflate` で ZIP → `{タレント名}_{案件名}_写真.zip` でダウンロード。写真がなければボタンを出さない。取得に失敗した写真は個別ダウンロードのリンクに切り替える（research R8）
+- [X] T035 [US4] `src/app/(admin)/admin/applications/[id]/page.tsx`（+ `loading.tsx`）: 基本情報・自由項目の回答（T033）・既存の提出物（既存の `SubmissionLinks` をそのまま使う）・ZIPボタン（T034）
 - [ ] T036 [US4] 「内容を見る」リンクを追加: `src/components/admin/application-table.tsx` と `src/app/(admin)/admin/jobs/[id]/page.tsx` の応募者欄（既存の列・表示は変えない）
 
 **Checkpoint**: US1 + US4 で山中さんの個別回収が不要になる（MVP）
