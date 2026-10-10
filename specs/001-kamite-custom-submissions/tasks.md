@@ -76,8 +76,8 @@ description: "案件ごとの提出項目を応募フォームで受け取る �
 
 **Independent Test**: quickstart S1（プロフィール初期値・コンポジ以外の部分）と S6
 
-- [ ] T018 [US1] `src/app/api/external/jobs/route.ts`: `payload.requirements` を `submissionFields` に変換して `jobs` に保存する（`label`/`kind`/`required`/`note`/順番をそのまま、`key`=`makeKamiteFieldKey`、`source`=`KAMITE`）。新規は `detectAutofill`、再送は既存の `submissionFields` と `mergeKamiteFields` で突き合わせて置き換え（`requirements` が空なら `[]`）。既存の応募の `submissionAnswers` には触れない。受け付ける形式・認証・応答は変えない（FR-030）
-- [ ] T019 [US1] 同ファイルの `buildNote` から提出物（requirements）の文章を外す（枠 roles と note はそのまま。FR-004）
+- [X] T018 [US1] `src/app/api/external/jobs/route.ts`: `payload.requirements` を `submissionFields` に変換して `jobs` に保存する（`label`/`kind`/`required`/`note`/順番をそのまま、`key`=`makeKamiteFieldKey`、`source`=`KAMITE`）。新規は `detectAutofill`、再送は既存の `submissionFields` と `mergeKamiteFields` で突き合わせて置き換え（`requirements` が空なら `[]`）。既存の応募の `submissionAnswers` には触れない。受け付ける形式・認証・応答は変えない（FR-030）
+- [X] T019 [US1] 同ファイルの `buildNote` から提出物（requirements）の文章を外す（枠 roles と note はそのまま。FR-004）
 - [ ] T020 [P] [US1] `src/lib/upload-errors.ts`: `classifyUploadError({ status?, body?, error?, stalled?, aborted? })` → `TOO_LARGE`（413・サイズ超過）/ `BAD_TYPE` / `NETWORK`（XHR の onerror・オフライン）/ `STALLED`（30秒進まない）/ `ABORTED`（タレントが中止）/ `UNAUTHORIZED` / `OTHER` と、タレント向けの文言を返す。応答がJSONでなくても落ちない
 - [ ] T021 [P] [US1] `src/lib/upload-errors.test.ts`: 413（本文がHTML）、400 BAD_TYPE、ネットワークエラー、stalled、aborted、401、本文が空
 - [ ] T022 [US1] `src/lib/supabase-storage.ts` に `createUploadUrl(path)`（`createSignedUploadUrl` を使う）を追加。既存関数は変更しない
