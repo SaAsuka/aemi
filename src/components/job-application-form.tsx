@@ -30,6 +30,7 @@ export function JobApplicationForm({
   requirements,
   hasResume = true,
   dateConflict = null,
+  token = null,
 }: {
   jobId: string
   talentId: string
@@ -37,6 +38,8 @@ export function JobApplicationForm({
   requirements?: Requirement[]
   hasResume?: boolean
   dateConflict?: string | null
+  // 専用リンク（?t=）で開いたときのトークン。受け付け側で本人を確かめるのに使う
+  token?: string | null
 }) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [message, setMessage] = useState("")
@@ -94,6 +97,7 @@ export function JobApplicationForm({
     formData.set("talentId", talentId)
     formData.set("jobId", jobId)
     formData.set("status", "APPLIED")
+    if (token) formData.set("t", token)
 
     for (const [cat, sub] of Object.entries(submissions)) {
       if (sub.mode === "file" && sub.fileUrl) {

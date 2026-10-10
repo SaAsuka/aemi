@@ -2,6 +2,9 @@
 
 import { requireAdmin } from "@/lib/auth"
 import { revalidatePath, updateTag } from "next/cache"
+import { after } from "next/server"
+import { resolveApplicant } from "@/lib/applicant"
+import { logger } from "@/lib/logger"
 import { del } from "@vercel/blob"
 import { deleteFromStorage, isSupabaseStorageUrl } from "@/lib/supabase-storage"
 import { prisma } from "@/lib/db"
@@ -119,7 +122,21 @@ export async function createApplication(formData: FormData) {
     return { error: parsed.error.flatten().fieldErrors }
   }
 
-  const data = parsed.data
+  // 誰として応募するかは送られてきた talentId / status ではなく、ログイン・専用リンク・管理者かで決める
+  const applicant = await resolveApplicant(formData)
+  if (!applicant.ok) {
+    // 本人確認できない呼び出しは記録テーブルに残さない（外から記録を埋められないように）
+    after(() => logger.warn("application_unauthorized", { jobId: parsed.data.jobId }))
+    return { error: { talentId: ["ログインし直してください"] } }
+  }
+  const data = { ...parsed.data, talentId: applicant.talentId, status: applicant.status as typeof parsed.data.status }
+
+  if (applicant.requireResume) {
+    const talentResume = await prisma.talent.findUnique({ where: { id: data.talentId }, select: { resume: true } })
+    if (!talentResume?.resume) {
+      return { error: { jobId: ["コンポジPDFが未登録のため応募できません。先に設定画面から宣材写真をアップロードし、コンポジPDFを生成してください。"] } }
+    }
+  }
 
   const existing = await prisma.application.findUnique({
     where: { talentId_jobId: { talentId: data.talentId, jobId: data.jobId } },
