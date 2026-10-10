@@ -165,3 +165,14 @@ KAMITE（`develop/yokai-aomidori/app` ／ https://app.kamite.jp ）に届いた�
   `type "AuthTokenType" does not exist` で落ちる）。差分は `--from-migrations` ではなく
   **`--from-config-datasource`（いまのDBとスキーマの差）**で出す。`prisma.config.ts` に `shadowDatabaseUrl` を用意してある
 - ⚠️ **`npx prisma` は最新版（8系）を取ってきて `migrate` が無いと言われる。** `./node_modules/.bin/prisma` を使う
+- ⚠️ **`prisma.config.ts` は `.env` しか読まない（手元は `.env.local` しか無い）。** 差分を出すときは
+  `node --env-file=.env.local ./node_modules/prisma/build/index.js migrate diff --from-config-datasource --to-schema prisma/schema.prisma --script`。
+  テストDBには代理店機能（agencies 等）の残骸があり、差分に DROP が混ざる。**必ず目視して該当分だけ切り出す**
+- 🔴 **Vercel Functions はリクエスト本文が4.5MBまで。** `/api/upload` 経由のアップロードは大きいiPhone写真が処理前に 413 で落ちる。
+  応答がJSONでないので画面の `res.json()` が失敗し、Safari では「The string did not match the expected pattern.」になる。
+  応募の提出物（自由項目）は `/api/submissions/upload-url` で署名付きURLをもらってストレージへ直接アップロードしている。
+  応答も4.5MBまでなので、写真のZIPはブラウザで作っている
+- 🔴 **`/api/blob` は `applications/` だけ権限確認あり**（管理者と本人だけ）。それ以外のパスは今も誰でも開ける
+- 🔴 **応募（`createApplication`）は `src/lib/applicant.ts` で本人を決める。** 送られてきた `talentId` / `status` は管理者の代理応募のときだけ使う
+- ⚠️ **`jobs.submissionFields` / `applications.submissionAnswers` は JSON。** 必ず `src/lib/submission-fields.ts` の関数を通して読み書きする（DBは形を守らない）。
+  応募フォームからタレントのプロフィールは書き換えない。仕様は `specs/001-kamite-custom-submissions/`
