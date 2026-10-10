@@ -2,6 +2,8 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 import { prisma } from "@/lib/db"
 import { clientIp, logExternalJob, verifyExternalRequest } from "@/lib/external-job"
+import { logger } from "@/lib/logger"
+import { mergeKamiteFields, parseSubmissionFields } from "@/lib/submission-fields"
 
 /**
  * 外部システム（KAMITE）から案件を受け取って、VOZELの案件として登録する口。
@@ -69,8 +71,9 @@ function parseDate(value: string | null | undefined): Date | null {
 }
 
 /**
- * 募集枠と提出物を、そのまま読める文章にしてメモ欄へ入れる。
+ * 募集枠を、そのまま読める文章にしてメモ欄へ入れる。
  * VOZEL側には枠ごとの入れ物が無いので、条件を落とさないよう全部ここに残す。
+ * 提出物はメモ欄ではなく案件の提出項目（submissionFields）として応募フォームに出す。
  */
 function buildNote(p: Payload): string | null {
   const blocks: string[] = []
@@ -88,13 +91,6 @@ function buildNote(p: Payload): string | null {
       return `・${r.label}${cond.length ? `（${cond.join(" / ")}）` : ""}`
     })
     blocks.push(`【募集枠】\n${lines.join("\n")}`)
-  }
-
-  if (p.requirements.length > 0) {
-    const lines = p.requirements.map(
-      (r) => `・${r.label}${r.required ? "" : "（任意）"}${r.note ? ` — ${r.note}` : ""}`
-    )
-    blocks.push(`【提出物】\n${lines.join("\n")}`)
   }
 
   if (p.note) blocks.push(p.note)
@@ -161,8 +157,14 @@ export async function POST(request: Request) {
 
     const existing = await prisma.job.findUnique({
       where: { externalSource_externalId: { externalSource: source, externalId: payload.externalId } },
-      select: { id: true, status: true },
+      select: { id: true, status: true, submissionFields: true },
     })
+
+    // 提出物は丸ごと置き換える。同じ項目で管理者が自動判定を直していたら、その判定は引き継ぐ
+    const submissionFields = mergeKamiteFields(
+      parseSubmissionFields(existing?.submissionFields, (event, detail) => logger.warn(event, detail)),
+      payload.requirements
+    )
 
     const cond = jobLevelConditions(payload)
     const data = {
@@ -173,6 +175,7 @@ export async function POST(request: Request) {
       deadline: parseDate(payload.deadline),
       note: buildNote(payload),
       sourceUrl: payload.sourceUrl ?? null,
+      submissionFields,
       ...cond,
     }
 
