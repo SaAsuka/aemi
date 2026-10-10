@@ -42,6 +42,7 @@ export function JobApplicationForm({
   token = null,
   fields = [],
   alreadyApplied = false,
+  prefill = {},
 }: {
   jobId: string
   talentId: string
@@ -55,6 +56,8 @@ export function JobApplicationForm({
   fields?: SubmissionField[]
   // もう応募済みの案件か（途中保存を消すため）
   alreadyApplied?: boolean
+  // 名前・年齢・身長の項目にプロフィールから入れる値（locked: 年齢を書き換え不可にする）
+  prefill?: Record<string, { value: string; locked: boolean }>
 }) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [message, setMessage] = useState("")
@@ -63,7 +66,7 @@ export function JobApplicationForm({
   const topMessageRef = useRef<HTMLDivElement>(null)
 
   const [answers, setAnswers] = useState<Record<string, FieldInputState>>(() =>
-    Object.fromEntries(fields.map((f) => [f.key, emptyFieldState()]))
+    Object.fromEntries(fields.map((f) => [f.key, emptyFieldState(prefill[f.key]?.value ?? "")]))
   )
   const updateAnswer = useCallback((key: string, update: Partial<FieldInputState>) => {
     setAnswers((prev) => ({ ...prev, [key]: { ...prev[key], ...update } }))
@@ -80,7 +83,8 @@ export function JobApplicationForm({
         const next = { ...prev }
         for (const f of fields) {
           const d = draft[f.key]
-          if (!d || !next[f.key]) continue
+          // 生年月日から決まる年齢は途中保存で上書きしない
+          if (!d || !next[f.key] || prefill[f.key]?.locked) continue
           next[f.key] = {
             ...next[f.key],
             value: typeof d.value === "string" ? d.value : next[f.key].value,
@@ -435,6 +439,7 @@ export function JobApplicationForm({
               jobId={jobId}
               token={token}
               onUploadError={(err) => handleUploadError(err, f.key)}
+              prefill={prefill[f.key]}
             />
           ))}
         </div>

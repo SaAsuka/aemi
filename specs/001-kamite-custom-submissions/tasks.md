@@ -155,10 +155,10 @@ description: "案件ごとの提出項目を応募フォームで受け取る �
 
 **Independent Test**: quickstart S1 のプロフィール部分
 
-- [ ] T052 [P] [US2] `src/lib/submission-fields.ts` に `profileInitialValue(autofill, talent, today)`（NAME=名前、AGE=生年月日から today 時点の満年齢、HEIGHT=身長（cm を付けない数字）、未登録は空）を追加し、テストを追加（誕生日当日・前日・うるう日、生年月日・身長の未登録）
-- [ ] T053 [US2] `src/app/(talent)/jobs/[id]/page.tsx`: タレントの `name`・`birthDate`・`height` を読み（専用リンクの場合も同様）、NAME/AGE/HEIGHT 項目の初期値をフォームへ渡す
-- [ ] T054 [US2] `src/components/submission-field-input.tsx`: プロフィールから埋めた項目に「プロフィールの内容を入れています。この応募だけ変えたい場合は書き換えてください（プロフィールは変わりません）」を表示。AGE は書き換え不可＋「年齢は生年月日から計算しています。違う場合は設定画面で生年月日を直してください」（設定画面へのリンク）。**生年月日が未登録なら AGE は普通の入力欄**にし、「設定画面で生年月日を登録すると次から自動で入ります」を表示
-- [ ] T055 [US2] `src/lib/actions/application.ts` の `createApplication`: NAME/AGE/HEIGHT の回答は、受け付け側で `profileInitialValue` と比べて同じなら `origin: "PROFILE"`、違えば `INPUT` として保存する。AGE は、生年月日が登録されていればフォームの値を使わず受け付け側で計算した値を保存し（`PROFILE`）、未登録ならフォームの値を使う（`INPUT`）。**タレントのプロフィールは更新しない**
+- [X] T052 [P] [US2] `src/lib/submission-fields.ts` に `profileInitialValue(autofill, talent, today)`（NAME=名前、AGE=生年月日から today 時点の満年齢、HEIGHT=身長（cm を付けない数字）、未登録は空）を追加し、テストを追加（誕生日当日・前日・うるう日、生年月日・身長の未登録）
+- [X] T053 [US2] `src/app/(talent)/jobs/[id]/page.tsx`: タレントの `name`・`birthDate`・`height` を読み（専用リンクの場合も同様）、NAME/AGE/HEIGHT 項目の初期値をフォームへ渡す
+- [X] T054 [US2] `src/components/submission-field-input.tsx`: プロフィールから埋めた項目に「プロフィールの内容を入れています。この応募だけ変えたい場合は書き換えてください（プロフィールは変わりません）」を表示。AGE は書き換え不可＋「年齢は生年月日から計算しています。違う場合は設定画面で生年月日を直してください」（設定画面へのリンク）。**生年月日が未登録なら AGE は普通の入力欄**にし、「設定画面で生年月日を登録すると次から自動で入ります」を表示
+- [X] T055 [US2] `src/lib/actions/application.ts` の `createApplication`: NAME/AGE/HEIGHT の回答は、受け付け側で `profileInitialValue` と比べて同じなら `origin: "PROFILE"`、違えば `INPUT` として保存する。AGE は、生年月日が登録されていればフォームの値を使わず受け付け側で計算した値を保存し（`PROFILE`）、未登録ならフォームの値を使う（`INPUT`）。**タレントのプロフィールは更新しない**
 
 **Checkpoint**: 名前・年齢・身長は手入力不要。プロフィールは変わらない
 
@@ -171,7 +171,7 @@ description: "案件ごとの提出項目を応募フォームで受け取る �
 **Independent Test**: quickstart S1 の「プロフィール資料」・S2・S4
 
 - [ ] T056 [US3] 確認（コード変更は T028・T008 で済んでいる）: `autofill: "COMPOSITE"` の項目について、開発ツールで `ans_{key}_value` 等を送っても回答が作られない／必須チェック・`hasMissingAnswers` に影響しない／upload-url を発行できない（T023）
-- [ ] T057 [US3] `src/components/admin/application-answers.tsx`: COMPOSITE の行は「コンポジット（登録済みのもの）」として、T031 で取得したタレントの今の `resume` を、既存のコンポジット表示と同じ方法（`blobProxyUrl(resume, true)`）でリンク表示する。未登録なら「コンポジット未登録」。ZIP（T034）・管理者の登録/修正（T051）の対象外
+- [X] T057 [US3] `src/components/admin/application-answers.tsx`: COMPOSITE の行は「コンポジット（登録済みのもの）」として、T031 で取得したタレントの今の `resume` を、既存のコンポジット表示と同じ方法（`blobProxyUrl(resume, true)`）でリンク表示する。未登録なら「コンポジット未登録」。ZIP（T034）・管理者の登録/修正（T051）の対象外
 - [ ] T058 [US3] 確認: コンポジット未登録のタレントで応募ボタンが押せず案内が出る（既存）／画面を通さず送っても拒否される（T012）／代理応募は今までどおりできる／管理画面のコンポジット生成・アップロード・表示（`composite-pdf-button.tsx`）が今までどおり動く
 
 **Checkpoint**: 全ストーリー完了

@@ -2,6 +2,7 @@
 // DBでは JSON で持つので形はDBが守ってくれない。読み書きは必ずこのファイルの関数を通す。
 // サーバーとブラウザの両方で使うため、サーバー専用のもの（logger・DB）はここで import しない。
 import { z } from "zod"
+import { differenceInYears } from "date-fns"
 import { isErrorCode } from "@/lib/error-code"
 
 export const FIELD_KINDS = ["PHOTO", "FILE", "TEXT", "URL"] as const
@@ -152,6 +153,32 @@ export function detectAutofill(label: string, kind: FieldKind): Autofill | null 
 function compatibleAutofill(autofill: Autofill | null, kind: FieldKind): Autofill | null {
   if (autofill && autofill !== "COMPOSITE" && kind !== "TEXT") return null
   return autofill
+}
+
+// ---- プロフィールからの初期値（応募フォームからプロフィールは書き換えない） ----
+
+export type ProfileForAutofill = { name: string | null; birthDate: Date | string | null; height: number | null }
+
+// 名前・年齢・身長の項目に最初から入れる値。年齢は管理画面と同じ計算（満年齢）。未登録なら空
+export function profileInitialValue(autofill: Autofill | null, profile: ProfileForAutofill, today: Date): string {
+  switch (autofill) {
+    case "NAME":
+      return profile.name?.trim() ?? ""
+    case "AGE": {
+      if (!profile.birthDate) return ""
+      const birth = new Date(profile.birthDate)
+      return Number.isNaN(birth.getTime()) ? "" : String(differenceInYears(today, birth))
+    }
+    case "HEIGHT":
+      return profile.height ? String(profile.height) : ""
+    default:
+      return ""
+  }
+}
+
+// 年齢をプロフィールから決めて書き換え不可にするか（生年月日が登録されているときだけ）
+export function isAgeLocked(field: SubmissionField, profile: ProfileForAutofill): boolean {
+  return field.autofill === "AGE" && !!profile.birthDate
 }
 
 // ---- 項目のキー ----

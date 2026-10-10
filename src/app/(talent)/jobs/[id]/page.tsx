@@ -7,7 +7,7 @@ import { prisma } from "@/lib/db"
 import { formatDate, formatDeadline } from "@/lib/utils/date"
 import { GENDER_LABELS } from "@/types"
 import { JobApplicationForm } from "@/components/job-application-form"
-import { parseSubmissionFields, visibleFields } from "@/lib/submission-fields"
+import { isAgeLocked, parseSubmissionFields, profileInitialValue, visibleFields } from "@/lib/submission-fields"
 import { TalentNav } from "@/components/talent-nav"
 
 export default async function TalentJobDetailPage({
@@ -33,7 +33,7 @@ export default async function TalentJobDetailPage({
   const displayName = talent.name
   const [job, talentResume, activeApps, myApplication] = await Promise.all([
     getOpenJob(id),
-    prisma.talent.findUnique({ where: { id: talent.id }, select: { resume: true } }),
+    prisma.talent.findUnique({ where: { id: talent.id }, select: { resume: true, name: true, birthDate: true, height: true } }),
     prisma.application.findMany({
       where: {
         talentId: talent.id,
@@ -67,6 +67,14 @@ export default async function TalentJobDetailPage({
 
   // 自由な提出項目（コンポジの項目はフォームに出さない）
   const fields = visibleFields(parseSubmissionFields(job.submissionFields))
+  // 名前・年齢・身長はプロフィールの値を最初から入れる（プロフィールは書き換えない）。年齢はここで1回だけ計算する
+  const profile = { name: talentResume?.name ?? null, birthDate: talentResume?.birthDate ?? null, height: talentResume?.height ?? null }
+  const today = new Date()
+  const prefill = Object.fromEntries(
+    fields
+      .filter((f) => f.autofill === "NAME" || f.autofill === "AGE" || f.autofill === "HEIGHT")
+      .map((f) => [f.key, { value: profileInitialValue(f.autofill, profile, today), locked: isAgeLocked(f, profile) }])
+  )
 
   const backHref = t ? `/jobs?t=${t}` : "/jobs"
 
@@ -144,7 +152,7 @@ export default async function TalentJobDetailPage({
         </div>
       )}
 
-      <JobApplicationForm jobId={job.id} talentId={talent.id} talentName={talent.name} requirements={job.requirements} hasResume={hasResume} dateConflict={dateConflict} token={t ?? null} fields={fields} alreadyApplied={!!myApplication} />
+      <JobApplicationForm jobId={job.id} talentId={talent.id} talentName={talent.name} requirements={job.requirements} hasResume={hasResume} dateConflict={dateConflict} token={t ?? null} fields={fields} alreadyApplied={!!myApplication} prefill={prefill} />
     </div>
     </>
   )

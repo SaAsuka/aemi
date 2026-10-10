@@ -35,6 +35,7 @@ export function SubmissionFieldInput({
   token,
   talentId,
   onUploadError,
+  prefill,
 }: {
   field: SubmissionField
   state: FieldInputState
@@ -45,6 +46,8 @@ export function SubmissionFieldInput({
   talentId?: string | null
   // アップロード失敗時に受付番号を得るための処理（応募フォームから渡す）
   onUploadError?: (err: UploadError) => Promise<string | null>
+  // 名前・年齢・身長の項目：プロフィールから入れた値と、年齢を書き換え不可にするか
+  prefill?: { value: string; locked: boolean }
 }) {
   const controllerRef = useRef<AbortController | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
@@ -98,7 +101,36 @@ export function SubmissionFieldInput({
         {field.note && <p className="mt-0.5 whitespace-pre-wrap text-xs text-muted-foreground">{field.note}</p>}
       </div>
 
-      {field.kind === "TEXT" && (
+      {field.kind === "TEXT" && prefill && (
+        <div className="space-y-1">
+          <Input
+            id={`${inputId}-input`}
+            type="text"
+            inputMode={field.autofill === "NAME" ? "text" : "numeric"}
+            value={state.value}
+            readOnly={prefill.locked}
+            aria-readonly={prefill.locked || undefined}
+            onChange={(e) => onChange({ value: e.target.value, error: null })}
+            maxLength={2000}
+            className={`text-sm ${prefill.locked ? "bg-muted" : ""}`}
+          />
+          {field.autofill === "AGE" && prefill.locked ? (
+            <p className="text-xs text-muted-foreground">
+              年齢は生年月日から計算しています。違う場合は
+              <a href="/mypage/settings" className="underline">設定画面</a>
+              で生年月日を直してください
+            </p>
+          ) : field.autofill === "AGE" ? (
+            <p className="text-xs text-muted-foreground">設定画面で生年月日を登録すると、次から自動で入ります</p>
+          ) : prefill.value ? (
+            <p className="text-xs text-muted-foreground">
+              プロフィールの内容を入れています。この応募だけ変えたい場合は書き換えてください（プロフィールは変わりません）
+            </p>
+          ) : null}
+        </div>
+      )}
+
+      {field.kind === "TEXT" && !prefill && (
         <Textarea
           id={`${inputId}-input`}
           value={state.value}
