@@ -56,6 +56,19 @@ export async function uploadToStorage(
   return `${url}/storage/v1/object/${BUCKET}/${path}`
 }
 
+export function storageObjectUrl(path: string): string {
+  return `${getSupabaseUrl()}/storage/v1/object/${BUCKET}/${path}`
+}
+
+// ブラウザからストレージへ直接アップロードするための、1回限りの署名付きURL。
+// サーバー（Vercel Functions）を通さないので、本文4.5MBの上限に当たらない
+export async function createUploadUrl(path: string): Promise<{ uploadUrl: string; fileUrl: string }> {
+  const supabase = getAdminClient()
+  const { data, error } = await supabase.storage.from(BUCKET).createSignedUploadUrl(path)
+  if (error || !data) throw new Error(`署名付きアップロードURL取得失敗: ${error?.message}`)
+  return { uploadUrl: data.signedUrl, fileUrl: storageObjectUrl(path) }
+}
+
 export async function getSignedUrl(path: string, expiresIn = 3600, download?: string): Promise<string> {
   const supabase = getAdminClient()
   const options = download ? { download } : undefined
