@@ -1,19 +1,22 @@
 "use server"
 
-import { requireAdmin } from "@/lib/auth"
+import { getSession, requireAdmin } from "@/lib/auth"
+import { isErrorCode } from "@/lib/error-code"
 import { revalidatePath, updateTag } from "next/cache"
 import { after } from "next/server"
-import { resolveApplicant } from "@/lib/applicant"
+import { resolveApplicant, resolveRequester } from "@/lib/applicant"
 import { logger } from "@/lib/logger"
 import { recordFormError } from "@/lib/form-error-log"
 import {
   buildAnswerFromForm,
   hasMissingRequired,
   missingMessage,
+  parseSubmissionAnswers,
   parseSubmissionFields,
   sameFieldKeys,
   visibleFields,
   type SubmissionAnswer,
+  type SubmissionField,
 } from "@/lib/submission-fields"
 import { del } from "@vercel/blob"
 import { deleteFromStorage, isSupabaseStorageUrl } from "@/lib/supabase-storage"
@@ -124,7 +127,38 @@ export async function getApplication(id: string) {
 
 const SUBMISSION_CATEGORIES = ["ACTING_VIDEO", "VOICE_SAMPLE", "PAST_WORK_VIDEO", "PROFILE_PHOTO"] as const
 
+// 応募済みの応募で「あとで別途送る」になっている項目（再送で完了扱いにしたときも案内を出すため）
+function deferredItems(json: unknown): { label: string; code: string | null }[] {
+  return parseSubmissionAnswers(json)
+    .filter((a) => a.origin === "DEFERRED")
+    .map((a) => ({ label: a.label, code: a.errorCode }))
+}
+
+function isUniqueViolation(e: unknown) {
+  return (e as { code?: string } | null)?.code === "P2002"
+}
+
 export async function createApplication(formData: FormData) {
+  try {
+    return await createApplicationInner(formData)
+  } catch (e) {
+    // 想定外の失敗。タレントには受付番号と「時間をおいて再送」を返し、原因は記録に残す
+    const message = e instanceof Error ? e.message : String(e)
+    const session = await getSession().catch(() => null)
+    const code = await recordFormError({
+      form: "application",
+      source: "server",
+      talentId: session?.role === "talent" ? session.talentId ?? null : null,
+      jobId: (formData.get("jobId") as string | null) ?? null,
+      reason: "SERVER_ERROR",
+      message,
+    })
+    const text = "応募の送信に失敗しました。時間をおいてもう一度お試しください"
+    return { error: { jobId: [`${text}（受付番号：${code}）`] }, message: text, action: "RETRY" as const, code }
+  }
+}
+
+async function createApplicationInner(formData: FormData) {
   const raw = Object.fromEntries(formData)
   const parsed = applicationSchema.safeParse(raw)
 
@@ -152,6 +186,10 @@ export async function createApplication(formData: FormData) {
     where: { talentId_jobId: { talentId: data.talentId, jobId: data.jobId } },
   })
   if (existing) {
+    // タレント本人の再送（送信が止まった後など）は失敗ではなく完了として返す。管理者の代理応募は今までどおり
+    if (!applicant.isAdminProxy) {
+      return { success: true, alreadyApplied: true, deferred: deferredItems(existing.submissionAnswers) }
+    }
     return { error: { jobId: ["このタレントは既にこの案件に応募済みです"] } }
   }
 
@@ -246,35 +284,67 @@ export async function createApplication(formData: FormData) {
     }
 
     const fieldErrors: Record<string, string[]> = {}
+    const failed: { key: string; reason: "REQUIRED_MISSING" | "INVALID_VALUE" }[] = []
     for (const field of fields) {
-      const built = buildAnswerFromForm(field, (name) => (formData.get(name) as string | null) ?? null, {
-        talentId: data.talentId,
-        jobId: data.jobId,
-      })
-      if (!built.ok) fieldErrors[`ans_${field.key}`] = [built.error]
-      else if (built.answer) answers.push(built.answer)
-      else if (field.required) fieldErrors[`ans_${field.key}`] = [missingMessage(field)]
+      const get = (name: string) => (formData.get(name) as string | null) ?? null
+      const built = buildAnswerFromForm(field, get, { talentId: data.talentId, jobId: data.jobId })
+      if (!built.ok) {
+        fieldErrors[`ans_${field.key}`] = [built.error]
+        failed.push({ key: field.key, reason: "INVALID_VALUE" })
+        continue
+      }
+      if (built.answer) {
+        answers.push(built.answer)
+        continue
+      }
+      // 「あとで別途送る」：その項目のアップロード失敗が記録されているときだけ受け付ける
+      const deferred = await deferredAnswer(field, get, data.talentId, data.jobId)
+      if (deferred) {
+        answers.push(deferred)
+        continue
+      }
+      if (field.required) {
+        fieldErrors[`ans_${field.key}`] = [missingMessage(field)]
+        failed.push({ key: field.key, reason: "REQUIRED_MISSING" })
+      }
     }
     if (Object.keys(fieldErrors).length > 0) {
+      for (const f of failed.slice(0, 5)) {
+        await recordFormError({
+          form: "application", source: "server", talentId: data.talentId, jobId: data.jobId, field: f.key, reason: f.reason,
+        })
+      }
       return { error: fieldErrors, message: "入力内容を確認してください", action: "FIX_FIELDS" as const }
     }
   }
 
-  await prisma.application.create({
-    data: {
-      talentId: data.talentId,
-      jobId: data.jobId,
-      status: data.status,
-      note: data.note || null,
-      submissions: {
-        create: submissions,
+  try {
+    await prisma.application.create({
+      data: {
+        talentId: data.talentId,
+        jobId: data.jobId,
+        status: data.status,
+        note: data.note || null,
+        submissions: {
+          create: submissions,
+        },
+        // 自由項目のない案件は今までどおり何も入れない
+        ...(fields.length > 0
+          ? { submissionAnswers: answers, hasMissingAnswers: hasMissingRequired(fields, answers) }
+          : {}),
       },
-      // 自由項目のない案件は今までどおり何も入れない
-      ...(fields.length > 0
-        ? { submissionAnswers: answers, hasMissingAnswers: hasMissingRequired(fields, answers) }
-        : {}),
-    },
-  })
+    })
+  } catch (e) {
+    // 同時に2回送られた（止まった後の再送など）とき、2回目は応募済みとして完了扱いにする
+    if (isUniqueViolation(e) && !applicant.isAdminProxy) {
+      const already = await prisma.application.findUnique({
+        where: { talentId_jobId: { talentId: data.talentId, jobId: data.jobId } },
+        select: { submissionAnswers: true },
+      })
+      return { success: true, alreadyApplied: true, deferred: deferredItems(already?.submissionAnswers) }
+    }
+    throw e
+  }
 
   const [talent, job, appCount] = await Promise.all([
     prisma.talent.findUnique({ where: { id: data.talentId }, select: { name: true } }),
@@ -298,7 +368,50 @@ export async function createApplication(formData: FormData) {
   revalidatePath("/jobs")
   updateTag("talents")
   updateTag("jobs")
-  return { success: true }
+  return {
+    success: true,
+    deferred: answers.filter((a) => a.origin === "DEFERRED").map((a) => ({ label: a.label, code: a.errorCode })),
+  }
+}
+
+// 応募の送信が30秒で終わらなかったとき、画面から「実は応募できていたか」を確かめる（タレント本人・専用リンクのみ）
+export async function getMyApplicationStatus(jobId: string, t?: string | null) {
+  const requester = await resolveRequester({ t })
+  if (!requester.ok || requester.isAdminProxy) return { applied: false as const, deferred: [] }
+  const app = await prisma.application.findUnique({
+    where: { talentId_jobId: { talentId: requester.talentId, jobId } },
+    select: { submissionAnswers: true },
+  })
+  return app ? { applied: true as const, deferred: deferredItems(app.submissionAnswers) } : { applied: false as const, deferred: [] }
+}
+
+// 「あとで別途送る」の回答を作る。写真・ファイルの項目で、その応募者・案件・項目のアップロード失敗の記録があるときだけ
+async function deferredAnswer(
+  field: SubmissionField,
+  get: (name: string) => string | null,
+  talentId: string,
+  jobId: string
+): Promise<SubmissionAnswer | null> {
+  if (field.kind !== "PHOTO" && field.kind !== "FILE") return null
+  if (get(`ans_${field.key}_deferred`) !== "1") return null
+  const log = await prisma.formErrorLog.findFirst({
+    where: { talentId, jobId, field: field.key, form: "upload" },
+    orderBy: { createdAt: "desc" },
+    select: { code: true },
+  })
+  if (!log) return null
+  const sentCode = get(`ans_${field.key}_deferred_code`)
+  return {
+    key: field.key,
+    label: field.label,
+    kind: field.kind,
+    value: null,
+    fileUrl: null,
+    fileName: null,
+    origin: "DEFERRED",
+    errorCode: isErrorCode(sentCode) ? sentCode : log.code,
+    updatedAt: null,
+  }
 }
 
 const NOTIFY_STATUSES = new Set(["RESUME_SENT", "ACCEPTED", "REJECTED"])
