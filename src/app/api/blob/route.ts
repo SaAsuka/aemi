@@ -1,6 +1,27 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { get } from "@vercel/blob"
 import { isSupabaseStorageUrl, extractStoragePath, getSignedUrl } from "@/lib/supabase-storage"
+import { getSession } from "@/lib/auth"
+
+function storagePathOf(url: string): string | null {
+  if (isSupabaseStorageUrl(url)) return extractStoragePath(url)
+  try {
+    const u = new URL(url)
+    if (u.hostname.endsWith("blob.vercel-storage.com")) return decodeURIComponent(u.pathname.replace(/^\//, ""))
+  } catch {
+    // URLとして読めないものは下の処理に任せる
+  }
+  return null
+}
+
+// 応募の提出物（applications/）だけは、管理者と本人以外に見せない。
+// 新しい提出物は applications/{talentId}/... に置く。それ以前の applications/{時刻}-... は管理者だけ
+async function canReadApplicationFile(path: string): Promise<boolean> {
+  const session = await getSession()
+  if (session.role === "admin") return true
+  const ownerId = path.split("/")[1]
+  return session.role === "talent" && !!session.talentId && session.talentId === ownerId
+}
 
 export async function GET(request: NextRequest) {
   const url = request.nextUrl.searchParams.get("url")
@@ -10,6 +31,14 @@ export async function GET(request: NextRequest) {
 
   if (!url) {
     return NextResponse.json({ error: "Missing url" }, { status: 400 })
+  }
+
+  const storagePath = storagePathOf(url)
+  if (storagePath?.includes("..")) {
+    return NextResponse.json({ error: "invalid_path" }, { status: 400 })
+  }
+  if (storagePath?.startsWith("applications/") && !(await canReadApplicationFile(storagePath))) {
+    return NextResponse.json({ error: "forbidden" }, { status: 403 })
   }
 
   try {
