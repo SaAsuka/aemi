@@ -190,6 +190,11 @@ export default async function JobDetailPage({
                       </p>
                       <div className="mt-2 flex flex-wrap items-center gap-2">
                         <SubmissionLinks submissions={app.submissions} />
+                        {app.hasMissingAnswers && (
+                          <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 ring-1 ring-amber-200">
+                            未提出あり
+                          </span>
+                        )}
                         <Link
                           href={`/admin/applications/${app.id}`}
                           className="text-xs text-neutral-600 underline underline-offset-4 hover:text-neutral-950"

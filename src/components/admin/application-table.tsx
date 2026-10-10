@@ -23,15 +23,20 @@ import { InvoiceCreateDialog } from "@/components/admin/invoice-create-dialog"
 import { TalentAvatar } from "@/components/admin/talent-avatar"
 import { INVOICE_STATUS_LABELS, INVOICE_TONE, StatusChip } from "@/components/admin/status-chip"
 
-// 応募詳細（提出項目の回答・写真のまとめてダウンロード）へのリンク
-function DetailLink({ applicationId }: { applicationId: string }) {
+// 応募詳細（提出項目の回答・写真のまとめてダウンロード）へのリンク。必須の提出項目に未提出があれば印を付ける
+function DetailLink({ applicationId, missing }: { applicationId: string; missing?: boolean }) {
   return (
-    <Link
-      href={`/admin/applications/${applicationId}`}
-      className="mt-1 inline-block text-xs text-neutral-600 underline underline-offset-4 hover:text-neutral-950"
-    >
-      内容を見る
-    </Link>
+    <span className="mt-1 flex flex-wrap items-center gap-1.5">
+      {missing && (
+        <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 ring-1 ring-amber-200">未提出あり</span>
+      )}
+      <Link
+        href={`/admin/applications/${applicationId}`}
+        className="text-xs text-neutral-600 underline underline-offset-4 hover:text-neutral-950"
+      >
+        内容を見る
+      </Link>
+    </span>
   )
 }
 
@@ -39,6 +44,7 @@ type AppRow = {
   id: string
   status: string
   appliedAt: Date
+  hasMissingAnswers?: boolean
   talent: {
     id: string
     name: string
@@ -241,7 +247,7 @@ export function ApplicationTable({
                   </TableCell>
                   <TableCell className={`${CELL} max-w-[10rem] whitespace-normal`}>
                     <SubmissionLinks submissions={app.submissions} />
-                    <DetailLink applicationId={app.id} />
+                    <DetailLink applicationId={app.id} missing={app.hasMissingAnswers} />
                   </TableCell>
                   <TableCell className={CELL}>
                     <div className="w-32">{statusSelect(app)}</div>
@@ -284,7 +290,7 @@ export function ApplicationTable({
                   </Link>
                   <Schedule app={app} />
                   {app.submissions.length > 0 && <SubmissionLinks submissions={app.submissions} />}
-                  <DetailLink applicationId={app.id} />
+                  <DetailLink applicationId={app.id} missing={app.hasMissingAnswers} />
                   <div className="flex flex-wrap items-center gap-2 pt-0.5">
                     <div className="w-36">{statusSelect(app)}</div>
                     {app.status === "ACCEPTED" && invoice(app)}

@@ -72,6 +72,7 @@ export async function getJob(id: string) {
           id: true,
           status: true,
           appliedAt: true,
+          hasMissingAnswers: true,
           talent: {
             select: {
               id: true, name: true,

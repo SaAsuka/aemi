@@ -11,7 +11,7 @@ import { ApplicationTable } from "@/components/admin/application-table"
 import { JobTalentMatchSelect } from "@/components/admin/job-talent-match-select"
 import { BTN_PRIMARY, BTN_SECONDARY, PANEL } from "@/components/admin/styles"
 
-type ApplicationSearchParams = { status?: string; sort?: string; order?: string; page?: string; talentId?: string }
+type ApplicationSearchParams = { status?: string; sort?: string; order?: string; page?: string; talentId?: string; missing?: string }
 
 const STATUS_TABS = [
   { value: "ALL", label: "すべて" },
@@ -36,16 +36,26 @@ export default async function ApplicationsPage({
 }) {
   const params = await searchParams
   const { status, sort, order, page, talentId } = params
+  const missingOnly = params.missing === "1"
   const [applications, totalCount, talents, productionCompanies] = await Promise.all([
-    getApplications(status, undefined, sort, order, page ? Number(page) : 1, talentId),
-    getApplicationCount(status, undefined, talentId),
+    getApplications(status, undefined, sort, order, page ? Number(page) : 1, talentId, missingOnly),
+    getApplicationCount(status, undefined, talentId, missingOnly),
     getActiveTalentOptions(),
     getProductionCompanyList(),
   ])
 
   const activeStatus = status && status !== "ALL" ? status : "ALL"
   const selectedTalent = talentId ? talents.find((t) => t.id === talentId) : undefined
-  const isNarrowed = Boolean(talentId || activeStatus !== "ALL")
+  const isNarrowed = Boolean(talentId || activeStatus !== "ALL" || missingOnly)
+
+  // 「未提出ありのみ」の切り替え（ページは1に戻す）
+  const missingHref = (() => {
+    const next = new URLSearchParams()
+    for (const [k, v] of Object.entries(params)) if (v && k !== "missing" && k !== "page") next.set(k, v)
+    if (!missingOnly) next.set("missing", "1")
+    const qs = next.toString()
+    return qs ? `/admin/applications?${qs}` : "/admin/applications"
+  })()
 
   const pageSize = 50
   const currentPage = page ? Number(page) : 1
@@ -117,6 +127,15 @@ export default async function ApplicationsPage({
             )
           })}
         </nav>
+        <Link
+          href={missingHref}
+          aria-pressed={missingOnly}
+          className={`inline-flex h-8 items-center rounded-full px-3.5 text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950/30 ${
+            missingOnly ? "bg-amber-500 font-medium text-white" : "text-amber-800 ring-1 ring-amber-300 hover:bg-amber-50"
+          }`}
+        >
+          {missingOnly ? "未提出ありのみ表示中（解除）" : "未提出ありのみ"}
+        </Link>
       </div>
 
       {/* 一覧 */}
