@@ -13,6 +13,8 @@ import {
   isSubmissionFileOf,
   buildAnswerFromForm,
   sameFieldKeys,
+  buildAnswerRows,
+  zipEntryNames,
   type SubmissionField,
   type SubmissionAnswer,
 } from "./submission-fields"
@@ -313,6 +315,67 @@ describe("sameFieldKeys", () => {
     expect(sameFieldKeys(JSON.stringify(["k_00000001", "k_00000001"]), fields)).toBe(false)
     expect(sameFieldKeys("not json", fields)).toBe(false)
     expect(sameFieldKeys(null, fields)).toBe(false)
+  })
+})
+
+describe("buildAnswerRows", () => {
+  const fields = [
+    field({ key: "k_00000001", label: "近影写真", kind: "PHOTO" }),
+    field({ key: "k_00000002", label: "最寄駅" }),
+    field({ key: "k_00000003", label: "プロフィール資料", kind: "FILE", autofill: "COMPOSITE" }),
+    field({ key: "k_00000004", label: "参考動画", kind: "URL", required: false }),
+  ]
+  const photo = answer({ key: "k_00000001", label: "近影写真", kind: "PHOTO", value: null, fileUrl: "https://x/a.jpg" })
+
+  it("案件の項目順に、回答あり・未提出・コンポジの行を作る", () => {
+    const rows = buildAnswerRows(fields, [answer({ key: "k_00000002" }), photo])
+    expect(rows.map((r) => [r.label, r.state])).toEqual([
+      ["近影写真", "ANSWERED"],
+      ["最寄駅", "ANSWERED"],
+      ["プロフィール資料", "COMPOSITE"],
+      ["参考動画", "MISSING"],
+    ])
+  })
+
+  it("別途送付待ちを分ける", () => {
+    const deferred = answer({ key: "k_00000001", kind: "PHOTO", value: null, origin: "DEFERRED", errorCode: "E-7K2X9Q" })
+    expect(buildAnswerRows(fields, [deferred])[0].state).toBe("DEFERRED")
+  })
+
+  it("案件から消えた項目の回答は最後に回答時点の項目名で出す", () => {
+    const old = answer({ key: "k_00000099", label: "最寄りのバス停", value: "A停留所" })
+    const rows = buildAnswerRows(fields, [old])
+    expect(rows.at(-1)).toMatchObject({ label: "最寄りのバス停", removed: true, state: "ANSWERED" })
+  })
+})
+
+describe("zipEntryNames", () => {
+  const rowsOf = (answers: SubmissionAnswer[]) =>
+    buildAnswerRows(
+      answers.map((a) => field({ key: a.key, label: a.label, kind: a.kind })),
+      answers
+    )
+
+  it("{タレント名}_{項目名}.{拡張子} にする", () => {
+    const rows = rowsOf([answer({ key: "k_00000001", label: "近影写真（正面）", kind: "PHOTO", value: null, fileUrl: "https://x/k-1.JPG", fileName: "IMG.HEIC" })])
+    expect(zipEntryNames("山田 花子", rows)).toEqual([{ fileUrl: "https://x/k-1.JPG", name: "山田_花子_近影写真（正面）.jpg" }])
+  })
+
+  it("ファイル名に使えない文字は _ にし、同名は番号を付ける", () => {
+    const rows = rowsOf([
+      answer({ key: "k_00000001", label: "写真/1", kind: "PHOTO", value: null, fileUrl: "https://x/a.png" }),
+      answer({ key: "k_00000002", label: "写真:1", kind: "PHOTO", value: null, fileUrl: "https://x/b.png" }),
+    ])
+    expect(zipEntryNames("A", rows).map((e) => e.name)).toEqual(["A_写真_1.png", "A_写真_1_2.png"])
+  })
+
+  it("写真以外・未提出・別途送付待ちは含めない", () => {
+    const rows = rowsOf([
+      answer({ key: "k_00000001", kind: "FILE", value: null, fileUrl: "https://x/a.pdf" }),
+      answer({ key: "k_00000002", kind: "PHOTO", value: null, origin: "DEFERRED", errorCode: "E-7K2X9Q" }),
+      answer({ key: "k_00000003", kind: "TEXT" }),
+    ])
+    expect(zipEntryNames("A", rows)).toEqual([])
   })
 })
 
