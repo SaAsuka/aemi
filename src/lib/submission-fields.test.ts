@@ -165,7 +165,8 @@ describe("submissionFieldsSchema", () => {
     expect(submissionFieldsSchema.safeParse([{ ...field(), label: "" }]).success).toBe(false)
     expect(submissionFieldsSchema.safeParse([{ ...field(), kind: "VIDEO" }]).success).toBe(false)
     expect(submissionFieldsSchema.safeParse([{ ...field(), key: "x_1" }]).success).toBe(false)
-    const { required: _r, ...noRequired } = field()
+    const noRequired: Record<string, unknown> = { ...field() }
+    delete noRequired.required
     expect(submissionFieldsSchema.safeParse([noRequired]).success).toBe(false)
   })
 

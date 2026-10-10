@@ -143,7 +143,7 @@ description: "案件ごとの提出項目を応募フォームで受け取る �
 - [X] T048 [P] [US6] `src/lib/apply-draft.ts`（ブラウザ用）: `loadDraft/saveDraft/clearDraft(talentId, jobId)`。localStorage キー `apply-draft:{talentId}:{jobId}`、TEXT/URL の値とアップロード済み `fileUrl`/`fileName` だけを保存。フォームから入力のたびに保存（間引き）、開いたときに復元、応募完了で削除。**応募済みの案件を開いたときも削除**（`src/app/(talent)/jobs/[id]/page.tsx` から応募済みかを渡す）
 - [X] T049 [US6] `src/app/(admin)/admin/error-logs/page.tsx`: 直近の失敗記録の一覧（起きた日時・受付番号・フォーム・タレント名・案件名・項目名・理由・サーバー/端末・端末情報）、受付番号での検索、フォーム・タレント・案件での絞り込み。`requireAdmin()`。管理画面のナビに追加
 - [X] T050 [US6] 「未提出あり」: `src/lib/actions/application.ts` の一覧取得（`getApplications`・`getApplicationCount`）に `hasMissingAnswers` の絞り込みを追加し、`src/components/admin/application-table.tsx` と案件詳細の応募者欄に印を表示、**絞り込みは応募管理一覧にだけ**「未提出ありのみ」を追加（既存の列・並び順・ページ分けは変えない）
-- [ ] T051 [US6] 管理者による回答の登録・修正: `src/lib/actions/application-detail.ts` に `updateApplicationAnswer(applicationId, key, { value?, fileUrl?, fileName? })`（`requireAdmin()`、案件の項目に従って検証、`origin: "ADMIN"`・`updatedAt` を記録、`hasMissingAnswers` を再計算。差し替えた古いファイルは消さない＝FR-031 と同じ扱い。`autofill: COMPOSITE` の項目は登録・修正の対象外）。`src/components/admin/application-answers.tsx` に各行の「登録／差し替え／修正」を追加（ファイルは T024 を管理者として使い upload-url 経由で直接アップロード）。`DEFERRED` の行は「別途送付待ち」と目立つ表示
+- [X] T051 [US6] 管理者による回答の登録・修正: `src/lib/actions/application-detail.ts` に `updateApplicationAnswer(applicationId, key, { value?, fileUrl?, fileName? })`（`requireAdmin()`、案件の項目に従って検証、`origin: "ADMIN"`・`updatedAt` を記録、`hasMissingAnswers` を再計算。差し替えた古いファイルは消さない＝FR-031 と同じ扱い。`autofill: COMPOSITE` の項目は登録・修正の対象外）。`src/components/admin/application-answers.tsx` に各行の「登録／差し替え／修正」を追加（ファイルは T024 を管理者として使い upload-url 経由で直接アップロード）。`DEFERRED` の行は「別途送付待ち」と目立つ表示
 
 **Checkpoint**: アップロードや送信で止まっても操作が戻り、応募は完了でき、管理者が未提出と失敗の原因を把握できる
 
