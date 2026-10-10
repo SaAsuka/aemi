@@ -23,6 +23,18 @@ import { InvoiceCreateDialog } from "@/components/admin/invoice-create-dialog"
 import { TalentAvatar } from "@/components/admin/talent-avatar"
 import { INVOICE_STATUS_LABELS, INVOICE_TONE, StatusChip } from "@/components/admin/status-chip"
 
+// 応募詳細（提出項目の回答・写真のまとめてダウンロード）へのリンク
+function DetailLink({ applicationId }: { applicationId: string }) {
+  return (
+    <Link
+      href={`/admin/applications/${applicationId}`}
+      className="mt-1 inline-block text-xs text-neutral-600 underline underline-offset-4 hover:text-neutral-950"
+    >
+      内容を見る
+    </Link>
+  )
+}
+
 type AppRow = {
   id: string
   status: string
@@ -229,6 +241,7 @@ export function ApplicationTable({
                   </TableCell>
                   <TableCell className={`${CELL} max-w-[10rem] whitespace-normal`}>
                     <SubmissionLinks submissions={app.submissions} />
+                    <DetailLink applicationId={app.id} />
                   </TableCell>
                   <TableCell className={CELL}>
                     <div className="w-32">{statusSelect(app)}</div>
@@ -271,6 +284,7 @@ export function ApplicationTable({
                   </Link>
                   <Schedule app={app} />
                   {app.submissions.length > 0 && <SubmissionLinks submissions={app.submissions} />}
+                  <DetailLink applicationId={app.id} />
                   <div className="flex flex-wrap items-center gap-2 pt-0.5">
                     <div className="w-36">{statusSelect(app)}</div>
                     {app.status === "ACCEPTED" && invoice(app)}
