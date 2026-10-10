@@ -1,5 +1,26 @@
 # VOZEL (AEMI) プロジェクト
 
+## 開発の進め方（SDD / GitHub spec-kit）
+
+**新機能・ある程度の規模の修正は、コードを書き始める前に `specs/` に仕様を作ること。**
+
+```
+/speckit-specify <説明>  → spec.md（何を・なぜ）
+/speckit-clarify         → 曖昧な点を詰める（任意）
+/speckit-plan            → plan.md（どう作るか）
+/speckit-analyze         → spec/plan/tasks間の矛盾チェック（任意）
+/speckit-tasks           → tasks.md（作業分解）
+/speckit-implement       → 実装
+```
+
+各段階でユーザーの確認を挟んでから次に進む。spec.mdが曖昧なままplan.mdに進まない。
+詳細は `specs/README.md`、開発原則（本番環境の扱い・DBマイグレーションの安全性・テスト方針など）は
+`.specify/memory/constitution.md` を参照。
+
+**適用しないケース：** 誤字修正・既存バグの単純な修正・調査作業・1ファイルで完結する
+軽微な変更にはこのプロセスを適用しない（過剰）。「新しい機能」「設計判断が要る変更」
+「複数ファイルにまたがる変更」が対象の目安。迷ったら軽い方に倒してユーザーに確認する。
+
 ## 技術スタック
 - Next.js 16 (App Router) + Prisma + Vercel Blob (private) + Vercel デプロイ
 - 認証: iron-session（Cookie名 `aemi_session`）
