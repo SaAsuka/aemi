@@ -5,6 +5,7 @@ import Link, { useLinkStatus } from "next/link"
 import { usePathname } from "next/navigation"
 import { Dialog } from "@base-ui/react/dialog"
 import {
+  AlertTriangle,
   ArrowUpRight,
   BarChart3,
   Briefcase,
@@ -34,6 +35,7 @@ const navItems = [
   { title: "オプション管理", href: "/admin/options", icon: ShoppingBag },
   { title: "制作会社", href: "/admin/production-companies", icon: Building2 },
   { title: "請求書", href: "/admin/invoices", icon: Receipt },
+  { title: "エラー記録", href: "/admin/error-logs", icon: AlertTriangle },
 ]
 
 const ITEM =
