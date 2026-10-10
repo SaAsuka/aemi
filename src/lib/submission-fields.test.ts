@@ -16,6 +16,8 @@ import {
   buildAnswerRows,
   zipEntryNames,
   normalizeFieldsInput,
+  profileInitialValue,
+  isAgeLocked,
   type SubmissionField,
   type SubmissionAnswer,
 } from "./submission-fields"
@@ -414,6 +416,41 @@ describe("normalizeFieldsInput", () => {
     expect(normalizeFieldsInput(JSON.stringify([{ label: "あ".repeat(201) }])).ok).toBe(false)
     expect(normalizeFieldsInput("{oops").ok).toBe(false)
     expect(normalizeFieldsInput(JSON.stringify({ label: "x" })).ok).toBe(false)
+  })
+})
+
+describe("profileInitialValue", () => {
+  const profile = { name: "山田 花子", birthDate: new Date(2000, 4, 10), height: 160 }
+
+  it("名前・身長はプロフィールの値", () => {
+    expect(profileInitialValue("NAME", profile, new Date())).toBe("山田 花子")
+    expect(profileInitialValue("HEIGHT", profile, new Date())).toBe("160")
+  })
+
+  it("年齢は満年齢（誕生日の前日・当日）", () => {
+    expect(profileInitialValue("AGE", profile, new Date(2026, 4, 9))).toBe("25")
+    expect(profileInitialValue("AGE", profile, new Date(2026, 4, 10))).toBe("26")
+  })
+
+  it("うるう日生まれ", () => {
+    const leap = { ...profile, birthDate: new Date(2004, 1, 29) }
+    expect(profileInitialValue("AGE", leap, new Date(2026, 1, 28))).toBe("21")
+    expect(profileInitialValue("AGE", leap, new Date(2026, 2, 1))).toBe("22")
+  })
+
+  it("未登録なら空", () => {
+    const empty = { name: null, birthDate: null, height: null }
+    expect(profileInitialValue("NAME", empty, new Date())).toBe("")
+    expect(profileInitialValue("AGE", empty, new Date())).toBe("")
+    expect(profileInitialValue("HEIGHT", empty, new Date())).toBe("")
+    expect(profileInitialValue(null, profile, new Date())).toBe("")
+  })
+
+  it("年齢を書き換え不可にするのは生年月日があるときだけ", () => {
+    const age = field({ autofill: "AGE" })
+    expect(isAgeLocked(age, profile)).toBe(true)
+    expect(isAgeLocked(age, { ...profile, birthDate: null })).toBe(false)
+    expect(isAgeLocked(field({ autofill: "NAME" }), profile)).toBe(false)
   })
 })
 

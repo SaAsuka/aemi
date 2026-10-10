@@ -10,7 +10,9 @@ import { recordFormError } from "@/lib/form-error-log"
 import {
   buildAnswerFromForm,
   hasMissingRequired,
+  isAgeLocked,
   missingMessage,
+  profileInitialValue,
   parseSubmissionAnswers,
   parseSubmissionFields,
   sameFieldKeys,
@@ -285,9 +287,25 @@ async function createApplicationInner(formData: FormData) {
       return { error: { fieldKeys: [message] }, message, action: "RELOAD" as const, code }
     }
 
+    // 名前・年齢・身長の項目は、プロフィールのままか書き換えたかを記録する（プロフィール自体は書き換えない）
+    const needsProfile = fields.some((f) => f.autofill === "NAME" || f.autofill === "AGE" || f.autofill === "HEIGHT")
+    const profile = needsProfile
+      ? await prisma.talent.findUnique({ where: { id: data.talentId }, select: { name: true, birthDate: true, height: true } })
+      : null
+    const today = new Date()
+
     const fieldErrors: Record<string, string[]> = {}
     const failed: { key: string; reason: "REQUIRED_MISSING" | "INVALID_VALUE" }[] = []
     for (const field of fields) {
+      // 生年月日がある年齢は、送られてきた値ではなく生年月日から計算した値にする（画面でも書き換え不可）
+      if (profile && isAgeLocked(field, profile)) {
+        answers.push({
+          key: field.key, label: field.label, kind: field.kind,
+          value: profileInitialValue("AGE", profile, today), fileUrl: null, fileName: null,
+          origin: "PROFILE", errorCode: null, updatedAt: null,
+        })
+        continue
+      }
       const get = (name: string) => (formData.get(name) as string | null) ?? null
       const built = buildAnswerFromForm(field, get, { talentId: data.talentId, jobId: data.jobId })
       if (!built.ok) {
@@ -296,7 +314,8 @@ async function createApplicationInner(formData: FormData) {
         continue
       }
       if (built.answer) {
-        answers.push(built.answer)
+        const fromProfile = profile && field.autofill && built.answer.value === profileInitialValue(field.autofill, profile, today)
+        answers.push(fromProfile ? { ...built.answer, origin: "PROFILE" } : built.answer)
         continue
       }
       // 「あとで別途送る」：その項目のアップロード失敗が記録されているときだけ受け付ける
