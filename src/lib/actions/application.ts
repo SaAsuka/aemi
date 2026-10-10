@@ -26,23 +26,25 @@ import { sendLinePush, buildStatusMessage } from "@/lib/line"
 import { sendSlackNotification, buildApplicationNotification } from "@/lib/slack"
 import { trackEvent } from "@/lib/track-event"
 
-function buildAppWhere(status?: string, jobId?: string, talentId?: string) {
+function buildAppWhere(status?: string, jobId?: string, talentId?: string, missingOnly?: boolean) {
   const where: Record<string, unknown> = {}
   if (status && status !== "ALL") where.status = status
   if (jobId) where.jobId = jobId
   if (talentId) where.talentId = talentId
+  if (missingOnly) where.hasMissingAnswers = true
   return where
 }
 
-export async function getApplicationCount(status?: string, jobId?: string, talentId?: string) {
+export async function getApplicationCount(status?: string, jobId?: string, talentId?: string, missingOnly?: boolean) {
   await requireAdmin()
-  return prisma.application.count({ where: buildAppWhere(status, jobId, talentId) })
+  return prisma.application.count({ where: buildAppWhere(status, jobId, talentId, missingOnly) })
 }
 
 const APP_SELECT = {
   id: true,
   status: true,
   appliedAt: true,
+  hasMissingAnswers: true,
   talent: {
     select: {
       id: true, name: true,
@@ -70,9 +72,9 @@ const APP_SELECT = {
   schedule: { select: { date: true, status: true } },
 } as const
 
-export async function getApplications(status?: string, jobId?: string, sort?: string, order?: string, page?: number, talentId?: string) {
+export async function getApplications(status?: string, jobId?: string, sort?: string, order?: string, page?: number, talentId?: string, missingOnly?: boolean) {
   await requireAdmin()
-  const where = buildAppWhere(status, jobId, talentId)
+  const where = buildAppWhere(status, jobId, talentId, missingOnly)
   const sortOrder: "asc" | "desc" = order === "asc" ? "asc" : "desc"
   const pageSize = 50
   const currentPage = page ?? 1
