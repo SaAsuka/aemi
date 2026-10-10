@@ -208,6 +208,56 @@ export function mergeKamiteFields(prev: SubmissionField[], incoming: KamiteRequi
   })
 }
 
+// ---- 管理画面の案件編集から届いた項目 ----
+
+export type FieldsInput = { ok: true; fields: SubmissionField[] | undefined } | { ok: false; error: string }
+
+// 案件の作成・編集で届いた hidden の submissionFields を整える。
+// 送られてこなければ fields: undefined（＝保存済みの値に触らない）。
+// キーが無い・形の違うキーは作り直し、自動判定が未指定なら項目名から判定する
+export function normalizeFieldsInput(raw: unknown): FieldsInput {
+  if (raw === null || raw === undefined) return { ok: true, fields: undefined }
+  const invalid = { ok: false as const, error: "提出項目の内容を確認してください（項目名は必須で200文字まで、指示は1000文字まで、最大50項目）" }
+  let list: unknown
+  try {
+    list = typeof raw === "string" ? JSON.parse(raw) : null
+  } catch {
+    return invalid
+  }
+  if (!Array.isArray(list)) return invalid
+
+  const usedKeys = new Set<string>()
+  const items = list.map((item) => {
+    const o = (item && typeof item === "object" ? item : {}) as Record<string, unknown>
+    let key = typeof o.key === "string" && KEY_PATTERN.test(o.key) && !usedKeys.has(o.key) ? o.key : makeVozelFieldKey()
+    while (usedKeys.has(key)) key = makeVozelFieldKey()
+    usedKeys.add(key)
+    const label = typeof o.label === "string" ? o.label.trim() : ""
+    const kind = (FIELD_KINDS as readonly unknown[]).includes(o.kind) ? (o.kind as FieldKind) : "TEXT"
+    const note = typeof o.note === "string" && o.note.trim() ? o.note : null
+    const overridden = o.autofillOverridden === true
+    const autofill =
+      overridden || o.autofill !== undefined
+        ? (AUTOFILLS as readonly unknown[]).includes(o.autofill)
+          ? (o.autofill as Autofill)
+          : null
+        : detectAutofill(label, kind)
+    return {
+      key,
+      label,
+      kind,
+      required: o.required !== false,
+      note,
+      autofill,
+      autofillOverridden: overridden,
+      source: o.source === "KAMITE" ? "KAMITE" : "VOZEL",
+    }
+  })
+
+  const parsed = submissionFieldsSchema.safeParse(items)
+  return parsed.success ? { ok: true, fields: parsed.data } : invalid
+}
+
 // ---- 応募フォームから届いた回答を組み立てる ----
 
 export type BuiltAnswer = { ok: true; answer: SubmissionAnswer | null } | { ok: false; error: string }
