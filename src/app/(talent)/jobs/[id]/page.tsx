@@ -31,7 +31,7 @@ export default async function TalentJobDetailPage({
   }
 
   const displayName = talent.name
-  const [job, talentResume, activeApps] = await Promise.all([
+  const [job, talentResume, activeApps, myApplication] = await Promise.all([
     getOpenJob(id),
     prisma.talent.findUnique({ where: { id: talent.id }, select: { resume: true } }),
     prisma.application.findMany({
@@ -43,6 +43,7 @@ export default async function TalentJobDetailPage({
         job: { select: { title: true, dates: { select: { date: true, type: true } } } },
       },
     }),
+    prisma.application.findUnique({ where: { talentId_jobId: { talentId: talent.id, jobId: id } }, select: { id: true } }),
   ])
   const hasResume = !!talentResume?.resume
   if (!job) redirect("/jobs")
@@ -143,7 +144,7 @@ export default async function TalentJobDetailPage({
         </div>
       )}
 
-      <JobApplicationForm jobId={job.id} talentId={talent.id} talentName={talent.name} requirements={job.requirements} hasResume={hasResume} dateConflict={dateConflict} token={t ?? null} fields={fields} />
+      <JobApplicationForm jobId={job.id} talentId={talent.id} talentName={talent.name} requirements={job.requirements} hasResume={hasResume} dateConflict={dateConflict} token={t ?? null} fields={fields} alreadyApplied={!!myApplication} />
     </div>
     </>
   )

@@ -1,7 +1,10 @@
 "use client"
 
-import { useState, useCallback } from "react"
-import { createApplication } from "@/lib/actions/application"
+import { useState, useCallback, useEffect, useRef } from "react"
+import { createApplication, getMyApplicationStatus } from "@/lib/actions/application"
+import { flushErrorQueue, reportClientError } from "@/lib/client-error-report"
+import { clearDraft, loadDraft, saveDraft, type Draft } from "@/lib/apply-draft"
+import type { UploadError } from "@/lib/client-upload"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,6 +28,10 @@ type SubmissionData = {
   uploading: boolean
 }
 
+const SUBMIT_TIMEOUT_MS = 30_000
+const TIMED_OUT = Symbol("timed-out")
+const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
+
 export function JobApplicationForm({
   jobId,
   talentId,
@@ -34,6 +41,7 @@ export function JobApplicationForm({
   dateConflict = null,
   token = null,
   fields = [],
+  alreadyApplied = false,
 }: {
   jobId: string
   talentId: string
@@ -45,9 +53,14 @@ export function JobApplicationForm({
   token?: string | null
   // 案件ごとの自由な提出項目（コンポジの項目は含まない）
   fields?: SubmissionField[]
+  // もう応募済みの案件か（途中保存を消すため）
+  alreadyApplied?: boolean
 }) {
   const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle")
   const [message, setMessage] = useState("")
+  const [action, setAction] = useState<"FIX_FIELDS" | "RETRY" | "CONTACT" | "RELOAD" | null>(null)
+  const [deferredItems, setDeferredItems] = useState<{ label: string; code: string | null }[]>([])
+  const topMessageRef = useRef<HTMLDivElement>(null)
 
   const [answers, setAnswers] = useState<Record<string, FieldInputState>>(() =>
     Object.fromEntries(fields.map((f) => [f.key, emptyFieldState()]))
@@ -55,6 +68,56 @@ export function JobApplicationForm({
   const updateAnswer = useCallback((key: string, update: Partial<FieldInputState>) => {
     setAnswers((prev) => ({ ...prev, [key]: { ...prev[key], ...update } }))
   }, [])
+
+  // 途中保存した入力を戻す（応募済みの案件なら途中保存を消す）
+  const [draftLoaded, setDraftLoaded] = useState(false)
+  useEffect(() => {
+    if (alreadyApplied) {
+      clearDraft(talentId, jobId)
+    } else {
+      const draft = loadDraft(talentId, jobId)
+      setAnswers((prev) => {
+        const next = { ...prev }
+        for (const f of fields) {
+          const d = draft[f.key]
+          if (!d || !next[f.key]) continue
+          next[f.key] = {
+            ...next[f.key],
+            value: typeof d.value === "string" ? d.value : next[f.key].value,
+            fileUrl: d.fileUrl ?? next[f.key].fileUrl,
+            fileName: d.fileName ?? next[f.key].fileName,
+          }
+        }
+        return next
+      })
+    }
+    setDraftLoaded(true)
+    // 最初の1回だけ
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // 入力のたびに途中保存（間引く）
+  useEffect(() => {
+    if (!draftLoaded || alreadyApplied || fields.length === 0) return
+    const timer = setTimeout(() => {
+      const draft: Draft = {}
+      for (const f of fields) {
+        const a = answers[f.key]
+        if (a) draft[f.key] = { value: a.value, fileUrl: a.fileUrl, fileName: a.fileName }
+      }
+      saveDraft(talentId, jobId, draft)
+    }, 500)
+    return () => clearTimeout(timer)
+  }, [answers, draftLoaded, alreadyApplied, fields, talentId, jobId])
+
+  // アップロードの失敗を端末から報告し、受付番号を得る
+  const handleUploadError = useCallback(
+    async (err: UploadError, fieldKey: string) => {
+      if (!err.info.reason) return null
+      return reportClientError({ form: "upload", jobId, field: fieldKey, reason: err.info.reason, message: err.info.message, t: token })
+    },
+    [jobId, token]
+  )
 
   const isAnswered = (f: SubmissionField, a: FieldInputState | undefined) => {
     if (!a) return false
@@ -114,6 +177,8 @@ export function JobApplicationForm({
 
   const handleApply = async () => {
     setStatus("loading")
+    setAction(null)
+    setAnswers((prev) => Object.fromEntries(Object.entries(prev).map(([k, a]) => [k, a.deferred ? a : { ...a, error: null }])))
     const formData = new FormData()
     formData.set("talentId", talentId)
     formData.set("jobId", jobId)
@@ -147,30 +212,94 @@ export function JobApplicationForm({
       }
     }
 
-    const result = await createApplication(formData)
+    // 端末にためていた失敗の報告を先に送る（「あとで別途送る」の確認に間に合わせるため。待つのは長くても5秒）
+    await Promise.race([flushErrorQueue(token), wait(5_000)])
+
+    // 返事が30秒来なければ待つのをやめ、応募できていたかを確かめる（くるくるが終わらない状態を作らない）
+    const result = await Promise.race([
+      createApplication(formData),
+      wait(SUBMIT_TIMEOUT_MS).then((): typeof TIMED_OUT => TIMED_OUT),
+    ])
+
+    if (result === TIMED_OUT) {
+      const check = await getMyApplicationStatus(jobId, token).catch(() => null)
+      if (check?.applied) {
+        finishSuccess(check.deferred)
+        return
+      }
+      const code = reportClientError({ form: "application", jobId, reason: "TIMEOUT", message: "応募の送信が30秒で終わらなかった", t: token })
+      setStatus("error")
+      setAction("RETRY")
+      setMessage(`通信に時間がかかっています。入力はそのまま残っているので、電波の良い場所でもう一度「応募する」を押してください（受付番号：${code}）`)
+      return
+    }
 
     if ("error" in result && result.error) {
       setStatus("error")
-      const err = result.error
-      if (typeof err === "string") {
-        setMessage(err)
-      } else {
-        const values: string[] = []
-        for (const v of Object.values(err)) {
-          if (v) values.push(...v)
-        }
-        setMessage(values.join(", ") || "エラーが発生しました")
+      const action = "action" in result ? result.action : undefined
+      setAction(action ?? null)
+      if (action === "RELOAD") {
+        setMessage("案件の内容が更新されました。画面を開き直してください（入力は残っています）")
+        return
       }
+
+      // 自由項目のエラーはその項目の場所に出し、最初の項目までスクロールする
+      const err = result.error as Record<string, string[] | undefined>
+      const others: string[] = []
+      let firstKey: string | null = null
+      for (const [name, msgs] of Object.entries(err)) {
+        if (!msgs?.length) continue
+        const key = name.startsWith("ans_") ? name.slice(4) : null
+        if (key && fields.some((f) => f.key === key)) {
+          updateAnswer(key, { error: msgs[0] })
+          firstKey ??= key
+        } else {
+          others.push(...msgs)
+        }
+      }
+      setMessage(
+        others.length > 0
+          ? others.join(", ")
+          : action === "FIX_FIELDS"
+            ? "入力内容を確認してください。赤字の項目を直してから、もう一度「応募する」を押してください"
+            : "エラーが発生しました。時間をおいてもう一度お試しください"
+      )
+      requestAnimationFrame(() => {
+        const target = firstKey ? document.getElementById(`field-${firstKey}`) : topMessageRef.current
+        target?.scrollIntoView({ behavior: "smooth", block: "center" })
+      })
     } else {
-      setStatus("success")
-      setMessage(`${talentName}さんの応募が完了しました`)
+      finishSuccess("deferred" in result ? result.deferred ?? [] : [])
     }
+  }
+
+  const finishSuccess = (deferred: { label: string; code: string | null }[]) => {
+    clearDraft(talentId, jobId)
+    setDeferredItems(deferred)
+    setStatus("success")
+    setMessage(`${talentName}さんの応募が完了しました`)
   }
 
   if (status === "success") {
     return (
-      <div className="rounded-lg border border-green-200 bg-green-50 p-6 text-center">
-        <p className="text-green-800 font-medium">{message}</p>
+      <div className="space-y-3">
+        <div className="rounded-lg border border-green-200 bg-green-50 p-6 text-center">
+          <p className="text-green-800 font-medium">{message}</p>
+        </div>
+        {deferredItems.length > 0 && (
+          <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900" role="status">
+            <p className="font-medium">次の項目は、管理者に別途送ってください</p>
+            <ul className="mt-2 list-disc space-y-1 pl-5">
+              {deferredItems.map((d) => (
+                <li key={`${d.label}-${d.code}`}>
+                  {d.label}
+                  {d.code && <span className="ml-1">（受付番号：{d.code}）</span>}
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2 text-xs">送るときは、受付番号も一緒に伝えてください。</p>
+          </div>
+        )}
       </div>
     )
   }
@@ -178,8 +307,13 @@ export function JobApplicationForm({
   return (
     <div className="space-y-4">
       {status === "error" && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
+        <div ref={topMessageRef} className="rounded-lg border border-red-200 bg-red-50 p-4 text-center" role="alert">
           <p className="text-red-800 text-sm">{message}</p>
+          {action === "RELOAD" && (
+            <button type="button" onClick={() => window.location.reload()} className="mt-2 text-sm text-red-800 underline">
+              画面を開き直す
+            </button>
+          )}
         </div>
       )}
 
@@ -300,6 +434,7 @@ export function JobApplicationForm({
               onChange={(update) => updateAnswer(f.key, update)}
               jobId={jobId}
               token={token}
+              onUploadError={(err) => handleUploadError(err, f.key)}
             />
           ))}
         </div>

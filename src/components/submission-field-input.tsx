@@ -69,7 +69,8 @@ export function SubmissionFieldInput({
     } catch (e) {
       const err = e instanceof UploadError ? e : null
       const aborted = err?.info.kind === "ABORTED"
-      const code = err && !aborted && onUploadError ? await onUploadError(err) : err?.code ?? null
+      // サーバー側で記録済みならその受付番号、そうでなければ端末から報告して受付番号を得る
+      const code = aborted ? null : err?.code ?? (err && onUploadError ? await onUploadError(err) : null)
       onChange({
         uploading: false,
         progress: 0,
@@ -164,11 +165,37 @@ export function SubmissionFieldInput({
         </div>
       )}
 
-      {state.error && (
-        <p className="text-xs text-red-700" role="alert">
-          {state.error}
-          {state.errorCode && <span className="ml-1">（受付番号：{state.errorCode}）</span>}
-        </p>
+      {state.deferred ? (
+        <div className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900 ring-1 ring-amber-200" role="status">
+          <p>
+            この項目は、応募のあとで管理者に別途送ってください
+            {state.errorCode && <>（受付番号：{state.errorCode}）</>}
+          </p>
+          <button type="button" onClick={() => onChange({ deferred: false })} className="mt-1 underline">
+            やっぱりここでアップロードする
+          </button>
+        </div>
+      ) : (
+        state.error && (
+          <div className="space-y-1" role="alert">
+            <p className="text-xs text-red-700">
+              {state.error}
+              {state.errorCode && <span className="ml-1">（受付番号：{state.errorCode}）</span>}
+            </p>
+            {isFile && state.uploadFailed && !state.fileUrl && !state.uploading && (
+              <div className="flex flex-wrap gap-3 text-xs">
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="text-neutral-900 underline">
+                  もう一度アップロード
+                </button>
+                {state.errorCode && (
+                  <button type="button" onClick={() => onChange({ deferred: true, error: null })} className="text-neutral-900 underline">
+                    あとで別途送る（応募は先に済ませる）
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )
       )}
     </div>
   )
