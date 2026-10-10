@@ -277,6 +277,10 @@ model Job {
   externalId     String?
   sourceUrl      String? // 送り元の案件ページ。中身を突き合わせたいときに開く
 
+  // 案件ごとの自由な提出項目（項目名・種類・必須・指示文…の配列）。今の4種類（requirements）とは別物。
+  // 中身の形は src/lib/submission-fields.ts で検証する。必ずそこを通して読み書きする
+  submissionFields Json?
+
   applications      Application[]
   requirements      JobRequirement[]
   dates             JobDate[]
@@ -303,6 +307,28 @@ model ExternalJobLog {
   @@index([createdAt])
   @@index([source, createdAt])
   @@map("external_job_logs")
+}
+
+// 応募・アップロードなどフォームの失敗の記録。タレントには受付番号（code）を見せ、管理者が後から原因を追う。
+// 入力値・提出物の中身・パスワード・トークンは入れない。タレント削除後も残すため外部キーは張らない
+model FormErrorLog {
+  id         String   @id @default(cuid())
+  code       String   @unique // 受付番号 例: E-7K2X9Q
+  form       String // application / upload /（将来）register
+  talentId   String?
+  jobId      String?
+  field      String? // 自由項目の key
+  reason     String // REQUIRED_MISSING / INVALID_VALUE / TOO_LARGE / BAD_TYPE / NETWORK / STALLED / TIMEOUT / UNAUTHORIZED / FIELDS_CHANGED / SERVER_ERROR / OTHER
+  source     String // server / client
+  message    String?
+  userAgent  String?
+  occurredAt DateTime
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([talentId])
+  @@index([talentId, jobId, field])
+  @@map("form_error_logs")
 }
 
 model JobDate {
@@ -332,6 +358,11 @@ model Application {
   note            String?
   createdAt       DateTime          @default(now())
   updatedAt       DateTime          @updatedAt
+
+  // 自由な提出項目への回答（回答時点の項目名つき）。src/lib/submission-fields.ts を通して読み書きする
+  submissionAnswers Json?
+  // 必須の自由項目に未提出（別途送付待ちを含む）があるか。一覧の絞り込み用（JSONの中はページ分けの前に絞れないため）
+  hasMissingAnswers Boolean @default(false)
 
   schedule    Schedule?
   submissions ApplicationSubmission[]
