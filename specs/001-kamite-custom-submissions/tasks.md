@@ -180,8 +180,8 @@ description: "案件ごとの提出項目を応募フォームで受け取る �
 
 ## Phase 9: Polish & 確認
 
-- [ ] T059 [P] `CLAUDE.md` の「踏んだ罠」に追記: Vercel Functions の本文上限4.5MB（`/api/upload` 経由は大きい写真が落ちる・Safari では「The string did not match the expected pattern.」になる）、提出物は upload-url で直接アップロード、`/api/blob` は `applications/` だけ権限確認あり、`submissionFields`/`submissionAnswers` は必ず `src/lib/submission-fields.ts` を通して読む、応募フォームからプロフィールは書き換えない
-- [ ] T060 `npm test` と `npx tsc --noEmit` が通る
+- [X] T059 [P] `CLAUDE.md` の「踏んだ罠」に追記: Vercel Functions の本文上限4.5MB（`/api/upload` 経由は大きい写真が落ちる・Safari では「The string did not match the expected pattern.」になる）、提出物は upload-url で直接アップロード、`/api/blob` は `applications/` だけ権限確認あり、`submissionFields`/`submissionAnswers` は必ず `src/lib/submission-fields.ts` を通して読む、応募フォームからプロフィールは書き換えない
+- [X] T060 `npm test` と `npx tsc --noEmit` が通る
 - [ ] T061 quickstart.md の S1〜S8 をテスト環境で実施（S8 は iPhone Safari・LINE内蔵ブラウザ・Android Chrome の実機。実機確認できなかったものは未確認として報告）
 - [ ] T062 ユーザーの許可を得て `vozel-test` へ push → 山中さんにテスト環境で確認してもらう（SC-008）。項目名の自動判定語を山中さんの実データで調整
 - [ ] T063 （本番反映はユーザーの許可後・別作業）`origin/main` から新しいブランチを切り、本機能のファイルだけ移植（`scripts/send-test-kamite-job.ts` は除く）、`git diff origin/main..HEAD --stat` を確認。本番DBのマイグレーションは Supabase SQL Editor でユーザーに実行してもらい `_prisma_migrations` に記録（開発原則 第1条・第3条）
