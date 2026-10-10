@@ -7,6 +7,7 @@ import { prisma } from "@/lib/db"
 import { formatDate, formatDeadline } from "@/lib/utils/date"
 import { GENDER_LABELS } from "@/types"
 import { JobApplicationForm } from "@/components/job-application-form"
+import { parseSubmissionFields, visibleFields } from "@/lib/submission-fields"
 import { TalentNav } from "@/components/talent-nav"
 
 export default async function TalentJobDetailPage({
@@ -62,6 +63,9 @@ export default async function TalentJobDetailPage({
       if (dateConflict) break
     }
   }
+
+  // 自由な提出項目（コンポジの項目はフォームに出さない）
+  const fields = visibleFields(parseSubmissionFields(job.submissionFields))
 
   const backHref = t ? `/jobs?t=${t}` : "/jobs"
 
@@ -139,7 +143,7 @@ export default async function TalentJobDetailPage({
         </div>
       )}
 
-      <JobApplicationForm jobId={job.id} talentId={talent.id} talentName={talent.name} requirements={job.requirements} hasResume={hasResume} dateConflict={dateConflict} token={t ?? null} />
+      <JobApplicationForm jobId={job.id} talentId={talent.id} talentName={talent.name} requirements={job.requirements} hasResume={hasResume} dateConflict={dateConflict} token={t ?? null} fields={fields} />
     </div>
     </>
   )

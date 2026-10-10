@@ -134,6 +134,7 @@ export async function getOpenJob(id: string) {
           id: true, category: true, description: true, referenceUrl: true, referenceFile: true,
         },
       },
+      submissionFields: true,
     },
   })
 }
