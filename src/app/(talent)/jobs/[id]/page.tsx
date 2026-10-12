@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation"
-import Link from "next/link"
 import { requireTalent } from "@/lib/auth"
 import { getTalentByToken } from "@/lib/actions/talent"
 import { getOpenJob } from "@/lib/actions/job"
@@ -9,6 +8,7 @@ import { GENDER_LABELS } from "@/types"
 import { JobApplicationForm } from "@/components/job-application-form"
 import { isAgeLocked, parseSubmissionFields, profileInitialValue, visibleFields } from "@/lib/submission-fields"
 import { TalentNav } from "@/components/talent-nav"
+import { BackToJobsLink } from "@/components/back-to-jobs-link"
 
 export default async function TalentJobDetailPage({
   params,
@@ -82,9 +82,7 @@ export default async function TalentJobDetailPage({
     <>
       {!t && <TalentNav talentName={displayName} />}
     <div className="mx-auto max-w-4xl px-4 py-8 space-y-6">
-      <Link href={backHref} className="text-sm text-muted-foreground hover:underline">
-        &larr; 案件一覧に戻る
-      </Link>
+      <BackToJobsLink fallbackHref={backHref} />
 
       <div>
         <h1 className="text-xl font-bold">{job.title}</h1>

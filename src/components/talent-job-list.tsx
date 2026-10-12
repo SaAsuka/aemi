@@ -1,15 +1,19 @@
 "use client"
 
-import { useState, useMemo } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useMemo, useEffect } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Badge } from "@/components/ui/badge"
 import { RefreshCw } from "lucide-react"
 import { GENDER_LABELS } from "@/types"
 import type { JobWithMatch } from "@/app/(talent)/jobs/page"
+import { readJobListReturn, saveJobListReturn, clearJobListReturn } from "@/lib/job-list-return"
 
 type FilterType = "all" | "match" | "unmatch"
 type SortType = "newest" | "deadline" | "fee"
+
+const FILTERS: FilterType[] = ["all", "match", "unmatch"]
+const SORTS: SortType[] = ["newest", "deadline", "fee"]
 
 import { formatShortDeadline } from "@/lib/utils/date"
 
@@ -37,9 +41,38 @@ export function TalentJobList({
   matchCount: number
 }) {
   const router = useRouter()
-  const [filter, setFilter] = useState<FilterType>("all")
-  const [sort, setSort] = useState<SortType>("newest")
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+  // 絞り込み・並び順はURLに持たせる（案件を見て戻っても、そのままになるように）
+  const filterParam = searchParams.get("filter") as FilterType | null
+  const sortParam = searchParams.get("sort") as SortType | null
+  const [filter, setFilter] = useState<FilterType>(filterParam && FILTERS.includes(filterParam) ? filterParam : "all")
+  const [sort, setSort] = useState<SortType>(sortParam && SORTS.includes(sortParam) ? sortParam : "newest")
   const [refreshing, setRefreshing] = useState(false)
+
+  const updateUrl = (next: { filter: FilterType; sort: SortType }) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (next.filter === "all") params.delete("filter")
+    else params.set("filter", next.filter)
+    if (next.sort === "newest") params.delete("sort")
+    else params.set("sort", next.sort)
+    const qs = params.toString()
+    router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false })
+  }
+
+  // 案件ページから戻ってきたら、見ていた位置までスクロールする
+  useEffect(() => {
+    const saved = readJobListReturn()
+    if (!saved) return
+    const here = `${window.location.pathname}${window.location.search}`
+    if (saved.url !== here) return
+    clearJobListReturn()
+    requestAnimationFrame(() => window.scrollTo(0, saved.scrollY))
+  }, [])
+
+  const rememberPosition = () => {
+    saveJobListReturn({ url: `${window.location.pathname}${window.location.search}`, scrollY: window.scrollY })
+  }
 
   const filtered = useMemo(() => {
     let result = jobs
@@ -74,7 +107,11 @@ export function TalentJobList({
       <div className="flex items-center gap-3 flex-wrap">
         <select
           value={filter}
-          onChange={(e) => setFilter(e.target.value as FilterType)}
+          onChange={(e) => {
+            const next = e.target.value as FilterType
+            setFilter(next)
+            updateUrl({ filter: next, sort })
+          }}
           className="h-10 rounded-lg border border-input bg-transparent px-3 text-sm outline-none"
         >
           <option value="all">全件</option>
@@ -83,7 +120,11 @@ export function TalentJobList({
         </select>
         <select
           value={sort}
-          onChange={(e) => setSort(e.target.value as SortType)}
+          onChange={(e) => {
+            const next = e.target.value as SortType
+            setSort(next)
+            updateUrl({ filter, sort: next })
+          }}
           className="h-10 rounded-lg border border-input bg-transparent px-3 text-sm outline-none"
         >
           <option value="newest">新着順</option>
@@ -114,6 +155,7 @@ export function TalentJobList({
           <Link
             key={job.id}
             href={`/jobs/${job.id}?t=${token}`}
+            onClick={rememberPosition}
             className="block rounded-xl border bg-card p-4 shadow-sm hover:shadow-md active:scale-[0.98] transition-all cursor-pointer"
           >
             <div className="flex items-start justify-between gap-2">
