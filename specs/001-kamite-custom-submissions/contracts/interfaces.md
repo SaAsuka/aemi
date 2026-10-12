@@ -79,6 +79,7 @@
 | `ans_{key}_deferred` | `1` のとき「あとで別途送る」。受け付け側で、その応募者・案件・項目のアップロード失敗の記録があるかを確かめ、無ければ未入力として扱う |
 | `ans_{key}_deferred_code` | 「あとで別途送る」の項目で端末が表示した受付番号 |
 | `fieldKeys` | フォームが表示していた自由項目のキーの一覧（案件の項目が入力中に変わったかの確認用） |
+| `talentRemarks` | タレントからの備考（任意・1000文字まで。2026-10-12 追加）。管理者の代理応募では受け取らない（代理応募の社内メモは今までどおり `note`） |
 
 応答（成功時）: `{ "success": true, "deferred": [{ "label": "近影写真（正面）", "code": "E-7K2X9Q" }] }` — `deferred` があれば完了画面で「管理者に別途送ってください」と受付番号を表示する。`ans_{key}_deferred_code` で端末が表示した受付番号を受け取り、DEFERRED の回答の `errorCode` に保存する
 
@@ -103,5 +104,6 @@
 - `/admin/applications/[id]` — 応募の内容（自由項目の回答・既存の提出物・基本情報）、写真の一括ダウンロード、回答の登録・差し替え・修正（`updateApplicationAnswer(applicationId, key, …)`・`requireAdmin()`。ファイルは管理者として upload-url を発行して直接アップロード）
 - `/admin/error-logs` — 失敗の記録の一覧（直近、受付番号・フォーム・タレント・案件で検索・絞り込み）
 - 応募管理一覧・案件詳細の応募者欄 — 「未提出あり」の印。絞り込みは応募管理一覧だけ（`applications.hasMissingAnswers` を使う）
+- 応募管理一覧・案件詳細の応募者欄 — 「備考あり」の印（`applications.talentRemarks` が空でない）。応募詳細に「タレントからの備考」を表示（2026-10-12 追加）
 
 どちらも `/admin` 配下なので middleware の管理者確認が効く。ページ・データ取得の両方で `requireAdmin()` も呼ぶ。
