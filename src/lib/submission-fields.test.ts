@@ -18,6 +18,7 @@ import {
   normalizeFieldsInput,
   profileInitialValue,
   isAgeLocked,
+  normalizeRemarks,
   type SubmissionField,
   type SubmissionAnswer,
 } from "./submission-fields"
@@ -451,6 +452,23 @@ describe("profileInitialValue", () => {
     expect(isAgeLocked(age, profile)).toBe(true)
     expect(isAgeLocked(age, { ...profile, birthDate: null })).toBe(false)
     expect(isAgeLocked(field({ autofill: "NAME" }), profile)).toBe(false)
+  })
+})
+
+describe("normalizeRemarks", () => {
+  it("空・空白だけ・文字列以外は null", () => {
+    expect(normalizeRemarks("")).toEqual({ ok: true, value: null })
+    expect(normalizeRemarks("  \n ")).toEqual({ ok: true, value: null })
+    expect(normalizeRemarks(null)).toEqual({ ok: true, value: null })
+  })
+
+  it("前後の空白を除いて保存する", () => {
+    expect(normalizeRemarks("  10/15は午後のみ可\n")).toEqual({ ok: true, value: "10/15は午後のみ可" })
+  })
+
+  it("1000文字まで", () => {
+    expect(normalizeRemarks("あ".repeat(1000)).ok).toBe(true)
+    expect(normalizeRemarks("あ".repeat(1001)).ok).toBe(false)
   })
 })
 
