@@ -195,6 +195,11 @@ export default async function JobDetailPage({
                             未提出あり
                           </span>
                         )}
+                        {app.talentRemarks && (
+                          <span className="rounded-full bg-sky-50 px-2 py-0.5 text-xs font-medium text-sky-800 ring-1 ring-sky-200">
+                            備考あり
+                          </span>
+                        )}
                         <Link
                           href={`/admin/applications/${app.id}`}
                           className="text-xs text-neutral-600 underline underline-offset-4 hover:text-neutral-950"
