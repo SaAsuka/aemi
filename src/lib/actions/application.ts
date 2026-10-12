@@ -12,6 +12,7 @@ import {
   hasMissingRequired,
   isAgeLocked,
   missingMessage,
+  normalizeRemarks,
   profileInitialValue,
   parseSubmissionAnswers,
   parseSubmissionFields,
@@ -339,6 +340,16 @@ async function createApplicationInner(formData: FormData) {
     }
   }
 
+  // タレントからの備考（撮影日の都合など）。代理応募では受け取らない（社内メモは今までどおり note）
+  let talentRemarks: string | null = null
+  if (!applicant.isAdminProxy) {
+    const remarks = normalizeRemarks(formData.get("talentRemarks"))
+    if (!remarks.ok) {
+      return { error: { talentRemarks: [remarks.error] }, message: "入力内容を確認してください", action: "FIX_FIELDS" as const }
+    }
+    talentRemarks = remarks.value
+  }
+
   try {
     await prisma.application.create({
       data: {
@@ -346,6 +357,7 @@ async function createApplicationInner(formData: FormData) {
         jobId: data.jobId,
         status: data.status,
         note: data.note || null,
+        ...(talentRemarks ? { talentRemarks } : {}),
         submissions: {
           create: submissions,
         },

@@ -411,6 +411,18 @@ export function zipEntryNames(talentName: string, rows: AnswerRow[]): { fileUrl:
   return out
 }
 
+// ---- タレントからの備考 ----
+
+export const REMARKS_MAX = 1000
+
+// 応募フォームの「備考」を整える。前後の空白を除き、空なら null。長すぎればエラー
+export function normalizeRemarks(raw: unknown): { ok: true; value: string | null } | { ok: false; error: string } {
+  const text = typeof raw === "string" ? raw.trim() : ""
+  if (!text) return { ok: true, value: null }
+  if (text.length > REMARKS_MAX) return { ok: false, error: `備考は${REMARKS_MAX}文字以内で入力してください` }
+  return { ok: true, value: text }
+}
+
 // ---- 提出物ファイルの置き場所 ----
 
 export function submissionStoragePrefix(talentId: string, jobId: string): string {

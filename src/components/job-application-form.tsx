@@ -8,6 +8,7 @@ import type { UploadError } from "@/lib/client-upload"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Textarea } from "@/components/ui/textarea"
 import { SUBMISSION_CATEGORY_LABELS } from "@/types"
 import type { SubmissionField } from "@/lib/submission-fields"
 import { SubmissionFieldInput, emptyFieldState, type FieldInputState } from "@/components/submission-field-input"
@@ -29,6 +30,9 @@ type SubmissionData = {
 }
 
 const SUBMIT_TIMEOUT_MS = 30_000
+const REMARKS_MAX = 1000
+// 途中保存で備考を入れておくキー（自由項目のキーは k_ / v_ で始まるので重ならない）
+const REMARKS_DRAFT_KEY = "__remarks"
 const TIMED_OUT = Symbol("timed-out")
 const wait = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms))
 
@@ -72,6 +76,10 @@ export function JobApplicationForm({
     setAnswers((prev) => ({ ...prev, [key]: { ...prev[key], ...update } }))
   }, [])
 
+  // タレントからの備考（撮影日の都合など）
+  const [remarks, setRemarks] = useState("")
+  const [remarksError, setRemarksError] = useState<string | null>(null)
+
   // 途中保存した入力を戻す（応募済みの案件なら途中保存を消す）
   const [draftLoaded, setDraftLoaded] = useState(false)
   useEffect(() => {
@@ -79,6 +87,7 @@ export function JobApplicationForm({
       clearDraft(talentId, jobId)
     } else {
       const draft = loadDraft(talentId, jobId)
+      if (typeof draft[REMARKS_DRAFT_KEY]?.value === "string") setRemarks(draft[REMARKS_DRAFT_KEY].value!)
       setAnswers((prev) => {
         const next = { ...prev }
         for (const f of fields) {
@@ -102,9 +111,9 @@ export function JobApplicationForm({
 
   // 入力のたびに途中保存（間引く）
   useEffect(() => {
-    if (!draftLoaded || alreadyApplied || fields.length === 0) return
+    if (!draftLoaded || alreadyApplied) return
     const timer = setTimeout(() => {
-      const draft: Draft = {}
+      const draft: Draft = { [REMARKS_DRAFT_KEY]: { value: remarks } }
       for (const f of fields) {
         const a = answers[f.key]
         if (a) draft[f.key] = { value: a.value, fileUrl: a.fileUrl, fileName: a.fileName }
@@ -112,7 +121,7 @@ export function JobApplicationForm({
       saveDraft(talentId, jobId, draft)
     }, 500)
     return () => clearTimeout(timer)
-  }, [answers, draftLoaded, alreadyApplied, fields, talentId, jobId])
+  }, [answers, remarks, draftLoaded, alreadyApplied, fields, talentId, jobId])
 
   // アップロードの失敗を端末から報告し、受付番号を得る
   const handleUploadError = useCallback(
@@ -183,6 +192,7 @@ export function JobApplicationForm({
     setStatus("loading")
     setAction(null)
     setAnswers((prev) => Object.fromEntries(Object.entries(prev).map(([k, a]) => [k, a.deferred ? a : { ...a, error: null }])))
+    setRemarksError(null)
     const formData = new FormData()
     formData.set("talentId", talentId)
     formData.set("jobId", jobId)
@@ -215,6 +225,7 @@ export function JobApplicationForm({
         formData.set(`ans_${f.key}_value`, a.value.trim())
       }
     }
+    if (remarks.trim()) formData.set("talentRemarks", remarks.trim())
 
     // 端末にためていた失敗の報告を先に送る（「あとで別途送る」の確認に間に合わせるため。待つのは長くても5秒）
     await Promise.race([flushErrorQueue(token), wait(5_000)])
@@ -253,6 +264,11 @@ export function JobApplicationForm({
       let firstKey: string | null = null
       for (const [name, msgs] of Object.entries(err)) {
         if (!msgs?.length) continue
+        if (name === "talentRemarks") {
+          setRemarksError(msgs[0])
+          firstKey ??= "remarks"
+          continue
+        }
         const key = name.startsWith("ans_") ? name.slice(4) : null
         if (key && fields.some((f) => f.key === key)) {
           updateAnswer(key, { error: msgs[0] })
@@ -444,6 +460,33 @@ export function JobApplicationForm({
           ))}
         </div>
       )}
+
+      <div id="field-remarks" className="rounded-lg border p-4 space-y-2">
+        <label htmlFor="talent-remarks" className="text-sm font-medium">
+          備考<span className="ml-2 text-xs text-muted-foreground">任意</span>
+        </label>
+        <p className="text-xs text-muted-foreground">撮影日のご都合など、伝えたいことがあれば書いてください</p>
+        <Textarea
+          id="talent-remarks"
+          value={remarks}
+          onChange={(e) => {
+            setRemarks(e.target.value)
+            setRemarksError(null)
+          }}
+          rows={3}
+          maxLength={REMARKS_MAX}
+          aria-invalid={!!remarksError || undefined}
+          className="text-sm"
+        />
+        <p className="text-right text-xs text-muted-foreground">
+          {remarks.length}/{REMARKS_MAX}
+        </p>
+        {remarksError && (
+          <p className="text-xs text-red-700" role="alert">
+            {remarksError}
+          </p>
+        )}
+      </div>
 
       {dateConflict && (
         <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800">
