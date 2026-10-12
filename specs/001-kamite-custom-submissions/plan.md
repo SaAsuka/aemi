@@ -67,8 +67,9 @@ specs/001-kamite-custom-submissions/
 
 ```text
 prisma/
-├── schema.prisma                                   # 変更: Job.submissionFields, Application.submissionAnswers, Application.hasMissingAnswers, FormErrorLog 追加
-└── migrations/2026xxxx_add_submission_fields/      # 新規
+├── schema.prisma                                   # 変更: Job.submissionFields, Application.submissionAnswers, Application.hasMissingAnswers, Application.talentRemarks, FormErrorLog 追加
+├── migrations/20261011000000_add_submission_fields/ # 新規（テストDB適用済み）
+└── migrations/2026101200xxxx_add_talent_remarks/    # 新規（US7・2026-10-12 追加）
 
 src/lib/
 ├── submission-fields.ts                            # 新規: zod定義・detectAutofill・makeKamiteFieldKey/makeVozelFieldKey・mergeKamiteFields・回答の検証・hasMissingRequired・プロフィール初期値
