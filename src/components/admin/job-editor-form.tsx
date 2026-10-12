@@ -12,6 +12,8 @@ import { createJob, updateJob } from "@/lib/actions/job"
 import type { Job, JobRequirement } from "@/generated/prisma/client"
 import { SUBMISSION_CATEGORY_LABELS } from "@/types"
 import { BTN_PRIMARY, BTN_SECONDARY, FIELD, PANEL } from "@/components/admin/styles"
+import { SubmissionFieldsEditor } from "@/components/admin/submission-fields-editor"
+import { parseSubmissionFields } from "@/lib/submission-fields"
 
 type ActionResult = { success?: boolean; id?: string; error?: Record<string, string[] | undefined> } | null
 type Errors = Record<string, string>
@@ -232,6 +234,7 @@ export function JobEditorForm({
   )
   const initialDeadline = useMemo(() => splitDeadline(job?.deadline), [job])
   const reqMap = useMemo(() => new Map((requirements ?? []).map((r) => [r.category as string, r])), [requirements])
+  const initialSubmissionFields = useMemo(() => parseSubmissionFields(job?.submissionFields), [job])
   const [clientErrors, setClientErrors] = useState<Errors>({})
   const [dirty, setDirty] = useState(false)
   const [status, setStatus] = useState<JobStatus>((job?.status as JobStatus) ?? "DRAFT")
@@ -604,6 +607,24 @@ export function JobEditorForm({
             )
           })}
         </ul>
+      </section>
+
+      <section className={inDialog ? "border-t border-neutral-200 pt-6" : `${PANEL} p-5 sm:p-6`}>
+        <h2 className="text-base font-semibold text-neutral-950">案件ごとの提出項目</h2>
+        <p className="mt-1 text-sm text-neutral-500">
+          上の4種類のほかに、項目名を自由に付けて提出してもらうものです。タレントの応募フォームに1項目ずつ出ます。
+        </p>
+        <div className="mt-5">
+          <SubmissionFieldsEditor
+            initial={initialSubmissionFields}
+            hadSavedFields={Array.isArray(job?.submissionFields)}
+            error={errors.submissionFields}
+            onEdit={() => {
+              if (!dirty) onDirtyChange?.(true)
+              setDirty(true)
+            }}
+          />
+        </div>
       </section>
 
       <Section plain={inDialog} title="備考" description="社内用のメモです。">
