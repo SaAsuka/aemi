@@ -66,6 +66,12 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
         </p>
       </div>
 
+      {app.talentRemarks && (
+        <Section title="タレントからの備考">
+          <p className="whitespace-pre-wrap break-words text-sm leading-relaxed text-neutral-950">{app.talentRemarks}</p>
+        </Section>
+      )}
+
       {hasFields && (
         <Section
           title="提出項目"
@@ -86,7 +92,7 @@ export default async function ApplicationDetailPage({ params }: { params: Promis
         </Section>
       )}
 
-      {!hasFields && app.submissions.length === 0 && (
+      {!hasFields && app.submissions.length === 0 && !app.talentRemarks && (
         <p className={`${PANEL} px-5 py-6 text-center text-sm text-neutral-500`}>この応募に提出物はありません。</p>
       )}
     </div>

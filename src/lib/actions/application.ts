@@ -48,6 +48,7 @@ const APP_SELECT = {
   status: true,
   appliedAt: true,
   hasMissingAnswers: true,
+  talentRemarks: true,
   talent: {
     select: {
       id: true, name: true,

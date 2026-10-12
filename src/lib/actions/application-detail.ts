@@ -25,6 +25,7 @@ export async function getApplicationDetail(id: string) {
       appliedAt: true,
       hasMissingAnswers: true,
       submissionAnswers: true,
+      talentRemarks: true,
       talent: { select: { id: true, name: true, resume: true } },
       job: { select: { id: true, title: true, submissionFields: true } },
       submissions: { select: { id: true, category: true, fileUrl: true, externalUrl: true, fileName: true } },
