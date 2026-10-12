@@ -363,6 +363,8 @@ model Application {
   submissionAnswers Json?
   // 必須の自由項目に未提出（別途送付待ちを含む）があるか。一覧の絞り込み用（JSONの中はページ分けの前に絞れないため）
   hasMissingAnswers Boolean @default(false)
+  // タレントが応募フォームの「備考」に書いた内容（撮影日の都合など）。note は管理者の社内メモなので分けている
+  talentRemarks     String?
 
   schedule    Schedule?
   submissions ApplicationSubmission[]
