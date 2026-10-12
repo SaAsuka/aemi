@@ -108,7 +108,8 @@ KAMITE送信 / 管理画面で保存
 応募送信（30秒で画面に操作を戻す → 応募済みか確認）
    ├─ resolveApplicant() で本人確定（R4）
    ├─ 必須チェック・形チェック（失敗 → form_error_logs ＋項目ごとのエラーを返す）
-   └─ application 作成（submissionAnswers・hasMissingAnswers 付き）。プロフィールは触らない
+   └─ application 作成（submissionAnswers・hasMissingAnswers・talentRemarks 付き）。プロフィールは触らない
+      （talentRemarks はタレント本人・専用リンクの応募のときだけ。代理応募の社内メモは今までどおり note）
 KAMITE再送
    └─ submissionFields を置き換え（管理者が直した autofill は引き継ぐ）。既存の submissionAnswers は触らない
 管理者が回答を登録・修正

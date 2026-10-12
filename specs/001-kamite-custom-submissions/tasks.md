@@ -178,22 +178,6 @@ description: "案件ごとの提出項目を応募フォームで受け取る �
 
 ---
 
-## Phase 8b: User Story 7 - タレントが応募時に備考を書ける (P2・2026-10-12 追加)
-
-**Goal**: どの案件の応募フォームにも任意の備考欄を出し、「タレントからの備考」として保存・表示する。社内用のメモ（`note`）とは分ける
-
-**Independent Test**: quickstart S7b
-
-- [ ] T064 [US7] `prisma/schema.prisma` の `Application` に `talentRemarks String?` を追加し、`migrate diff --from-config-datasource` で差分を出して**このカラムの追加だけ**を `prisma/migrations/<日時>_add_talent_remarks/migration.sql` に切り出す。**SQLをユーザーに見せて承認を得てから**テストDBに適用（`db execute` ＋ `migrate resolve --applied`）、`prisma generate`（開発原則 第3条）
-- [ ] T065 [US7] `src/lib/actions/application.ts` の `createApplication`: タレント本人・専用リンクの応募のときだけ、フォームの `talentRemarks` を前後の空白を除いて1000文字までで保存（空なら null）。1000文字を超えたら項目のエラー（`talentRemarks`）で返す。管理者の代理応募では受け取らない（社内メモの `note` は今までどおり）
-- [ ] T066 [US7] `src/components/job-application-form.tsx`: 提出物の下（日程の重なり・コンポジ未登録の案内の上）に「備考（任意）」欄を出す（案内「撮影日のご都合など、伝えたいことがあれば書いてください」・1000文字まで・残り文字数）。送信時に `talentRemarks` として送る。途中保存（`src/lib/apply-draft.ts`）の対象に加える（キー `__remarks`）。エラー時はこの欄の下に理由を出す。自由項目がない案件でも出す
-- [ ] T067 [US7] 管理画面: `src/lib/actions/application-detail.ts` で `talentRemarks` を返し、`src/app/(admin)/admin/applications/[id]/page.tsx` の上の方に「タレントからの備考」を表示。`src/lib/actions/application.ts` の一覧（`APP_SELECT`）と `src/lib/actions/job.ts` の `getJob` の応募者に `talentRemarks` を足し、`src/components/admin/application-table.tsx` と `src/app/(admin)/admin/jobs/[id]/page.tsx` の応募者欄に「備考あり」の印を出す（既存の列・並び順は変えない）
-- [ ] T068 [US7] 確認: quickstart S7b
-
-**Checkpoint**: 日程の可否などを自由記述で受け取れる
-
----
-
 ## Phase 9: Polish & 確認
 
 - [X] T059 [P] `CLAUDE.md` の「踏んだ罠」に追記: Vercel Functions の本文上限4.5MB（`/api/upload` 経由は大きい写真が落ちる・Safari では「The string did not match the expected pattern.」になる）、提出物は upload-url で直接アップロード、`/api/blob` は `applications/` だけ権限確認あり、`submissionFields`/`submissionAnswers` は必ず `src/lib/submission-fields.ts` を通して読む、応募フォームからプロフィールは書き換えない
@@ -201,6 +185,22 @@ description: "案件ごとの提出項目を応募フォームで受け取る �
 - [ ] T061 quickstart.md の S1〜S8 をテスト環境で実施（S8 は iPhone Safari・LINE内蔵ブラウザ・Android Chrome の実機。実機確認できなかったものは未確認として報告）
 - [ ] T062 ユーザーの許可を得て `vozel-test` へ push → 山中さんにテスト環境で確認してもらう（SC-008）。項目名の自動判定語を山中さんの実データで調整
 - [ ] T063 （本番反映はユーザーの許可後・別作業）`origin/main` から新しいブランチを切り、本機能のファイルだけ移植（`scripts/send-test-kamite-job.ts` は除く）、`git diff origin/main..HEAD --stat` を確認。本番DBのマイグレーションは Supabase SQL Editor でユーザーに実行してもらい `_prisma_migrations` に記録（開発原則 第1条・第3条）
+
+---
+
+## Phase 10: User Story 7 - タレントが応募時に備考を書ける (P2・2026-10-12 追加)
+
+**Goal**: どの案件の応募フォームにも任意の備考欄を出し、「タレントからの備考」として保存・表示する。社内用のメモ（`note`）とは分ける
+
+**Independent Test**: quickstart S7b
+
+- [ ] T064 [US7] `prisma/schema.prisma` の `Application` に `talentRemarks String?` を追加し、`migrate diff --from-config-datasource` で差分を出して**このカラムの追加だけ**を `prisma/migrations/<日時>_add_talent_remarks/migration.sql` に切り出す。**SQLをユーザーに見せて承認を得てから**テストDBに適用（`db execute` ＋ `migrate resolve --applied`）、`prisma generate`（開発原則 第3条）
+- [ ] T065 [US7] `src/lib/submission-fields.ts` に `normalizeRemarks(raw)`（前後の空白を除き、空なら null、1000文字を超えたらエラー）を追加し、`src/lib/submission-fields.test.ts` にテスト（空・空白だけ・1000/1001文字）を追加（開発原則 第5条）。`src/lib/actions/application.ts` の `createApplication`: タレント本人・専用リンクの応募のときだけ、フォームの `talentRemarks` を `normalizeRemarks` で整えて保存。超えたら項目のエラー（`talentRemarks`）で返す。管理者の代理応募では受け取らない（社内メモの `note` は今までどおり）。応募一覧のCSV出力には入れない
+- [ ] T066 [US7] `src/components/job-application-form.tsx`: 提出物の下（日程の重なり・コンポジ未登録の案内の上）に「備考（任意）」欄を出す（案内「撮影日のご都合など、伝えたいことがあれば書いてください」・1000文字まで・残り文字数）。送信時に `talentRemarks` として送る。途中保存（`src/lib/apply-draft.ts`）の対象に加える（キー `__remarks`）。エラー時はこの欄の下に理由を出す。自由項目がない案件でも出す
+- [ ] T067 [US7] 管理画面: `src/lib/actions/application-detail.ts` で `talentRemarks` を返し、`src/app/(admin)/admin/applications/[id]/page.tsx` の上の方に「タレントからの備考」を表示。`src/lib/actions/application.ts` の一覧（`APP_SELECT`）と `src/lib/actions/job.ts` の `getJob` の応募者に `talentRemarks` を足し、`src/components/admin/application-table.tsx` と `src/app/(admin)/admin/jobs/[id]/page.tsx` の応募者欄に「備考あり」の印を出す（既存の列・並び順は変えない）
+- [ ] T068 [US7] 確認: quickstart S7b
+
+**Checkpoint**: 日程の可否などを自由記述で受け取れる
 
 ---
 

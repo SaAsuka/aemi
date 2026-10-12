@@ -36,7 +36,7 @@ KAMITEから届く提出物（項目名・種類・必須・指示）を案件�
 |---|---|---|---|
 | 第1条 | 本番は明示的な許可なしに触らない | 開発は `origin/vozel-test` から切ったブランチ。本番反映は許可後、`origin/main` から切り直して該当ファイルだけ移植し `git diff origin/main..HEAD --stat` を確認 | OK |
 | 第2条 | テスト環境で確認してから本番 | quickstart.md の S1〜S8 をテスト環境で実施 → 山中さんに触ってもらう → 本番 | OK |
-| 第3条 | マイグレーションは安全第一 | 追加のみ（Json?×2・Boolean×1・新テーブル1）。`migrate diff --from-config-datasource` で差分確認、**SQLをユーザーに見せて承認後に**テストDBへ適用、本番はSQL Editorでユーザーが実行し `_prisma_migrations` に記録 | OK |
+| 第3条 | マイグレーションは安全第一 | 追加のみ（Json?×2・Boolean×1・String?×1・新テーブル1）。`migrate diff --from-config-datasource` で差分確認、**SQLをユーザーに見せて承認後に**テストDBへ適用、本番はSQL Editorでユーザーが実行し `_prisma_migrations` に記録 | OK |
 | 第4条 | 重要な情報はDBに | 回答・失敗記録はDB。端末（localStorage）に置くのは下書きと未送信の失敗報告だけで、消えても応募そのものは困らない用途に限る | OK |
 | 第5条 | ロジックは関数にしてテスト | `detectAutofill` / 項目キー / 再送時の引き継ぎ / 回答の検証 / `hasMissingRequired` / `classifyUploadError` / 受付番号 / `decideApplicant` / ZIP内ファイル名 / `shouldRetryReport` / プロフィール初期値（年齢の計算）、をテスト | OK |
 | 第6条 | Safari/iOSを軽視しない | フォームは `noValidate`、HEIC対応、直接アップロードで4.5MB問題を回避、S8で実機確認 | OK |
@@ -125,6 +125,7 @@ CLAUDE.md                                           # 変更: 「踏んだ罠」
 7. **失敗の記録**: `form_error_logs`（受付番号つき）・端末からの報告窓口 `/api/form-errors`・届かなかった報告の再送・`/admin/error-logs`
 8. **管理画面**: 応募詳細・回答の登録/修正・ZIP・「内容を見る」リンク・「未提出あり」の印と絞り込み・案件編集の自由項目エディタ
 9. **ドキュメント更新**（削除処理には手を入れない）
+9b. **タレントからの備考（US7・2026-10-12 追加）**: `applications.talentRemarks` の追加（テストDBへは承認後に適用）・応募処理・応募フォームの備考欄・管理画面の表示と「備考あり」の印
 10. **確認**: quickstart S1〜S8、`npm test`、`npx tsc --noEmit`
 
 コミットは CLAUDE.md の規約どおり、機能修正は1機能ずつ、デザイン修正と混ぜない。`vozel-test` への push はユーザーの許可後。
