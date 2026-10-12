@@ -192,5 +192,8 @@ KAMITE（`develop/yokai-aomidori/app` ／ https://app.kamite.jp ）に届いた�
   応答も4.5MBまでなので、写真のZIPはブラウザで作っている
 - 🔴 **`/api/blob` は `applications/` だけ権限確認あり**（管理者と本人だけ）。それ以外のパスは今も誰でも開ける
 - 🔴 **応募（`createApplication`）は `src/lib/applicant.ts` で本人を決める。** 送られてきた `talentId` / `status` は管理者の代理応募のときだけ使う
+- ⚠️ **新しいテーブルを作ったら RLS（行レベルのセキュリティ）を有効にする。** 全テーブル有効にしてある（ポリシーなし＝Supabase の公開用の鍵からは触れない）。
+  アプリは Prisma で直接つないでいるので影響しない。Supabase の SQL Editor で作ると警告が出るので「有効にする」を選ぶ。
+  マイグレーションで足したときは `ALTER TABLE "テーブル名" ENABLE ROW LEVEL SECURITY;` を別に実行する
 - ⚠️ **`jobs.submissionFields` / `applications.submissionAnswers` は JSON。** 必ず `src/lib/submission-fields.ts` の関数を通して読み書きする（DBは形を守らない）。
   応募フォームからタレントのプロフィールは書き換えない。仕様は `specs/001-kamite-custom-submissions/`
