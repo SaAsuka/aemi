@@ -156,6 +156,7 @@ KAMITE（`develop/yokai-aomidori/app` ／ https://app.kamite.jp ）に届いた�
 - ⚠️ Stripe の「Webhook の配信に関する問題」メールは a.saitou@ に届く。来たら停止期限（約9日後）を確認し、受け口が応答するか（署名なしPOSTで400なら生きている）→Vercelログに受信があるか→Stripe管理画面のイベント、の順で切り分ける（2026-10-11 に10/5からの失敗を発見）
   - 2026-10-14 実測: Stripeからの再送は本番で **400（署名が合わない）**＝本番の通知用の鍵（180日前に設定）とStripe側が食い違っている。直すには Stripe の画面で鍵を確認して入れ直す
   - 2026-10-15 解決: 鍵そのものは合っていて、**Vercel の値の末尾に文字の `\n` が付いていた**（40文字＝本来の38文字＋`\n`）。`printf '%s'` で標準入力から入れ直し→再デプロイ→失敗8件を `POST /v1/events/<id>/retry`（`webhook_endpoint=we_...`）で再送し、失敗0件になった
+  - ⚠️ **本番の環境変数は他にも8件、末尾に改行が混ざっていた**（2026-10-15 に全部外した。DATABASE_URL・FREEE_CLIENT_ID/SECRET・GEMINI_API_KEY・NEXT_PUBLIC_APP_URL・RESEND_API_KEY・SESSION_SECRET・STRIPE_PRICE_ID＋テストの GEMINI_API_KEY）。入れるときは `printf '%s' | vercel env update <名前> production --yes`。「Production, Preview」共通の変数は `env add --force` だと片方が消えうるので `update` を使う。`vercel env pull` は本物の改行を `\n` と書き出す。Secret 型にした値は pull の結果が当てにならないので、直ったかは実際の動き（Stripe なら失敗件数）で確かめる
   - ⚠️ Stripe にいる ¥4,980 の契約者のうち、**近藤恵里奈さん・市川莉帆さん・矢崎要さんの3人は VOZEL の DB に紐づいていない**（タレント登録も無い）。通知が届いても反映先が無いので、決済状態は画面に出ない
   - 🔴 **VOZELのStripeには a.saitou@irup.jp でログインする。** a.saito@xedge で入るとKAMITEのアカウントになり、VOZELは「ページを表示できません」になる
 - ℹ️ Stripeの通知失敗は `GET /v1/events?delivery_success=false`（本番鍵は `.env` の STRIPE_SECRET_KEY）で件数が取れる。毎朝 `~/.claude/scripts/watch.py` が見ていて、1件でもあればMac通知と /mail-check の報告に出る（2026-10-15）
