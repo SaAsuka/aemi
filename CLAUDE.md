@@ -153,7 +153,14 @@ KAMITE（`develop/yokai-aomidori/app` ／ https://app.kamite.jp ）に届いた�
 - 弾いたぶんも含めて `external_job_logs` に残る。**このテーブルを消さない**（不審なアクセスに気づくため）
 
 ## 踏んだ罠
-
+- ⚠️ Stripe の「Webhook の配信に関する問題」メールは a.saitou@ に届く。来たら停止期限（約9日後）を確認し、受け口が応答するか（署名なしPOSTで400なら生きている）→Vercelログに受信があるか→Stripe管理画面のイベント、の順で切り分ける（2026-10-11 に10/5からの失敗を発見）
+  - 2026-10-14 実測: Stripeからの再送は本番で **400（署名が合わない）**＝本番の通知用の鍵（180日前に設定）とStripe側が食い違っている。直すには Stripe の画面で鍵を確認して入れ直す
+  - 2026-10-15 解決: 鍵そのものは合っていて、**Vercel の値の末尾に文字の `\n` が付いていた**（40文字＝本来の38文字＋`\n`）。`printf '%s'` で標準入力から入れ直し→再デプロイ→失敗8件を `POST /v1/events/<id>/retry`（`webhook_endpoint=we_...`）で再送し、失敗0件になった
+  - ⚠️ Stripe にいる ¥4,980 の契約者のうち、**近藤恵里奈さん・市川莉帆さん・矢崎要さんの3人は VOZEL の DB に紐づいていない**（タレント登録も無い）。通知が届いても反映先が無いので、決済状態は画面に出ない
+  - 🔴 **VOZELのStripeには a.saitou@irup.jp でログインする。** a.saito@xedge で入るとKAMITEのアカウントになり、VOZELは「ページを表示できません」になる
+- ℹ️ Stripeの通知失敗は `GET /v1/events?delivery_success=false`（本番鍵は `.env` の STRIPE_SECRET_KEY）で件数が取れる。毎朝 `~/.claude/scripts/watch.py` が見ていて、1件でもあればMac通知と /mail-check の報告に出る（2026-10-15）
+- ℹ️ **VOZELの開発は野村くん（NomuraYoshiki）が主担当。** 機能追加はまず野村くんへ依頼する。KAMITEから届く提出物は項目ごと（名前・種類・必須・指示）に来ているが、`/api/external/jobs` で文章にして説明文へ入れているだけ（2026-10-10 に案件ごとの提出項目の新設を依頼）
+- 🔴 **タレントの案件詳細（`src/app/(talent)/jobs/[id]/page.tsx`）に出るのは説明文と場所・報酬・日付・条件だけ。備考（note）は管理画面にしか出ない。** KAMITE由来の案件で選考方法がタレントに見えず指摘された（2026-10-09・KAMITE側で説明文へ移して解決）。KAMITEの提出物は自由記述のため JobRequirement に入らず、応募フォームから提出できない
 - 🔴 **`vozel-test` が `main` から遅れていないか、マージ前に必ず確かめる**（2026-09-15 時点では追いついている。
   2026-09-14 時点では79コミット遅れていた）。遅れたまま
   **`vozel-test` を `main` にマージすると本番がそのぶん巻き戻る**（2026-09-14 時点なら1,790行の削除・
@@ -197,3 +204,4 @@ KAMITE（`develop/yokai-aomidori/app` ／ https://app.kamite.jp ）に届いた�
   マイグレーションで足したときは `ALTER TABLE "テーブル名" ENABLE ROW LEVEL SECURITY;` を別に実行する
 - ⚠️ **`jobs.submissionFields` / `applications.submissionAnswers` は JSON。** 必ず `src/lib/submission-fields.ts` の関数を通して読み書きする（DBは形を守らない）。
   応募フォームからタレントのプロフィールは書き換えない。仕様は `specs/001-kamite-custom-submissions/`
+- 🔴 **テストDB（`sdjpqumioxjmmbakizjv`）は 2026-09-23 に外向けAPIを塞いだ**（それまで全27テーブルが公開キーで読み書き可能＝Supabaseの警告メールで発覚）。本番は元々塞ぎ済み。アプリはPrisma＋サーバー専用キーのストレージだけなので影響なし。テーブルを足した後に警告が出たら `~/.claude/scripts/supabase-lockdown.sql` を当て直す
