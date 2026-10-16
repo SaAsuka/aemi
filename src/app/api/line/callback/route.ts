@@ -3,6 +3,7 @@ import { cookies } from "next/headers"
 import { getIronSession } from "iron-session"
 import { sessionOptions, type SessionData } from "@/lib/session"
 import { prisma } from "@/lib/db"
+import { verifyLineState } from "@/lib/line-state"
 import { lineLogger } from "@logs/line"
 import { trackEvent } from "@/lib/track-event"
 
@@ -16,25 +17,51 @@ export async function GET(req: NextRequest) {
   const state = req.nextUrl.searchParams.get("state")
   const error = req.nextUrl.searchParams.get("error")
 
-  if (error) {
-    lineLogger.error("auth_denied", { lineError: error })
-    return NextResponse.redirect(`${BASE_URL}/mypage/settings?line=error`)
-  }
-
   const cookieStore = await cookies()
   const savedState = cookieStore.get("line_state")?.value
-  const returnTo = cookieStore.get("line_return_to")?.value || ""
+  const cookieReturnTo = cookieStore.get("line_return_to")?.value || ""
   cookieStore.delete("line_state")
   cookieStore.delete("line_return_to")
 
-  if (!code || !state || state !== savedState) {
-    lineLogger.error("state_mismatch", { hasCode: !!code, hasState: !!state })
-    return NextResponse.redirect(`${BASE_URL}/mypage/settings?line=error`)
+  // Cookieが無い＝連携ボタンを押したのとは別のドメイン/ブラウザで戻ってきた。
+  // その場合はマイページを開いてもログイン画面になるので、ログイン不要の完了画面へ案内する
+  const viaSignedState = !savedState
+  const errorDest = viaSignedState
+    ? `${BASE_URL}/line-connected?status=error`
+    : `${BASE_URL}/mypage/settings?line=error`
+
+  if (error) {
+    lineLogger.error("auth_denied", { lineError: error, viaSignedState })
+    return NextResponse.redirect(errorDest)
   }
 
-  const session = await getIronSession<SessionData>(cookieStore, sessionOptions)
-  if (!session.talentId || session.role !== "talent") {
-    return NextResponse.redirect(`${BASE_URL}/auth/login`)
+  if (!code || !state) {
+    lineLogger.error("missing_params", { hasCode: !!code, hasState: !!state })
+    return NextResponse.redirect(errorDest)
+  }
+
+  let talentId: string
+  let returnTo = ""
+
+  if (!viaSignedState) {
+    // 従来どおり、連携ボタンを押したブラウザのCookieで照合する
+    if (state !== savedState) {
+      lineLogger.error("state_mismatch", { hasCode: true, hasState: true })
+      return NextResponse.redirect(errorDest)
+    }
+    const session = await getIronSession<SessionData>(cookieStore, sessionOptions)
+    if (!session.talentId || session.role !== "talent") {
+      return NextResponse.redirect(`${BASE_URL}/auth/login`)
+    }
+    talentId = session.talentId
+    returnTo = cookieReturnTo
+  } else {
+    const verified = verifyLineState(state, process.env.SESSION_SECRET!)
+    if (!verified) {
+      lineLogger.error("signed_state_invalid", {})
+      return NextResponse.redirect(errorDest)
+    }
+    talentId = verified.talentId
   }
 
   try {
@@ -52,8 +79,8 @@ export async function GET(req: NextRequest) {
 
     if (!tokenRes.ok) {
       const err = await tokenRes.json().catch(() => ({}))
-      lineLogger.error("token_fetch_failed", { talentId: session.talentId, status: tokenRes.status, detail: err })
-      return NextResponse.redirect(`${BASE_URL}/mypage/settings?line=error`)
+      lineLogger.error("token_fetch_failed", { talentId, status: tokenRes.status, detail: err })
+      return NextResponse.redirect(errorDest)
     }
 
     const { access_token } = await tokenRes.json()
@@ -63,23 +90,25 @@ export async function GET(req: NextRequest) {
     })
 
     if (!profileRes.ok) {
-      lineLogger.error("profile_fetch_failed", { talentId: session.talentId, status: profileRes.status })
-      return NextResponse.redirect(`${BASE_URL}/mypage/settings?line=error`)
+      lineLogger.error("profile_fetch_failed", { talentId, status: profileRes.status })
+      return NextResponse.redirect(errorDest)
     }
 
     const { userId } = await profileRes.json()
 
     await prisma.talent.update({
-      where: { id: session.talentId },
+      where: { id: talentId },
       data: { lineUserId: userId },
     })
 
-    trackEvent("line_connected", { userId: session.talentId, userType: "talent" })
-    lineLogger.info("connect_success", { talentId: session.talentId, lineUserId: userId })
+    trackEvent("line_connected", { userId: talentId, userType: "talent" })
+    lineLogger.info("connect_success", { talentId, lineUserId: userId, viaSignedState })
+
+    if (viaSignedState) return NextResponse.redirect(`${BASE_URL}/line-connected`)
     const successDest = returnTo ? `${BASE_URL}${returnTo}` : `${BASE_URL}/mypage/settings?line=connected`
     return NextResponse.redirect(successDest)
   } catch (e) {
-    lineLogger.error("unexpected_error", { talentId: session.talentId, error: String(e) })
-    return NextResponse.redirect(`${BASE_URL}/mypage/settings?line=error`)
+    lineLogger.error("unexpected_error", { talentId, error: String(e) })
+    return NextResponse.redirect(errorDest)
   }
 }
