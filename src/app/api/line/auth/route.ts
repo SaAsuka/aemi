@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { getIronSession } from "iron-session"
 import { sessionOptions, type SessionData } from "@/lib/session"
-import crypto from "crypto"
+import { createLineState } from "@/lib/line-state"
 import { lineLogger } from "@logs/line"
 
 const CHANNEL_ID = process.env.LINE_LOGIN_CHANNEL_ID
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
   }
 
   const returnTo = req.nextUrl.searchParams.get("returnTo") || ""
-  const state = crypto.randomBytes(16).toString("hex")
+  const state = createLineState(session.talentId, returnTo, process.env.SESSION_SECRET!)
 
   cookieStore.set("line_state", state, {
     httpOnly: true,
