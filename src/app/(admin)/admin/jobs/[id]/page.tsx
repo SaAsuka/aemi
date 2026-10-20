@@ -161,6 +161,60 @@ export default async function JobDetailPage({
         ))}
       </dl>
 
+      <Section title="案件の内容">
+        <dl className="grid gap-4 text-sm md:grid-cols-2">
+          <div>
+            <dt className="text-xs text-neutral-500">応募できる人の条件</dt>
+            <dd className="mt-1 text-neutral-950">{conditions.length ? conditions.join(" ・ ") : "条件なし（だれでも応募できます）"}</dd>
+          </div>
+          <div>
+            <dt className="text-xs text-neutral-500">提出してもらうもの</dt>
+            <dd className="mt-1">
+              {job.requirements.length === 0 ? (
+                <span className="text-neutral-500">なし</span>
+              ) : (
+                <ul className="space-y-1.5">
+                  {job.requirements.map((r) => (
+                    <li key={r.id} className="text-neutral-950">
+                      {SUBMISSION_CATEGORY_LABELS[r.category] ?? r.category}
+                      {r.description && <span className="block text-xs text-neutral-500">{r.description}</span>}
+                      {(r.referenceUrl || r.referenceFile) && (
+                        <a
+                          href={r.referenceUrl ?? r.referenceFile ?? "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-0.5 inline-flex items-center gap-0.5 text-xs font-medium text-neutral-950 underline-offset-4 hover:underline"
+                        >
+                          参考資料
+                          <ArrowUpRight className="size-3 text-neutral-400" aria-hidden="true" />
+                          <span className="sr-only">（新しいタブで開きます）</span>
+                        </a>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </dd>
+          </div>
+          {job.description && (
+            <div className="md:col-span-2">
+              <dt className="text-xs text-neutral-500">案件の説明</dt>
+              <dd className="mt-1 whitespace-pre-wrap leading-relaxed text-neutral-950">{job.description}</dd>
+            </div>
+          )}
+          {job.note && (
+            <div className="md:col-span-2">
+              <dt className="text-xs text-neutral-500">備考（社内用）</dt>
+              <dd className="mt-1 whitespace-pre-wrap leading-relaxed text-neutral-950">{job.note}</dd>
+            </div>
+          )}
+          <div>
+            <dt className="text-xs text-neutral-500">登録日</dt>
+            <dd className="mt-1 text-neutral-950">{formatDate(job.createdAt)}</dd>
+          </div>
+        </dl>
+      </Section>
+
       <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
         <div className="min-w-0 space-y-6">
           <Section
@@ -250,60 +304,6 @@ export default async function JobDetailPage({
         <aside className="min-w-0 space-y-6">
           <Section title="日程" description="オーディション日・撮影日など。タレントの案件ページにも表示されます。">
             <JobDates jobId={job.id} dates={job.dates} />
-          </Section>
-
-          <Section title="案件の内容">
-            <dl className="space-y-4 text-sm">
-              <div>
-                <dt className="text-xs text-neutral-500">応募できる人の条件</dt>
-                <dd className="mt-1 text-neutral-950">{conditions.length ? conditions.join(" ・ ") : "条件なし（だれでも応募できます）"}</dd>
-              </div>
-              <div>
-                <dt className="text-xs text-neutral-500">提出してもらうもの</dt>
-                <dd className="mt-1">
-                  {job.requirements.length === 0 ? (
-                    <span className="text-neutral-500">なし</span>
-                  ) : (
-                    <ul className="space-y-1.5">
-                      {job.requirements.map((r) => (
-                        <li key={r.id} className="text-neutral-950">
-                          {SUBMISSION_CATEGORY_LABELS[r.category] ?? r.category}
-                          {r.description && <span className="block text-xs text-neutral-500">{r.description}</span>}
-                          {(r.referenceUrl || r.referenceFile) && (
-                            <a
-                              href={r.referenceUrl ?? r.referenceFile ?? "#"}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="mt-0.5 inline-flex items-center gap-0.5 text-xs font-medium text-neutral-950 underline-offset-4 hover:underline"
-                            >
-                              参考資料
-                              <ArrowUpRight className="size-3 text-neutral-400" aria-hidden="true" />
-                              <span className="sr-only">（新しいタブで開きます）</span>
-                            </a>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
-                  )}
-                </dd>
-              </div>
-              {job.description && (
-                <div>
-                  <dt className="text-xs text-neutral-500">案件の説明</dt>
-                  <dd className="mt-1 whitespace-pre-wrap leading-relaxed text-neutral-950">{job.description}</dd>
-                </div>
-              )}
-              {job.note && (
-                <div>
-                  <dt className="text-xs text-neutral-500">備考（社内用）</dt>
-                  <dd className="mt-1 whitespace-pre-wrap leading-relaxed text-neutral-950">{job.note}</dd>
-                </div>
-              )}
-              <div>
-                <dt className="text-xs text-neutral-500">登録日</dt>
-                <dd className="mt-1 text-neutral-950">{formatDate(job.createdAt)}</dd>
-              </div>
-            </dl>
           </Section>
         </aside>
       </div>
