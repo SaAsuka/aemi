@@ -5,10 +5,8 @@ import { createApplication, getMyApplicationStatus } from "@/lib/actions/applica
 import { flushErrorQueue, reportClientError } from "@/lib/client-error-report"
 import { clearDraft, loadDraft, saveDraft, type Draft } from "@/lib/apply-draft"
 import type { UploadError } from "@/lib/client-upload"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { AlertCircle, AlertTriangle, CheckCircle2, ExternalLink, FileCheck2, Info, Loader2 } from "lucide-react"
+import { BTN_PRIMARY, FIELD, FILE_FIELD, PANEL, TEXTAREA } from "@/components/talent/styles"
 import { SUBMISSION_CATEGORY_LABELS } from "@/types"
 import type { SubmissionField } from "@/lib/submission-fields"
 import { SubmissionFieldInput, emptyFieldState, type FieldInputState } from "@/components/submission-field-input"
@@ -303,13 +301,17 @@ export function JobApplicationForm({
   if (status === "success") {
     return (
       <div className="space-y-3">
-        <div className="rounded-lg border border-green-200 bg-green-50 p-6 text-center">
-          <p className="text-green-800 font-medium">{message}</p>
+        <div className={`${PANEL} flex flex-col items-center px-5 py-8 text-center`} role="status">
+          <CheckCircle2 className="size-10 text-green-700" aria-hidden="true" />
+          <p className="mt-3 text-base font-semibold text-neutral-950">{message}</p>
         </div>
         {deferredItems.length > 0 && (
-          <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900" role="status">
-            <p className="font-medium">次の項目は、管理者に別途送ってください</p>
-            <ul className="mt-2 list-disc space-y-1 pl-5">
+          <div className="rounded-xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-900" role="status">
+            <p className="flex items-start gap-2 font-medium">
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              次の項目は、管理者に別途送ってください
+            </p>
+            <ul className="mt-2 list-disc space-y-1 pl-11">
               {deferredItems.map((d) => (
                 <li key={`${d.label}-${d.code}`}>
                   {d.label}
@@ -317,7 +319,7 @@ export function JobApplicationForm({
                 </li>
               ))}
             </ul>
-            <p className="mt-2 text-xs">送るときは、受付番号も一緒に伝えてください。</p>
+            <p className="mt-2 pl-6 text-xs">送るときは、受付番号も一緒に伝えてください。</p>
           </div>
         )}
       </div>
@@ -327,10 +329,13 @@ export function JobApplicationForm({
   return (
     <div className="space-y-4">
       {status === "error" && (
-        <div ref={topMessageRef} className="rounded-lg border border-red-200 bg-red-50 p-4 text-center" role="alert">
-          <p className="text-red-800 text-sm">{message}</p>
+        <div ref={topMessageRef} className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+          <p className="flex items-start gap-2">
+            <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <span>{message}</span>
+          </p>
           {action === "RELOAD" && (
-            <button type="button" onClick={() => window.location.reload()} className="mt-2 text-sm text-red-800 underline">
+            <button type="button" onClick={() => window.location.reload()} className="mt-2 ml-6 font-medium underline underline-offset-4">
               画面を開き直す
             </button>
           )}
@@ -338,28 +343,33 @@ export function JobApplicationForm({
       )}
 
       {hasRequirements && (
-        <div className="rounded-lg border p-4 space-y-4">
-          <p className="text-sm font-medium">提出物</p>
+        <section className={`${PANEL} p-5 sm:p-6`}>
+          <h3 className="text-base font-semibold text-neutral-950">提出物</h3>
+          <div className="mt-4 divide-y divide-neutral-100">
           {requirements.map((req) => {
             const sub = submissions[req.category]
             if (!sub) return null
             return (
-              <div key={req.category} className="space-y-2 border-t pt-3 first:border-t-0 first:pt-0">
+              <div key={req.category} className="space-y-3 py-4 first:pt-0 last:pb-0">
                 <div>
-                  <p className="text-sm font-medium">{req.category === "PROFILE_PHOTO" ? "現状写真（今のご自身の写真）" : SUBMISSION_CATEGORY_LABELS[req.category]}</p>
+                  <p className="flex items-center gap-1.5 text-sm font-medium text-neutral-900">
+                    {req.category === "PROFILE_PHOTO" ? "現状写真（今のご自身の写真）" : SUBMISSION_CATEGORY_LABELS[req.category]}
+                    <span className="rounded bg-neutral-950 px-1.5 py-px text-[10px] font-semibold leading-4 text-white">必須</span>
+                  </p>
                   {req.description && (
-                    <p className="text-xs text-muted-foreground mt-0.5">{req.description}</p>
+                    <p className="mt-1 text-xs leading-relaxed text-neutral-500">{req.description}</p>
                   )}
                   {(req.referenceUrl || req.referenceFile) && (
-                    <div className="flex gap-2 mt-1">
+                    <div className="mt-1.5 flex flex-wrap gap-x-4 gap-y-1">
                       {req.referenceUrl && (
                         <a
                           href={req.referenceUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-blue-600 hover:underline"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 underline-offset-4 hover:underline"
                         >
                           参考資料URL
+                          <ExternalLink className="size-3" aria-hidden="true" />
                         </a>
                       )}
                       {req.referenceFile && (
@@ -367,53 +377,53 @@ export function JobApplicationForm({
                           href={req.referenceFile}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-xs text-blue-600 hover:underline"
+                          className="inline-flex items-center gap-1 text-xs font-medium text-blue-700 underline-offset-4 hover:underline"
                         >
                           参考ファイル
+                          <ExternalLink className="size-3" aria-hidden="true" />
                         </a>
                       )}
                     </div>
                   )}
                 </div>
 
-                <div className="flex gap-3 text-sm">
-                  <label className="flex items-center gap-1 cursor-pointer">
-                    <input
-                      type="radio"
-                      name={`mode_${req.category}`}
-                      checked={sub.mode === "file"}
-                      onChange={() => updateSubmission(req.category, { mode: "file" })}
-                      className="accent-primary"
-                    />
-                    ファイル
-                  </label>
-                  <label className="flex items-center gap-1 cursor-pointer">
-                    <input
-                      type="radio"
-                      name={`mode_${req.category}`}
-                      checked={sub.mode === "url"}
-                      onChange={() => updateSubmission(req.category, { mode: "url" })}
-                      className="accent-primary"
-                    />
-                    URL
-                  </label>
+                {/* ファイルかURLかを選ぶ（見た目は切り替えボタン、中身はラジオボタン） */}
+                <div className="inline-flex rounded-lg bg-neutral-100 p-1 text-sm">
+                  {(["file", "url"] as const).map((m) => (
+                    <label
+                      key={m}
+                      className={`flex h-8 cursor-pointer items-center rounded-md px-3 transition-colors focus-within:ring-2 focus-within:ring-neutral-950/30 ${
+                        sub.mode === m ? "bg-white font-medium text-neutral-950 shadow-sm" : "text-neutral-500 hover:text-neutral-950"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name={`mode_${req.category}`}
+                        checked={sub.mode === m}
+                        onChange={() => updateSubmission(req.category, { mode: m })}
+                        className="sr-only"
+                      />
+                      {m === "file" ? "ファイル" : "URL"}
+                    </label>
+                  ))}
                 </div>
 
                 {sub.mode === "file" ? (
-                  <div className="space-y-1">
+                  <div className="space-y-1.5">
                     {sub.fileUrl ? (
-                      <div className="flex items-center gap-2 text-sm">
-                        <span className="text-green-700">{sub.fileName ?? "アップロード済み"}</span>
+                      <div className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm">
+                        <FileCheck2 className="size-4 shrink-0 text-green-700" aria-hidden="true" />
+                        <span className="min-w-0 flex-1 truncate text-neutral-900">{sub.fileName ?? "アップロード済み"}</span>
                         <button
                           type="button"
                           onClick={() => updateSubmission(req.category, { fileUrl: null, fileName: null })}
-                          className="text-xs text-red-600 hover:underline"
+                          className="shrink-0 rounded px-1.5 py-0.5 text-xs font-medium text-red-600 hover:bg-red-50"
                         >
                           削除
                         </button>
                       </div>
                     ) : (
-                      <Input
+                      <input
                         type="file"
                         accept="video/*,audio/*,image/*,.pdf"
                         disabled={sub.uploading}
@@ -421,31 +431,43 @@ export function JobApplicationForm({
                           const file = e.target.files?.[0]
                           if (file) handleFileUpload(req.category, file)
                         }}
-                        className="text-sm"
+                        aria-label={`${req.category === "PROFILE_PHOTO" ? "現状写真" : SUBMISSION_CATEGORY_LABELS[req.category]}のファイル`}
+                        className={FILE_FIELD}
                       />
                     )}
-                    {sub.uploading && <p className="text-xs text-muted-foreground">アップロード中...</p>}
+                    {sub.uploading && (
+                      <p className="flex items-center gap-1.5 text-xs text-neutral-500" role="status">
+                        <Loader2 className="size-3.5 animate-spin" aria-hidden="true" />
+                        アップロード中...
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <div>
-                    <Label className="text-xs">URL</Label>
-                    <Input
+                    <label htmlFor={`url_${req.category}`} className="mb-1.5 block text-xs font-medium text-neutral-700">URL</label>
+                    <input
+                      id={`url_${req.category}`}
                       value={sub.externalUrl}
                       onChange={(e) => updateSubmission(req.category, { externalUrl: e.target.value })}
                       placeholder="https://youtube.com/..."
-                      className="text-sm"
+                      inputMode="url"
+                      autoCapitalize="none"
+                      spellCheck={false}
+                      className={FIELD}
                     />
                   </div>
                 )}
               </div>
             )
           })}
-        </div>
+          </div>
+        </section>
       )}
 
       {fields.length > 0 && (
-        <div className="rounded-lg border p-4 space-y-4">
-          <p className="text-sm font-medium">{hasRequirements ? "その他の提出物" : "提出物"}</p>
+        <section className={`${PANEL} p-5 sm:p-6`}>
+          <h3 className="text-base font-semibold text-neutral-950">{hasRequirements ? "その他の提出物" : "提出物"}</h3>
+          <div className="mt-4 divide-y divide-neutral-100">
           {fields.map((f) => (
             <SubmissionFieldInput
               key={f.key}
@@ -458,15 +480,16 @@ export function JobApplicationForm({
               prefill={prefill[f.key]}
             />
           ))}
-        </div>
+          </div>
+        </section>
       )}
 
-      <div id="field-remarks" className="rounded-lg border p-4 space-y-2">
-        <label htmlFor="talent-remarks" className="text-sm font-medium">
-          備考<span className="ml-2 text-xs text-muted-foreground">任意</span>
+      <section id="field-remarks" className={`${PANEL} p-5 sm:p-6`}>
+        <label htmlFor="talent-remarks" className="flex items-center gap-1.5 text-base font-semibold text-neutral-950">
+          備考<span className="text-xs font-normal text-neutral-500">任意</span>
         </label>
-        <p className="text-xs text-muted-foreground">撮影日のご都合など、伝えたいことがあれば書いてください</p>
-        <Textarea
+        <p className="mt-1 text-sm text-neutral-500">撮影日のご都合など、伝えたいことがあれば書いてください</p>
+        <textarea
           id="talent-remarks"
           value={remarks}
           onChange={(e) => {
@@ -476,42 +499,46 @@ export function JobApplicationForm({
           rows={3}
           maxLength={REMARKS_MAX}
           aria-invalid={!!remarksError || undefined}
-          className="text-sm"
+          className={`${TEXTAREA} mt-3`}
         />
-        <p className="text-right text-xs text-muted-foreground">
+        <p className="mt-1.5 text-right text-xs tabular-nums text-neutral-400">
           {remarks.length}/{REMARKS_MAX}
         </p>
         {remarksError && (
-          <p className="text-xs text-red-700" role="alert">
+          <p className="flex items-start gap-1 text-xs text-red-600" role="alert">
+            <AlertCircle className="mt-px size-3.5 shrink-0" aria-hidden="true" />
             {remarksError}
           </p>
         )}
-      </div>
+      </section>
 
       {dateConflict && (
-        <div className="rounded-lg border border-red-300 bg-red-50 p-4 text-sm text-red-800">
-          ⚠ {dateConflict}
+        <div className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span>{dateConflict}</span>
         </div>
       )}
 
       {!hasResume && (
-        <div className="rounded-lg border border-amber-300 bg-amber-50 p-4 text-sm text-amber-800">
-          コンポジPDFが未登録のため応募できません。先に設定画面から宣材写真をアップロードし、コンポジPDFを生成してください。
+        <div className="flex items-start gap-2 rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span>コンポジPDFが未登録のため応募できません。先に設定画面から宣材写真をアップロードし、コンポジPDFを生成してください。</span>
         </div>
       )}
 
       <div className="h-20" />
 
-      <div className="fixed bottom-0 inset-x-0 z-30 border-t bg-background p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-        <div className="mx-auto max-w-4xl">
-          <Button
+      <div className="fixed inset-x-0 bottom-0 z-30 border-t border-neutral-200 bg-white p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+        <div className="mx-auto max-w-3xl">
+          <button
+            type="button"
             onClick={handleApply}
             disabled={status === "loading" || !allSubmitted || anyUploading || !hasResume || !!dateConflict}
-            className="w-full"
-            size="lg"
+            className={`${BTN_PRIMARY} w-full disabled:bg-neutral-300 disabled:opacity-100 disabled:text-neutral-600`}
           >
+            {status === "loading" && <Loader2 className="animate-spin" aria-hidden="true" />}
             {status === "loading" ? "送信中..." : dateConflict ? "日程が重複しています" : !hasResume ? "コンポジPDF未登録" : anyUploading ? "アップロード中..." : !allSubmitted ? "提出物を入力してください" : "この案件に応募する"}
-          </Button>
+          </button>
         </div>
       </div>
     </div>

@@ -1,8 +1,8 @@
 "use client"
 
 import { useRef } from "react"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
+import { AlertCircle, FileCheck2, Loader2 } from "lucide-react"
+import { FIELD, FILE_FIELD, TEXTAREA } from "@/components/talent/styles"
 import type { SubmissionField } from "@/lib/submission-fields"
 import { uploadSubmissionFile, UploadError } from "@/lib/client-upload"
 
@@ -90,40 +90,43 @@ export function SubmissionFieldInput({
   const isFile = field.kind === "PHOTO" || field.kind === "FILE"
 
   return (
-    <div id={inputId} className="space-y-2 border-t pt-3 first:border-t-0 first:pt-0" data-field-key={field.key}>
+    <div id={inputId} className="space-y-2 py-4 first:pt-0 last:pb-0" data-field-key={field.key}>
       <div>
-        <label htmlFor={`${inputId}-input`} className="text-sm font-medium">
+        <label htmlFor={`${inputId}-input`} className="flex items-center gap-1.5 text-sm font-medium text-neutral-900">
           {field.label}
-          <span className={`ml-2 text-xs ${field.required ? "text-red-600" : "text-muted-foreground"}`}>
-            {field.required ? "必須" : "任意"}
-          </span>
+          {field.required ? (
+            <span className="rounded bg-neutral-950 px-1.5 py-px text-[10px] font-semibold leading-4 text-white">必須</span>
+          ) : (
+            <span className="text-xs font-normal text-neutral-500">任意</span>
+          )}
         </label>
-        {field.note && <p className="mt-0.5 whitespace-pre-wrap text-xs text-muted-foreground">{field.note}</p>}
+        {field.note && <p className="mt-1 whitespace-pre-wrap text-xs leading-relaxed text-neutral-500">{field.note}</p>}
       </div>
 
       {field.kind === "TEXT" && prefill && (
-        <div className="space-y-1">
-          <Input
+        <div className="space-y-1.5">
+          <input
             id={`${inputId}-input`}
             type="text"
             inputMode={field.autofill === "NAME" ? "text" : "numeric"}
             value={state.value}
             readOnly={prefill.locked}
             aria-readonly={prefill.locked || undefined}
+            aria-invalid={!!state.error || undefined}
             onChange={(e) => onChange({ value: e.target.value, error: null })}
             maxLength={2000}
-            className={`text-sm ${prefill.locked ? "bg-muted" : ""}`}
+            className={FIELD}
           />
           {field.autofill === "AGE" && prefill.locked ? (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs leading-relaxed text-neutral-500">
               年齢は生年月日から計算しています。違う場合は
-              <a href="/mypage/settings" className="underline">設定画面</a>
+              <a href="/mypage/settings" className="font-medium text-neutral-900 underline underline-offset-2">設定画面</a>
               で生年月日を直してください
             </p>
           ) : field.autofill === "AGE" ? (
-            <p className="text-xs text-muted-foreground">設定画面で生年月日を登録すると、次から自動で入ります</p>
+            <p className="text-xs leading-relaxed text-neutral-500">設定画面で生年月日を登録すると、次から自動で入ります</p>
           ) : prefill.value ? (
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs leading-relaxed text-neutral-500">
               プロフィールの内容を入れています。この応募だけ変えたい場合は書き換えてください（プロフィールは変わりません）
             </p>
           ) : null}
@@ -131,58 +134,64 @@ export function SubmissionFieldInput({
       )}
 
       {field.kind === "TEXT" && !prefill && (
-        <Textarea
+        <textarea
           id={`${inputId}-input`}
           value={state.value}
           onChange={(e) => onChange({ value: e.target.value, error: null })}
           rows={2}
           maxLength={2000}
-          className="text-sm"
+          aria-invalid={!!state.error || undefined}
+          className={TEXTAREA}
         />
       )}
 
       {field.kind === "URL" && (
-        <Input
+        <input
           id={`${inputId}-input`}
           type="text"
           inputMode="url"
           autoComplete="url"
+          autoCapitalize="none"
+          spellCheck={false}
           value={state.value}
           onChange={(e) => onChange({ value: e.target.value, error: null })}
           placeholder="https://"
-          className="text-sm"
+          aria-invalid={!!state.error || undefined}
+          className={FIELD}
         />
       )}
 
       {isFile && (
         <div className="space-y-1">
           {state.fileUrl ? (
-            <div className="flex items-center gap-2 text-sm">
-              <span className="truncate text-green-700">{state.fileName ?? "アップロード済み"}</span>
+            <div className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-2.5 text-sm">
+              <FileCheck2 className="size-4 shrink-0 text-green-700" aria-hidden="true" />
+              <span className="min-w-0 flex-1 truncate text-neutral-900">{state.fileName ?? "アップロード済み"}</span>
               <button
                 type="button"
                 onClick={() => onChange({ fileUrl: null, fileName: null })}
-                className="shrink-0 text-xs text-red-600 hover:underline"
+                className="shrink-0 rounded px-1.5 py-0.5 text-xs font-medium text-red-600 hover:bg-red-50"
               >
                 削除
               </button>
             </div>
           ) : state.uploading ? (
-            <div className="flex items-center gap-3 text-sm" role="status">
-              <div className="h-2 flex-1 overflow-hidden rounded bg-muted">
-                <div className="h-full bg-primary transition-all" style={{ width: `${state.progress}%` }} />
+            <div className="flex items-center gap-3 rounded-lg border border-neutral-200 px-3 py-3 text-sm" role="status">
+              <Loader2 className="size-4 shrink-0 animate-spin text-neutral-500" aria-hidden="true" />
+              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-neutral-100">
+                <div className="h-full rounded-full bg-neutral-950 transition-all" style={{ width: `${state.progress}%` }} />
               </div>
-              <span className="w-10 text-right text-xs text-muted-foreground">{state.progress}%</span>
+              <span className="w-10 text-right text-xs tabular-nums text-neutral-500">{state.progress}%</span>
               <button
                 type="button"
                 onClick={() => controllerRef.current?.abort()}
-                className="shrink-0 text-xs text-red-600 hover:underline"
+                className="shrink-0 rounded px-1.5 py-0.5 text-xs font-medium text-red-600 hover:bg-red-50"
               >
                 中止
               </button>
             </div>
           ) : (
-            <Input
+            <input
               id={`${inputId}-input`}
               ref={fileInputRef}
               type="file"
@@ -191,36 +200,39 @@ export function SubmissionFieldInput({
                 const file = e.target.files?.[0]
                 if (file) handleFile(file)
               }}
-              className="text-sm"
+              className={FILE_FIELD}
             />
           )}
         </div>
       )}
 
       {state.deferred ? (
-        <div className="rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-900 ring-1 ring-amber-200" role="status">
+        <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-900" role="status">
           <p>
             この項目は、応募のあとで管理者に別途送ってください
             {state.errorCode && <>（受付番号：{state.errorCode}）</>}
           </p>
-          <button type="button" onClick={() => onChange({ deferred: false })} className="mt-1 underline">
+          <button type="button" onClick={() => onChange({ deferred: false })} className="mt-1 font-medium underline underline-offset-2">
             やっぱりここでアップロードする
           </button>
         </div>
       ) : (
         state.error && (
-          <div className="space-y-1" role="alert">
-            <p className="text-xs text-red-700">
-              {state.error}
-              {state.errorCode && <span className="ml-1">（受付番号：{state.errorCode}）</span>}
+          <div className="space-y-1.5" role="alert">
+            <p className="flex items-start gap-1 text-xs text-red-600">
+              <AlertCircle className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+              <span>
+                {state.error}
+                {state.errorCode && <span className="ml-1">（受付番号：{state.errorCode}）</span>}
+              </span>
             </p>
             {isFile && state.uploadFailed && !state.fileUrl && !state.uploading && (
-              <div className="flex flex-wrap gap-3 text-xs">
-                <button type="button" onClick={() => fileInputRef.current?.click()} className="text-neutral-900 underline">
+              <div className="flex flex-wrap gap-x-4 gap-y-1 pl-4.5 text-xs">
+                <button type="button" onClick={() => fileInputRef.current?.click()} className="font-medium text-neutral-900 underline underline-offset-2">
                   もう一度アップロード
                 </button>
                 {state.errorCode && (
-                  <button type="button" onClick={() => onChange({ deferred: true, error: null })} className="text-neutral-900 underline">
+                  <button type="button" onClick={() => onChange({ deferred: true, error: null })} className="font-medium text-neutral-900 underline underline-offset-2">
                     あとで別途送る（応募は先に済ませる）
                   </button>
                 )}
