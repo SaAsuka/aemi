@@ -10,7 +10,8 @@ import { JobApplicationForm } from "@/components/job-application-form"
 import { isAgeLocked, parseSubmissionFields, profileInitialValue, visibleFields } from "@/lib/submission-fields"
 import { TalentNav } from "@/components/talent-nav"
 import { BackToJobsLink } from "@/components/back-to-jobs-link"
-import { Info } from "lucide-react"
+import Link from "next/link"
+import { CheckCircle2, Info } from "lucide-react"
 
 export const metadata: Metadata = {
   title: "案件詳細 | VOZEL",
@@ -54,6 +55,8 @@ export default async function TalentJobDetailPage({
       where: {
         talentId: talent.id,
         status: { in: ["APPLIED", "RESUME_SENT", "ACCEPTED"] },
+        // この案件そのものへの応募は日程の重なりに数えない
+        jobId: { not: id },
       },
       select: {
         job: { select: { title: true, dates: { select: { date: true, type: true } } } },
@@ -173,7 +176,22 @@ export default async function TalentJobDetailPage({
           </section>
         )}
 
-        {openJob ? (
+        {openJob && myApplication ? (
+          // 応募済みの案件はフォームを出さない（同じ案件に二度は応募できない）
+          <div role="status" className="flex items-start gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <span>
+              この案件には応募済みです。
+              {t ? (
+                <span className="inline-block">応募の状況はマイページで確認できます。</span>
+              ) : (
+                <Link href="/mypage" className="inline-block font-medium underline underline-offset-2">
+                  応募の状況をマイページで見る
+                </Link>
+              )}
+            </span>
+          </div>
+        ) : openJob ? (
           <section className="space-y-4 border-t border-neutral-200 pt-6">
             <h2 className="text-lg font-semibold">応募する</h2>
             <JobApplicationForm jobId={openJob.id} talentId={talent.id} talentName={talent.name} requirements={openJob.requirements} hasResume={hasResume} dateConflict={dateConflict} token={t ?? null} fields={fields} alreadyApplied={!!myApplication} prefill={prefill} />
