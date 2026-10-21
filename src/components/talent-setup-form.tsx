@@ -15,6 +15,7 @@ import {
 import { AlertCircle, Plus, Loader2, Trash2, GripVertical, ChevronLeft, ChevronRight, ImagePlus, RotateCcw } from "lucide-react"
 import { BTN_PRIMARY, BTN_SECONDARY, FIELD, PANEL, SELECT_TRIGGER, TEXTAREA } from "@/components/talent/styles"
 import type { TalentPhoto } from "@/generated/prisma/client"
+import { SortableGrid } from "@/components/sortable-grid"
 
 const STORAGE_KEY = "vozel_setup_draft"
 const TOTAL_STEPS = 4
@@ -122,7 +123,7 @@ function Section({
 function SetupPhotos({ talentId, photos: initialPhotos }: { talentId: string; photos: TalentPhoto[] }) {
   const [photos, setPhotos] = useState(initialPhotos)
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
-  const [dragIdx, setDragIdx] = useState<number | null>(null)
+  const [reorderError, setReorderError] = useState<string | null>(null)
 
   const uploading = Object.keys(uploadProgress).length > 0
 
@@ -158,17 +159,18 @@ function SetupPhotos({ talentId, photos: initialPhotos }: { talentId: string; ph
     await deleteTalentPhoto(id, talentId)
   }, [talentId])
 
-  const handleDragStart = (idx: number) => setDragIdx(idx)
-
-  const handleDrop = useCallback(async (targetIdx: number) => {
-    if (dragIdx === null || dragIdx === targetIdx) return
-    const reordered = [...photos]
-    const [moved] = reordered.splice(dragIdx, 1)
-    reordered.splice(targetIdx, 0, moved)
-    setPhotos(reordered)
-    setDragIdx(null)
-    await reorderTalentPhotos(talentId, reordered.map(p => p.id))
-  }, [dragIdx, photos, talentId])
+  // 並べ替えたらすぐ画面に反映し、保存に失敗したら元の並びに戻す
+  const handleReorder = useCallback(async (next: TalentPhoto[]) => {
+    const prev = photos
+    setPhotos(next)
+    setReorderError(null)
+    try {
+      await reorderTalentPhotos(talentId, next.map(p => p.id))
+    } catch {
+      setPhotos(prev)
+      setReorderError("並べ替えを保存できませんでした。もう一度お試しください")
+    }
+  }, [photos, talentId])
 
   return (
     <div className="space-y-4">
@@ -228,39 +230,51 @@ function SetupPhotos({ talentId, photos: initialPhotos }: { talentId: string; ph
           <span className="text-xs text-neutral-500">何枚でもまとめて選べます</span>
         </button>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {photos.map((photo, idx) => (
-            <div
-              key={photo.id}
-              draggable
-              onDragStart={() => handleDragStart(idx)}
-              onDragOver={(e) => e.preventDefault()}
-              onDrop={() => handleDrop(idx)}
-              className={`group relative overflow-hidden rounded-xl bg-neutral-100 ring-1 transition-all ${idx < 6 ? "ring-neutral-950/20" : "ring-neutral-200"} ${dragIdx === idx ? "scale-95 opacity-50" : "hover:ring-neutral-950/40"}`}
-            >
-              <img src={blobProxyUrl(photo.url)} alt={photoLabel(idx)} className="aspect-[3/4] w-full object-cover" />
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2.5 pt-6">
-                <span className="text-xs font-medium text-white">
-                  {photoLabel(idx)}
-                  {idx < 6 && <span className="ml-1.5 text-[10px] opacity-75">コンポジ</span>}
-                </span>
+        <>
+          <p className="text-xs text-neutral-500">写真をドラッグ（スマホは長押し）で並べ替えできます</p>
+          {reorderError && (
+            <p role="alert" className="flex items-start gap-1.5 text-sm text-red-600">
+              <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              {reorderError}
+            </p>
+          )}
+          <SortableGrid
+            items={photos}
+            onReorder={handleReorder}
+            className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+            renderItem={(photo, idx, { handleProps, isDragging }) => (
+              <div
+                className={`group relative overflow-hidden rounded-xl bg-neutral-100 ring-1 transition-shadow ${idx < 6 ? "ring-neutral-950/20" : "ring-neutral-200"} ${isDragging ? "opacity-80 shadow-xl ring-2 ring-neutral-950" : "hover:ring-neutral-950/40"}`}
+              >
+                <img src={blobProxyUrl(photo.url)} alt={photoLabel(idx)} draggable={false} className="pointer-events-none aspect-[3/4] w-full object-cover" />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2.5 pt-6">
+                  <span className="text-xs font-medium text-white">
+                    {photoLabel(idx)}
+                    {idx < 6 && <span className="ml-1.5 text-[10px] opacity-75">コンポジ</span>}
+                  </span>
+                </div>
+                <div className="absolute right-1.5 top-1.5 flex gap-1">
+                  <button
+                    type="button"
+                    {...handleProps}
+                    aria-label={`${photoLabel(idx)}の写真を並べ替える`}
+                    className="cursor-grab rounded-lg bg-black/55 p-2 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  >
+                    <GripVertical className="size-4" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(photo.id)}
+                    aria-label={`${photoLabel(idx)}の写真を削除`}
+                    className="rounded-lg bg-black/55 p-2 text-white transition-colors hover:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  >
+                    <Trash2 className="size-4" aria-hidden="true" />
+                  </button>
+                </div>
               </div>
-              <div className="absolute right-1.5 top-1.5 flex gap-1">
-                <button type="button" aria-label="ドラッグして並べ替え" className="cursor-grab rounded-lg bg-black/55 p-2 text-white">
-                  <GripVertical className="size-4" aria-hidden="true" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(photo.id)}
-                  aria-label={`${photoLabel(idx)}の写真を削除`}
-                  className="rounded-lg bg-black/55 p-2 text-white transition-colors hover:bg-red-600"
-                >
-                  <Trash2 className="size-4" aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-          ))}
-        </div>
+            )}
+          />
+        </>
       )}
     </div>
   )

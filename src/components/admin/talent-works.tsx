@@ -7,6 +7,7 @@ import { Trash2, GripVertical, Plus, Loader2 } from "lucide-react"
 import { addTalentWork, deleteTalentWork, updateTalentWork, reorderTalentWorks } from "@/lib/actions/talent-work"
 import { blobProxyUrl } from "@/lib/utils/blob"
 import type { TalentWork } from "@/generated/prisma/client"
+import { SortableGrid } from "@/components/sortable-grid"
 
 export function TalentWorks({
   talentId,
@@ -25,7 +26,7 @@ export function TalentWorks({
   const [works, setWorks] = useState(initialWorks)
   const [uploading, setUploading] = useState(false)
   const [caption, setCaption] = useState("")
-  const [dragIdx, setDragIdx] = useState<number | null>(null)
+  const [reorderError, setReorderError] = useState<string | null>(null)
 
   const handleAdd = useCallback(async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
@@ -61,17 +62,19 @@ export function TalentWorks({
     await updateTalentWork(id, talentId, newCaption)
   }, [talentId])
 
-  const handleDragStart = (idx: number) => setDragIdx(idx)
-
-  const handleDrop = useCallback(async (targetIdx: number) => {
-    if (dragIdx === null || dragIdx === targetIdx) return
-    const reordered = [...works]
-    const [moved] = reordered.splice(dragIdx, 1)
-    reordered.splice(targetIdx, 0, moved)
-    setWorks(reordered)
-    setDragIdx(null)
-    await reorderTalentWorks(talentId, reordered.map(w => w.id))
-  }, [dragIdx, works, talentId])
+  // 並べ替えたらすぐ画面に反映し、保存に失敗したら元の並びに戻す
+  const handleReorder = useCallback(async (next: TalentWork[]) => {
+    const prev = works
+    setWorks(next)
+    setReorderError(null)
+    try {
+      await reorderTalentWorks(talentId, next.map(w => w.id))
+    } catch (err) {
+      console.error("過去作品の並べ替えエラー:", err)
+      setWorks(prev)
+      setReorderError("並べ替えを保存できませんでした。もう一度お試しください")
+    }
+  }, [works, talentId])
 
   return (
     <div className="space-y-4">
@@ -96,36 +99,48 @@ export function TalentWorks({
         />
       </div>
 
+      {reorderError && (
+        <p role="alert" className="text-sm text-red-600">{reorderError}</p>
+      )}
+
       {works.length > 0 && (
-        <div className="space-y-3">
-          {works.map((work, idx) => (
+        <SortableGrid
+          items={works}
+          onReorder={handleReorder}
+          dragFrom="handle"
+          unit="件"
+          className="space-y-3"
+          renderItem={(work, idx, { handleProps, isDragging }) => (
             <div
-              key={work.id}
-              draggable
-              onDragStart={() => handleDragStart(idx)}
-              onDragOver={e => e.preventDefault()}
-              onDrop={() => handleDrop(idx)}
-              className={`flex items-start gap-3 border rounded-lg p-2 ${itemClassName ?? ""} ${dragIdx === idx ? "opacity-50" : ""}`}
+              className={`flex items-start gap-3 border rounded-lg p-2 bg-white transition-shadow ${itemClassName ?? ""} ${isDragging ? "shadow-xl ring-2 ring-neutral-950" : ""}`}
             >
-              <button type="button" className="cursor-grab mt-2 text-muted-foreground">
-                <GripVertical className="h-4 w-4" />
+              {/* 作品名の入力欄で文字を選べるよう、並べ替えはこのつまみから。スマホは長押しで掴む */}
+              <button
+                type="button"
+                {...handleProps}
+                aria-label={`${idx + 1}件目の作品を並べ替える`}
+                style={{ WebkitTouchCallout: "none" }}
+                className="mt-1 -ml-1 flex size-10 shrink-0 cursor-grab touch-manipulation select-none items-center justify-center rounded-md text-muted-foreground hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950/30"
+              >
+                <GripVertical className="h-4 w-4" aria-hidden="true" />
               </button>
-              <img src={blobProxyUrl(work.imageUrl)} alt={work.caption} className="w-24 h-24 object-cover rounded" />
+              <img src={blobProxyUrl(work.imageUrl)} alt={work.caption} draggable={false} className="w-24 h-24 object-cover rounded" />
               <div className="flex-1 space-y-1">
                 <Input
                   defaultValue={work.caption}
                   onBlur={e => {
                     if (e.target.value !== work.caption) handleCaptionUpdate(work.id, e.target.value)
                   }}
+                  aria-label={`${idx + 1}件目の作品名`}
                   className={`text-sm ${inputClassName ?? ""}`}
                 />
               </div>
-              <Button type="button" variant="ghost" size="icon" onClick={() => handleDelete(work.id)}>
-                <Trash2 className="h-4 w-4 text-red-500" />
+              <Button type="button" variant="ghost" size="icon" onClick={() => handleDelete(work.id)} aria-label={`${idx + 1}件目の作品を削除`}>
+                <Trash2 className="h-4 w-4 text-red-500" aria-hidden="true" />
               </Button>
             </div>
-          ))}
-        </div>
+          )}
+        />
       )}
     </div>
   )
