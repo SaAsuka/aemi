@@ -7,6 +7,8 @@ const BASE =
 
 export const BTN_PRIMARY = `${BASE} bg-neutral-950 text-white hover:bg-neutral-800`
 export const BTN_SECONDARY = `${BASE} border border-neutral-300 bg-white text-neutral-900 hover:border-neutral-400 hover:bg-neutral-50`
+// LINE連携のボタン（LINEのブランドカラー）
+export const BTN_LINE = `${BASE} bg-[#06C755] text-white hover:bg-[#05b34d] focus-visible:ring-[#06C755]/30`
 
 export const FIELD =
   "block h-11 w-full min-w-0 rounded-lg border border-neutral-300 bg-white px-3.5 text-base text-neutral-950 transition-[border-color,box-shadow] duration-150 placeholder:text-neutral-400 hover:border-neutral-400 focus-visible:border-neutral-950 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-950/10 read-only:border-neutral-200 read-only:bg-neutral-50 read-only:text-neutral-500 read-only:hover:border-neutral-200 aria-invalid:border-red-600 aria-invalid:focus-visible:border-red-600 aria-invalid:focus-visible:ring-red-600/15"
