@@ -13,8 +13,9 @@
   --color-accent: #fb923c;
   --color-muted: #fef3e2;
   --color-border: #fed7aa;
-  --font-sans: var(--font-sans);
-  --font-heading: var(--font-sans);
+  /* Noto Sans JP を読み込めないとき（通信が遅い・止まっている等）も、明朝体ではなくゴシック体で出す */
+  --font-sans: var(--font-noto-sans-jp), "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", YuGothic, Meiryo, sans-serif;
+  --font-heading: var(--font-noto-sans-jp), "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", YuGothic, Meiryo, sans-serif;
   --color-chart-5: var(--chart-5);
   --color-chart-4: var(--chart-4);
   --color-chart-3: var(--chart-3);
