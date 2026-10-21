@@ -13,7 +13,6 @@ import {
   CreditCard,
   CalendarDays,
   FileText,
-  Globe,
   Loader2,
   LogOut,
   Menu,
@@ -142,10 +141,6 @@ function AdminNav({
             <ArrowUpRight className="ml-auto size-4 shrink-0 text-neutral-500" aria-hidden="true" />
             <span className="sr-only">（新しいタブで開きます）</span>
           </a>
-          <Link href="/" onClick={onNavigate} className={`${ITEM} ${ITEM_IDLE}`}>
-            <Globe className="size-[18px] shrink-0" aria-hidden="true" />
-            <span className="truncate">LP を表示</span>
-          </Link>
           <a href="/auth/logout" className={`${ITEM} ${ITEM_IDLE}`}>
             <LogOut className="size-[18px] shrink-0" aria-hidden="true" />
             <span className="truncate">ログアウト</span>
@@ -179,10 +174,6 @@ export function AdminHeader() {
 
   return (
     <header className="hidden h-14 shrink-0 items-center justify-end gap-1 border-b border-neutral-200 bg-white px-6 lg:flex">
-      <Link href="/" className={`${HEADER_ITEM} ${HEADER_IDLE}`}>
-        <Globe className="size-4 shrink-0" aria-hidden="true" />
-        LP を表示
-      </Link>
       <a
         href="https://dashboard.stripe.com/products"
         target="_blank"
