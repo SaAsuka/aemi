@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { requireTalent } from "@/lib/auth"
 import { getTalentByToken } from "@/lib/actions/talent"
@@ -9,6 +10,22 @@ import { JobApplicationForm } from "@/components/job-application-form"
 import { isAgeLocked, parseSubmissionFields, profileInitialValue, visibleFields } from "@/lib/submission-fields"
 import { TalentNav } from "@/components/talent-nav"
 import { BackToJobsLink } from "@/components/back-to-jobs-link"
+import Link from "next/link"
+import { CheckCircle2, Info } from "lucide-react"
+
+export const metadata: Metadata = {
+  title: "案件詳細 | VOZEL",
+}
+
+// 案件の情報を「見出し｜内容」の行で並べる
+function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="grid grid-cols-[6.5rem_minmax(0,1fr)] gap-3 py-3 first:pt-0 last:pb-0 sm:grid-cols-[8rem_minmax(0,1fr)]">
+      <dt className="text-neutral-500">{label}</dt>
+      <dd className="text-neutral-950">{children}</dd>
+    </div>
+  )
+}
 
 export default async function TalentJobDetailPage({
   params,
@@ -31,13 +48,15 @@ export default async function TalentJobDetailPage({
   }
 
   const displayName = talent.name
-  const [job, talentResume, activeApps, myApplication] = await Promise.all([
+  const [openJob, talentResume, activeApps, myApplication] = await Promise.all([
     getOpenJob(id),
     prisma.talent.findUnique({ where: { id: talent.id }, select: { resume: true, name: true, birthDate: true, height: true } }),
     prisma.application.findMany({
       where: {
         talentId: talent.id,
         status: { in: ["APPLIED", "RESUME_SENT", "ACCEPTED"] },
+        // この案件そのものへの応募は日程の重なりに数えない
+        jobId: { not: id },
       },
       select: {
         job: { select: { title: true, dates: { select: { date: true, type: true } } } },
@@ -46,6 +65,23 @@ export default async function TalentJobDetailPage({
     prisma.application.findUnique({ where: { talentId_jobId: { talentId: talent.id, jobId: id } }, select: { id: true } }),
   ])
   const hasResume = !!talentResume?.resume
+
+  // 募集が終わった（締切切れ・募集終了・中止）案件でも、応募した本人には内容を見せる
+  // （マイページの応募状況から開けるように）。応募フォームは出さない
+  const closedJob =
+    openJob || !myApplication
+      ? null
+      : await prisma.job.findUnique({
+          where: { id },
+          select: {
+            id: true, title: true, description: true, location: true, fee: true,
+            genderReq: true, ageMin: true, ageMax: true, heightMin: true, heightMax: true,
+            deadline: true, capacity: true, status: true,
+            client: { select: { companyName: true } },
+            dates: { orderBy: { date: "asc" as const } },
+          },
+        })
+  const job = openJob ?? closedJob
   if (!job) redirect("/jobs")
 
   const typeLabels: Record<string, string> = { AUDITION: "オーディション", SHOOTING: "撮影", OTHER: "予定" }
@@ -66,7 +102,7 @@ export default async function TalentJobDetailPage({
   }
 
   // 自由な提出項目（コンポジの項目はフォームに出さない）
-  const fields = visibleFields(parseSubmissionFields(job.submissionFields))
+  const fields = openJob ? visibleFields(parseSubmissionFields(openJob.submissionFields)) : []
   // 名前・年齢・身長はプロフィールの値を最初から入れる（プロフィールは書き換えない）。年齢はここで1回だけ計算する
   const profile = { name: talentResume?.name ?? null, birthDate: talentResume?.birthDate ?? null, height: talentResume?.height ?? null }
   const today = new Date()
@@ -78,80 +114,98 @@ export default async function TalentJobDetailPage({
 
   const backHref = t ? `/jobs?t=${t}` : "/jobs"
 
+  const hasConditions = !!job.genderReq || job.ageMin != null || job.ageMax != null || job.heightMin != null || job.heightMax != null
+
   return (
-    <>
+    <div className="min-h-[100dvh] bg-white">
       {!t && <TalentNav talentName={displayName} />}
-    <div className="mx-auto max-w-4xl px-4 py-8 space-y-6">
-      <BackToJobsLink fallbackHref={backHref} />
+      <main className="mx-auto max-w-3xl space-y-6 px-4 pt-6 text-neutral-950 sm:pt-8">
+        <BackToJobsLink fallbackHref={backHref} />
 
-      <div>
-        <h1 className="text-xl font-bold">{job.title}</h1>
-        <p className="text-sm text-muted-foreground mt-1">{job.client.companyName}</p>
-      </div>
-
-      <div className="rounded-lg border p-4 space-y-3 text-sm">
-        {job.location && (
-          <div>
-            <span className="text-muted-foreground">場所: </span>{job.location}
-          </div>
-        )}
-        {job.fee != null && (
-          <div>
-            <span className="text-muted-foreground">報酬: </span>&yen;{job.fee.toLocaleString()}
-          </div>
-        )}
-        {job.dates.length > 0 && (
-          <div className="space-y-1">
-            {job.dates.map((d, i) => (
-              <div key={i}>
-                <span className="text-muted-foreground">
-                  {d.type === "AUDITION" ? "オーディション" : d.type === "SHOOTING" ? "撮影" : "日程"}:{" "}
-                </span>
-                {formatDate(d.date)}
-                {d.startTime && ` ${d.startTime}`}
-                {d.location && ` (${d.location})`}
-              </div>
-            ))}
-          </div>
-        )}
-        {job.deadline && (
-          <div>
-            <span className="text-muted-foreground">締切: </span>{formatDeadline(job.deadline)}
-          </div>
-        )}
-        {job.capacity != null && (
-          <div>
-            <span className="text-muted-foreground">募集人数: </span>{job.capacity}名
-          </div>
-        )}
-        {job.genderReq && (
-          <div>
-            <span className="text-muted-foreground">性別条件: </span>{GENDER_LABELS[job.genderReq]}
-          </div>
-        )}
-        {(job.ageMin != null || job.ageMax != null) && (
-          <div>
-            <span className="text-muted-foreground">年齢条件: </span>
-            {job.ageMin ?? "−"}〜{job.ageMax ?? "−"}歳
-          </div>
-        )}
-        {(job.heightMin != null || job.heightMax != null) && (
-          <div>
-            <span className="text-muted-foreground">身長条件: </span>
-            {job.heightMin ?? "−"}〜{job.heightMax ?? "−"}cm
-          </div>
-        )}
-      </div>
-
-      {job.description && (
-        <div className="text-sm">
-          <p className="text-muted-foreground mb-1">詳細</p>
-          <p className="whitespace-pre-wrap">{job.description}</p>
+        <div>
+          <h1 className="text-2xl font-semibold leading-snug tracking-tight">{job.title}</h1>
+          <p className="mt-1.5 text-sm text-neutral-500">{job.client.companyName}</p>
         </div>
-      )}
 
-      <JobApplicationForm jobId={job.id} talentId={talent.id} talentName={talent.name} requirements={job.requirements} hasResume={hasResume} dateConflict={dateConflict} token={t ?? null} fields={fields} alreadyApplied={!!myApplication} prefill={prefill} />
+        <section className="rounded-xl border border-neutral-200 p-5 sm:p-6">
+          <h2 className="sr-only">案件の情報</h2>
+          <dl className="divide-y divide-neutral-100 text-sm">
+            {job.location && <InfoRow label="場所">{job.location}</InfoRow>}
+            {job.fee != null && (
+              <InfoRow label="報酬">
+                <span className="font-semibold tabular-nums">&yen;{job.fee.toLocaleString()}</span>
+              </InfoRow>
+            )}
+            {job.dates.map((d, i) => (
+              <InfoRow key={i} label={d.type === "AUDITION" ? "オーディション" : d.type === "SHOOTING" ? "撮影" : "日程"}>
+                <span className="tabular-nums">
+                  {formatDate(d.date)}
+                  {d.startTime && ` ${d.startTime}`}
+                </span>
+                {d.location && <span className="text-neutral-500">{` (${d.location})`}</span>}
+              </InfoRow>
+            ))}
+            {job.deadline && (
+              <InfoRow label="締切">
+                <span className="tabular-nums">{formatDeadline(job.deadline)}</span>
+              </InfoRow>
+            )}
+            {job.capacity != null && <InfoRow label="募集人数">{job.capacity}名</InfoRow>}
+          </dl>
+
+          {hasConditions && (
+            <div className="mt-4 border-t border-neutral-200 pt-4">
+              <h3 className="text-xs font-medium text-neutral-500">応募できる人の条件</h3>
+              <dl className="mt-2 divide-y divide-neutral-100 text-sm">
+                {job.genderReq && <InfoRow label="性別">{GENDER_LABELS[job.genderReq]}</InfoRow>}
+                {(job.ageMin != null || job.ageMax != null) && (
+                  <InfoRow label="年齢">{job.ageMin ?? "−"}〜{job.ageMax ?? "−"}歳</InfoRow>
+                )}
+                {(job.heightMin != null || job.heightMax != null) && (
+                  <InfoRow label="身長">{job.heightMin ?? "−"}〜{job.heightMax ?? "−"}cm</InfoRow>
+                )}
+              </dl>
+            </div>
+          )}
+        </section>
+
+        {job.description && (
+          <section>
+            <h2 className="text-base font-semibold">詳細</h2>
+            <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-neutral-800">{job.description}</p>
+          </section>
+        )}
+
+        {openJob && myApplication ? (
+          // 応募済みの案件はフォームを出さない（同じ案件に二度は応募できない）
+          <div role="status" className="flex items-start gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+            <CheckCircle2 className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            <span>
+              この案件には応募済みです。
+              {t ? (
+                <span className="inline-block">応募の状況はマイページで確認できます。</span>
+              ) : (
+                <Link href="/mypage" className="inline-block font-medium underline underline-offset-2">
+                  応募の状況をマイページで見る
+                </Link>
+              )}
+            </span>
+          </div>
+        ) : openJob ? (
+          <section className="space-y-4 border-t border-neutral-200 pt-6">
+            <h2 className="text-lg font-semibold">応募する</h2>
+            <JobApplicationForm jobId={openJob.id} talentId={talent.id} talentName={talent.name} requirements={openJob.requirements} hasResume={hasResume} dateConflict={dateConflict} token={t ?? null} fields={fields} alreadyApplied={!!myApplication} prefill={prefill} />
+          </section>
+        ) : (
+          <div role="status" className="flex items-start gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
+            <Info className="mt-0.5 size-4 shrink-0 text-neutral-500" aria-hidden="true" />
+            <span>
+              {closedJob?.status === "CANCELLED" ? "この案件は中止になりました。" : "この案件の募集は終了しました。"}
+              <span className="inline-block">応募の状況はマイページで確認できます。</span>
+            </span>
+          </div>
+        )}
+      </main>
     </div>
-    </>
   )
 }

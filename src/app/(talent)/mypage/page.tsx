@@ -4,8 +4,12 @@ import { calcProfileCompleteness } from "@/lib/utils/profile-completeness"
 import { TalentNav } from "@/components/talent-nav"
 import { TalentApplicationHistory } from "@/components/talent-application-history"
 import { ProfileCompleteness } from "@/components/profile-completeness"
-import { Briefcase } from "lucide-react"
+import type { Metadata } from "next"
 import { LineConnectAlert } from "@/components/line-connect-alert"
+
+export const metadata: Metadata = {
+  title: "マイページ | VOZEL",
+}
 
 export default async function MyPage() {
   const talent = await requireTalent()
@@ -18,28 +22,33 @@ export default async function MyPage() {
   const completeness = profile ? calcProfileCompleteness(profile) : null
 
   return (
-    <>
+    <div className="min-h-[100dvh] bg-white">
       <TalentNav talentName={displayName} />
-      <div className="mx-auto max-w-7xl px-4 py-8 space-y-6">
-        {!talent.lineUserId && (
-          <LineConnectAlert />
-        )}
+      <main className="mx-auto max-w-3xl px-4 pb-[calc(3rem+env(safe-area-inset-bottom))] pt-8 text-neutral-950 sm:pt-10">
+        <h1 className="text-2xl font-semibold tracking-tight">マイページ</h1>
 
-        {completeness && completeness.percentage < 100 && (
-          <ProfileCompleteness
-            percentage={completeness.percentage}
-            incomplete={completeness.incomplete}
-          />
-        )}
+        {(!talent.lineUserId || (completeness && completeness.percentage < 100)) && (
+          <div className="mt-6 space-y-4">
+            {!talent.lineUserId && (
+              <LineConnectAlert />
+            )}
 
-        <section className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Briefcase className="h-5 w-5 text-primary" />
-            <h2 className="text-lg font-semibold">応募状況</h2>
+            {completeness && completeness.percentage < 100 && (
+              <ProfileCompleteness
+                percentage={completeness.percentage}
+                incomplete={completeness.incomplete}
+              />
+            )}
           </div>
-          <TalentApplicationHistory applications={applications} />
+        )}
+
+        <section className="mt-10" aria-labelledby="applications-heading">
+          <h2 id="applications-heading" className="text-lg font-semibold">応募状況</h2>
+          <div className="mt-4">
+            <TalentApplicationHistory applications={applications} />
+          </div>
         </section>
-      </div>
-    </>
+      </main>
+    </div>
   )
 }

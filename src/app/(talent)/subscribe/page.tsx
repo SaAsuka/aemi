@@ -1,8 +1,17 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { headers } from "next/headers"
+import { AlertCircle, Check, Lock, LogOut } from "lucide-react"
+import { AuthShell } from "@/components/auth/auth-shell"
+import { AuthHeading } from "@/components/auth/auth-form"
+import { SubscribeButton } from "./subscribe-button"
 import { requireTalentRaw, isSubscriptionActive } from "@/lib/auth"
 import { createCheckoutSession, getStripe } from "@/lib/stripe"
 import type Stripe from "stripe"
+
+export const metadata: Metadata = {
+  title: "サブスクリプション | VOZEL",
+}
 
 async function getBaseUrl() {
   const h = await headers()
@@ -83,41 +92,56 @@ export default async function SubscribePage({
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="w-full max-w-sm space-y-6 p-6 text-center">
-        <h1 className="text-2xl font-bold">VOZEL</h1>
-        <p className="text-muted-foreground text-sm">
-          案件情報の閲覧にはサブスクリプションが必要です。
-        </p>
-        <div className="rounded-lg border p-4 space-y-2">
-          {plan ? (
-            <>
-              <p className="text-sm font-medium">{plan.name}</p>
-              <p className="text-lg font-bold">
+    <AuthShell>
+      <AuthHeading
+        title="サブスクリプション"
+        description="案件情報の閲覧にはサブスクリプションが必要です。"
+      />
+
+      <div className="mt-8 rounded-xl border border-neutral-200 p-5">
+        {plan ? (
+          <>
+            <p className="text-sm font-medium text-neutral-600">{plan.name}</p>
+            <p className="mt-1 flex items-baseline gap-1">
+              <span className="text-3xl font-semibold tracking-tight tabular-nums">
                 {formatAmount(plan.amount, plan.currency)}
-                <span className="text-sm font-normal text-muted-foreground">/{INTERVAL_LABELS[plan.interval] ?? plan.interval}</span>
-              </p>
-            </>
-          ) : (
-            <p className="text-sm text-muted-foreground">プランを確認中...</p>
-          )}
-          <p className="text-sm text-muted-foreground">案件閲覧・応募が可能になります</p>
-        </div>
-        {error === "stripe" && (
-          <p className="text-sm text-red-600">決済の開始に失敗しました。しばらく時間をおいて再度お試しください。</p>
+              </span>
+              <span className="text-sm text-neutral-500">/{INTERVAL_LABELS[plan.interval] ?? plan.interval}</span>
+            </p>
+          </>
+        ) : (
+          <p className="text-sm text-neutral-500">プランを確認中...</p>
         )}
-        <form action={handleSubscribe}>
-          <button
-            type="submit"
-            className="w-full rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground"
-          >
-            サブスクリプションを開始
-          </button>
-        </form>
-        <a href="/auth/logout" className="text-sm text-muted-foreground hover:underline block">
+        <p className="mt-4 flex items-start gap-2 border-t border-neutral-100 pt-4 text-sm text-neutral-700">
+          <Check className="mt-0.5 size-4 shrink-0 text-neutral-950" aria-hidden="true" />
+          案件閲覧・応募が可能になります
+        </p>
+      </div>
+
+      {error === "stripe" && (
+        <p role="alert" className="mt-6 flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <span>決済の開始に失敗しました。しばらく時間をおいて再度お試しください。</span>
+        </p>
+      )}
+
+      <form action={handleSubscribe} className="mt-6">
+        <SubscribeButton />
+      </form>
+      <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-neutral-500">
+        <Lock className="size-3.5" aria-hidden="true" />
+        お支払いは Stripe の決済画面で行います
+      </p>
+
+      <div className="mt-8 border-t border-neutral-200 pt-6">
+        <a
+          href="/auth/logout"
+          className="inline-flex items-center gap-1.5 rounded-sm text-sm text-neutral-500 underline-offset-4 transition-colors hover:text-neutral-950 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950"
+        >
+          <LogOut className="size-4" aria-hidden="true" />
           ログアウト
         </a>
       </div>
-    </div>
+    </AuthShell>
   )
 }

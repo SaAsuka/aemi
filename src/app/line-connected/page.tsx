@@ -1,3 +1,12 @@
+import type { Metadata } from "next"
+import { AlertCircle, Check } from "lucide-react"
+import { AuthShell } from "@/components/auth/auth-shell"
+import { AuthHeading } from "@/components/auth/auth-form"
+
+export const metadata: Metadata = {
+  title: "LINE連携 | VOZEL",
+}
+
 // LINE連携ボタンを押したのとは別のブラウザ（例：InstagramやLINEのアプリ内ブラウザから
 // LINEアプリ経由でSafariに戻った場合）で連携を終えた人向けの画面。ログインは不要で、
 // 個人情報は一切表示しない
@@ -10,25 +19,42 @@ export default async function LineConnectedPage({
   const failed = status === "error"
 
   return (
-    <div className="flex min-h-[100dvh] items-center justify-center">
-      <div className="w-full max-w-sm space-y-4 p-6 text-center">
-        <h1 className="text-2xl font-bold">{failed ? "LINE連携に失敗しました" : "LINE連携が完了しました"}</h1>
-        <p className="text-sm text-muted-foreground">
-          {failed ? (
+    <AuthShell>
+      {failed ? (
+        <div className="flex size-12 items-center justify-center rounded-full bg-red-50">
+          <AlertCircle className="size-6 text-red-600" aria-hidden="true" />
+        </div>
+      ) : (
+        <div className="flex size-12 items-center justify-center rounded-full bg-[#06C755]">
+          <Check className="size-6 text-white" aria-hidden="true" />
+        </div>
+      )}
+      <AuthHeading
+        title={failed ? "LINE連携に失敗しました" : "LINE連携が完了しました"}
+        description={
+          failed ? (
             <>
-              時間が経ちすぎたか、途中で操作が中断された可能性があります。
+              <span className="inline-block">時間が経ちすぎたか、</span>
+              <span className="inline-block">途中で操作が中断された可能性があります。</span>
               <br />
-              お手数ですが、マイページの設定からもう一度お試しください。
+              <span className="inline-block">お手数ですが、マイページの設定から</span>
+              <span className="inline-block">もう一度お試しください。</span>
             </>
           ) : (
             <>
-              新しい案件が登録されるとLINEで通知が届きます。
-              <br />
-              この画面は閉じて、元のアプリ・ブラウザに戻ってください。
+              <span className="inline-block">新しい案件が登録されると</span>
+              <span className="inline-block">LINEで通知が届きます。</span>
             </>
-          )}
+          )
+        }
+        className="mt-6"
+      />
+      {!failed && (
+        <p className="mt-8 rounded-lg border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm leading-relaxed text-neutral-700">
+          <span className="inline-block">この画面は閉じて、</span>
+          <span className="inline-block">元のアプリ・ブラウザに戻ってください。</span>
         </p>
-      </div>
-    </div>
+      )}
+    </AuthShell>
   )
 }

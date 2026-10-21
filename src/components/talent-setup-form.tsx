@@ -5,10 +5,6 @@ import { useEffect, useState, useCallback, useRef } from "react"
 import { setupTalent } from "@/lib/actions/talent-setup"
 import { addTalentPhoto, deleteTalentPhoto, reorderTalentPhotos } from "@/lib/actions/talent-photo"
 import { blobProxyUrl } from "@/lib/utils/blob"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -16,8 +12,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Plus, Loader2, Trash2, GripVertical, Camera, User, Ruler, Share2, CreditCard, Lock, ChevronLeft, ChevronRight, Check } from "lucide-react"
+import { AlertCircle, Plus, Loader2, Trash2, GripVertical, ChevronLeft, ChevronRight, ImagePlus, RotateCcw } from "lucide-react"
+import { BTN_PRIMARY, BTN_SECONDARY, FIELD, PANEL, SELECT_TRIGGER, TEXTAREA } from "@/components/talent/styles"
 import type { TalentPhoto } from "@/generated/prisma/client"
+import { SortableGrid } from "@/components/sortable-grid"
 
 const STORAGE_KEY = "vozel_setup_draft"
 const TOTAL_STEPS = 4
@@ -30,41 +28,94 @@ function photoLabel(idx: number): string {
   return `#${idx + 1}`
 }
 
+const STEP_LABELS = ["写真・基本情報", "身体・スキル", "SNS・振込先", "パスワード"]
+
 // --- ステッププログレスバー ---
 function StepProgressBar({ current, total }: { current: number; total: number }) {
-  const labels = ["写真・基本情報", "身体・スキル", "SNS・振込先", "パスワード"]
   return (
-    <div className="flex items-center gap-0 mb-8">
-      {labels.map((label, idx) => {
-        const step = idx + 1
-        const isCompleted = current > step
-        const isCurrent = current === step
-        const isLast = idx === labels.length - 1
-        return (
-          <div key={label} className="flex items-center flex-1 last:flex-none">
-            <div className="flex flex-col items-center">
-              <div
-                className={`h-8 w-8 rounded-full flex items-center justify-center text-xs font-medium ${
-                  isCompleted
-                    ? "bg-primary text-primary-foreground"
-                    : isCurrent
-                    ? "bg-primary text-primary-foreground ring-2 ring-primary/30 ring-offset-2"
-                    : "bg-muted text-muted-foreground"
+    <div>
+      <p className="flex items-baseline gap-2 text-sm">
+        <span className="font-semibold tabular-nums text-neutral-950">
+          STEP {current}
+          <span className="font-normal text-neutral-400"> / {total}</span>
+        </span>
+        <span className="text-neutral-600">{STEP_LABELS[current - 1]}</span>
+      </p>
+      <ol className="mt-3 grid grid-cols-4 gap-1.5" aria-label={`全${total}ステップ中 ${current} ステップ目`}>
+        {STEP_LABELS.map((label, idx) => {
+          const step = idx + 1
+          return (
+            <li key={label}>
+              <span
+                className={`block h-1 rounded-full transition-colors duration-300 ${
+                  current >= step ? "bg-neutral-950" : "bg-neutral-200"
                 }`}
+              />
+              <span
+                className={`mt-2 hidden text-xs sm:block ${
+                  current === step ? "font-medium text-neutral-950" : current > step ? "text-neutral-600" : "text-neutral-400"
+                }`}
+                aria-current={current === step ? "step" : undefined}
               >
-                {isCompleted ? <Check className="h-4 w-4" /> : step}
-              </div>
-              <span className={`text-[10px] sm:text-xs mt-1.5 text-center leading-tight ${isCurrent || isCompleted ? "text-foreground font-medium" : "text-muted-foreground"}`}>
                 {label}
               </span>
-            </div>
-            {!isLast && (
-              <div className={`h-0.5 flex-1 mx-2 ${current > step ? "bg-primary" : "bg-muted"}`} />
-            )}
-          </div>
-        )
-      })}
+            </li>
+          )
+        })}
+      </ol>
     </div>
+  )
+}
+
+// --- 入力欄の枠（ラベル・必須・補足・エラー） ---
+function Field({
+  id,
+  label,
+  required,
+  hint,
+  className = "",
+  error,
+  children,
+}: {
+  id: string
+  label: string
+  required?: boolean
+  hint?: string
+  className?: string
+  error?: React.ReactNode
+  children: React.ReactNode
+}) {
+  return (
+    <div className={`min-w-0 ${className}`}>
+      <label htmlFor={id} className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-neutral-900">
+        {label}
+        {required && (
+          <span className="rounded bg-neutral-950 px-1.5 py-px text-[10px] font-semibold leading-4 text-white">必須</span>
+        )}
+      </label>
+      {children}
+      {error}
+      {hint && <p className="mt-1.5 text-xs text-neutral-500">{hint}</p>}
+    </div>
+  )
+}
+
+// --- 区切り（カード） ---
+function Section({
+  title,
+  description,
+  children,
+}: {
+  title: string
+  description?: React.ReactNode
+  children: React.ReactNode
+}) {
+  return (
+    <section className={`${PANEL} p-5 sm:p-6`}>
+      <h2 className="text-base font-semibold text-neutral-950">{title}</h2>
+      {description && <p className="mt-1 text-sm leading-relaxed text-neutral-500">{description}</p>}
+      <div className="mt-5">{children}</div>
+    </section>
   )
 }
 
@@ -72,7 +123,7 @@ function StepProgressBar({ current, total }: { current: number; total: number })
 function SetupPhotos({ talentId, photos: initialPhotos }: { talentId: string; photos: TalentPhoto[] }) {
   const [photos, setPhotos] = useState(initialPhotos)
   const [uploadProgress, setUploadProgress] = useState<Record<string, number>>({})
-  const [dragIdx, setDragIdx] = useState<number | null>(null)
+  const [reorderError, setReorderError] = useState<string | null>(null)
 
   const uploading = Object.keys(uploadProgress).length > 0
 
@@ -108,39 +159,43 @@ function SetupPhotos({ talentId, photos: initialPhotos }: { talentId: string; ph
     await deleteTalentPhoto(id, talentId)
   }, [talentId])
 
-  const handleDragStart = (idx: number) => setDragIdx(idx)
-
-  const handleDrop = useCallback(async (targetIdx: number) => {
-    if (dragIdx === null || dragIdx === targetIdx) return
-    const reordered = [...photos]
-    const [moved] = reordered.splice(dragIdx, 1)
-    reordered.splice(targetIdx, 0, moved)
-    setPhotos(reordered)
-    setDragIdx(null)
-    await reorderTalentPhotos(talentId, reordered.map(p => p.id))
-  }, [dragIdx, photos, talentId])
+  // 並べ替えたらすぐ画面に反映し、保存に失敗したら元の並びに戻す
+  const handleReorder = useCallback(async (next: TalentPhoto[]) => {
+    const prev = photos
+    setPhotos(next)
+    setReorderError(null)
+    try {
+      await reorderTalentPhotos(talentId, next.map(p => p.id))
+    } catch {
+      setPhotos(prev)
+      setReorderError("並べ替えを保存できませんでした。もう一度お試しください")
+    }
+  }, [photos, talentId])
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium">{photos.length} 枚</span>
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+          <span className="text-sm font-semibold tabular-nums text-neutral-950">{photos.length} 枚</span>
           {photos.length >= 6 ? (
-            <span className="text-xs text-green-600 font-medium">コンポジOK（上位6枚を使用）</span>
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-medium text-emerald-700">
+              コンポジOK（上位6枚を使用）
+            </span>
           ) : (
-            <span className="text-xs text-amber-600">コンポジPDF生成には6枚以上必要です</span>
+            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700">
+              コンポジPDF生成には6枚以上必要です
+            </span>
           )}
         </div>
-        <Button
+        <button
           type="button"
-          variant="outline"
-          size="sm"
           disabled={uploading}
           onClick={() => document.getElementById("setup-photo-upload")?.click()}
+          className={`${BTN_SECONDARY} h-10 px-3 text-sm`}
         >
-          {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-1" /> : <Plus className="h-4 w-4 mr-1" />}
+          {uploading ? <Loader2 className="animate-spin" aria-hidden="true" /> : <Plus aria-hidden="true" />}
           写真を追加
-        </Button>
+        </button>
         <input
           id="setup-photo-upload"
           type="file"
@@ -153,45 +208,74 @@ function SetupPhotos({ talentId, photos: initialPhotos }: { talentId: string; ph
       </div>
 
       {Object.entries(uploadProgress).map(([name, pct]) => (
-        <div key={name} className="space-y-1">
-          <p className="text-xs text-muted-foreground truncate">{name}</p>
-          <div className="h-2 rounded-full bg-muted overflow-hidden">
+        <div key={name} className="space-y-1.5">
+          <p className="truncate text-xs text-neutral-500">{name}</p>
+          <div className="h-1.5 overflow-hidden rounded-full bg-neutral-100">
             <div
-              className="h-full bg-primary rounded-full transition-all duration-300"
+              className="h-full rounded-full bg-neutral-950 transition-all duration-300"
               style={{ width: `${pct}%` }}
             />
           </div>
         </div>
       ))}
 
-      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-        {photos.map((photo, idx) => (
-          <div
-            key={photo.id}
-            draggable
-            onDragStart={() => handleDragStart(idx)}
-            onDragOver={(e) => e.preventDefault()}
-            onDrop={() => handleDrop(idx)}
-            className={`relative group rounded-xl overflow-hidden border-2 transition-all ${idx < 6 ? "border-primary/30" : "border-border"} ${dragIdx === idx ? "opacity-50 scale-95" : "hover:border-primary/30"}`}
-          >
-            <img src={blobProxyUrl(photo.url)} alt={photoLabel(idx)} className="w-full aspect-[3/4] object-cover" />
-            <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-black/60 to-transparent p-2">
-              <span className="text-white text-xs font-medium">
-                {photoLabel(idx)}
-                {idx < 6 && <span className="ml-1 text-[10px] opacity-75">コンポジ</span>}
-              </span>
-            </div>
-            <div className="absolute top-1.5 right-1.5 flex gap-1">
-              <button type="button" className="bg-black/60 text-white p-2 rounded-lg cursor-grab">
-                <GripVertical className="h-4 w-4" />
-              </button>
-              <button type="button" onClick={() => handleDelete(photo.id)} className="bg-red-500/80 text-white p-2 rounded-lg hover:bg-red-500">
-                <Trash2 className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+      {photos.length === 0 && !uploading ? (
+        <button
+          type="button"
+          onClick={() => document.getElementById("setup-photo-upload")?.click()}
+          className="flex w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-300 bg-neutral-50 px-4 py-10 text-center transition-colors hover:border-neutral-400 hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-950/10"
+        >
+          <ImagePlus className="size-7 text-neutral-400" aria-hidden="true" />
+          <span className="text-sm font-medium text-neutral-900">写真を選ぶ</span>
+          <span className="text-xs text-neutral-500">何枚でもまとめて選べます</span>
+        </button>
+      ) : (
+        <>
+          <p className="text-xs text-neutral-500">写真をドラッグ（スマホは長押し）で並べ替えできます</p>
+          {reorderError && (
+            <p role="alert" className="flex items-start gap-1.5 text-sm text-red-600">
+              <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+              {reorderError}
+            </p>
+          )}
+          <SortableGrid
+            items={photos}
+            onReorder={handleReorder}
+            className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+            renderItem={(photo, idx, { handleProps, isDragging }) => (
+              <div
+                className={`group relative overflow-hidden rounded-xl bg-neutral-100 ring-1 transition-shadow ${idx < 6 ? "ring-neutral-950/20" : "ring-neutral-200"} ${isDragging ? "opacity-80 shadow-xl ring-2 ring-neutral-950" : "hover:ring-neutral-950/40"}`}
+              >
+                <img src={blobProxyUrl(photo.url)} alt={photoLabel(idx)} draggable={false} className="pointer-events-none aspect-[3/4] w-full object-cover" />
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2.5 pt-6">
+                  <span className="text-xs font-medium text-white">
+                    {photoLabel(idx)}
+                    {idx < 6 && <span className="ml-1.5 text-[10px] opacity-75">コンポジ</span>}
+                  </span>
+                </div>
+                <div className="absolute right-1.5 top-1.5 flex gap-1">
+                  <button
+                    type="button"
+                    {...handleProps}
+                    aria-label={`${photoLabel(idx)}の写真を並べ替える`}
+                    className="cursor-grab rounded-lg bg-black/55 p-2 text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  >
+                    <GripVertical className="size-4" aria-hidden="true" />
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(photo.id)}
+                    aria-label={`${photoLabel(idx)}の写真を削除`}
+                    className="rounded-lg bg-black/55 p-2 text-white transition-colors hover:bg-red-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                  >
+                    <Trash2 className="size-4" aria-hidden="true" />
+                  </button>
+                </div>
+              </div>
+            )}
+          />
+        </>
+      )}
     </div>
   )
 }
@@ -204,12 +288,17 @@ function FieldError({ name, clientErrors, serverErrors }: {
 }) {
   const clientErr = clientErrors[name]
   let serverErr = serverErrors?.[name]?.[0]
-  if (serverErr && !/[\u3000-\u9fff]/.test(serverErr)) {
+  if (serverErr && !/[　-鿿]/.test(serverErr)) {
     serverErr = "入力内容を確認してください"
   }
   const msg = clientErr || serverErr
   if (!msg) return null
-  return <p className="text-sm text-destructive">{msg}</p>
+  return (
+    <p id={`${name}-error`} className="mt-1.5 flex items-start gap-1 text-xs text-red-600">
+      <AlertCircle className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+      {msg}
+    </p>
+  )
 }
 
 // --- メインフォーム ---
@@ -513,108 +602,92 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
     }
   }, [validateAllSteps, navigateToErrorStep, router])
 
+
+  // エラーのある欄を赤枠にし、読み上げでエラー文につなぐ
+  const errorProps = (name: string) => {
+    const hasError = Boolean(fieldErrors[name] || serverErrors?.[name]?.length)
+    return {
+      "aria-invalid": hasError || undefined,
+      "aria-describedby": hasError ? `${name}-error` : undefined,
+    }
+  }
+  const fieldError = (name: string) => (
+    <FieldError name={name} clientErrors={fieldErrors} serverErrors={serverErrors} />
+  )
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       <StepProgressBar current={step} total={TOTAL_STEPS} />
 
       {restored && (
-        <div className="rounded-lg border border-blue-200 bg-blue-50 p-3 text-sm text-blue-800">
+        <div role="status" className="flex items-start gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
+          <RotateCcw className="mt-0.5 size-4 shrink-0 text-neutral-500" aria-hidden="true" />
           前回の入力データを復元しました
         </div>
       )}
 
       {stepError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-          {stepError}
+        <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <p>{stepError}</p>
         </div>
       )}
 
       {serverErrors?._form && (
-        <div className="rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-800">
-          {serverErrors._form[0]}
+        <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <p>{serverErrors._form[0]}</p>
         </div>
       )}
 
       {/* ステップ1: 写真・基本情報 */}
       {step === 1 && (
-        <section className="space-y-4">
-          <div className="flex items-center gap-2">
-            <Camera className="h-5 w-5 text-primary" />
-            <h2 className="text-base font-semibold">宣材写真</h2>
-          </div>
-          <p className="text-sm text-muted-foreground">
-            写真をアップロードしてください。上位6枚がコンポジPDFに使用されます（先頭2枚はバストアップ・全身）。
-          </p>
+        <Section
+          title="宣材写真"
+          description="写真をアップロードしてください。上位6枚がコンポジPDFに使用されます（先頭2枚はバストアップ・全身）。"
+        >
           <SetupPhotos talentId={talentId} photos={photos} />
-        </section>
+        </Section>
       )}
 
-      <form ref={formRef} onSubmit={(e) => e.preventDefault()} noValidate className="space-y-10" onChange={handleChange}>
+      <form ref={formRef} onSubmit={(e) => e.preventDefault()} noValidate className="space-y-5" onChange={handleChange}>
         {/* ステップ1: 基本情報 */}
         <div className={step === 1 ? "" : "hidden"}>
-          <section className="space-y-4">
-            <div className="flex items-center gap-2">
-              <User className="h-5 w-5 text-primary" />
-              <h2 className="text-base font-semibold">基本情報</h2>
+          <Section title="基本情報">
+            <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:gap-x-4">
+              <Field id="lastName" label="姓" required error={fieldError("lastName")}>
+                <input id="lastName" name="lastName" onBlur={handleBlur} autoComplete="family-name" className={FIELD} {...errorProps("lastName")} />
+              </Field>
+              <Field id="firstName" label="名" required error={fieldError("firstName")}>
+                <input id="firstName" name="firstName" onBlur={handleBlur} autoComplete="given-name" className={FIELD} {...errorProps("firstName")} />
+              </Field>
+              <Field id="lastNameKana" label="セイ" required error={fieldError("lastNameKana")}>
+                <input id="lastNameKana" name="lastNameKana" onBlur={handleBlur} className={FIELD} {...errorProps("lastNameKana")} />
+              </Field>
+              <Field id="firstNameKana" label="メイ" required error={fieldError("firstNameKana")}>
+                <input id="firstNameKana" name="firstNameKana" onBlur={handleBlur} className={FIELD} {...errorProps("firstNameKana")} />
+              </Field>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="lastName">姓 *</Label>
-                <Input id="lastName" name="lastName" onBlur={handleBlur} />
-                <FieldError name="lastName" clientErrors={fieldErrors} serverErrors={serverErrors} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="firstName">名 *</Label>
-                <Input id="firstName" name="firstName" onBlur={handleBlur} />
-                <FieldError name="firstName" clientErrors={fieldErrors} serverErrors={serverErrors} />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="lastNameKana">セイ *</Label>
-                <Input id="lastNameKana" name="lastNameKana" onBlur={handleBlur} />
-                <FieldError name="lastNameKana" clientErrors={fieldErrors} serverErrors={serverErrors} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="firstNameKana">メイ *</Label>
-                <Input id="firstNameKana" name="firstNameKana" onBlur={handleBlur} />
-                <FieldError name="firstNameKana" clientErrors={fieldErrors} serverErrors={serverErrors} />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="stageName">芸名</Label>
-                <Input id="stageName" name="stageName" placeholder="コンポジPDFに表記される名前" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nameRomaji">ローマ字名</Label>
-                <Input id="nameRomaji" name="nameRomaji" placeholder="例: Taro Yamada" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="email">メールアドレス</Label>
-                <Input id="email" type="email" value={email} readOnly className="bg-muted" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">電話番号</Label>
-                <Input id="phone" name="phone" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="category">芸能カテゴリ</Label>
-                <Input id="category" name="category" placeholder="例: 俳優、モデル、声優" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="gender">性別</Label>
+            <div className="mt-5 grid grid-cols-1 gap-x-4 gap-y-5 border-t border-neutral-100 pt-5 sm:grid-cols-2">
+              <Field id="stageName" label="芸名">
+                <input id="stageName" name="stageName" placeholder="コンポジPDFに表記される名前" className={FIELD} />
+              </Field>
+              <Field id="nameRomaji" label="ローマ字名">
+                <input id="nameRomaji" name="nameRomaji" placeholder="例: Taro Yamada" className={FIELD} />
+              </Field>
+              <Field id="email" label="メールアドレス">
+                <input id="email" type="email" value={email} readOnly className={FIELD} />
+              </Field>
+              <Field id="phone" label="電話番号">
+                <input id="phone" name="phone" type="tel" autoComplete="tel" className={FIELD} />
+              </Field>
+              <Field id="category" label="芸能カテゴリ">
+                <input id="category" name="category" placeholder="例: 俳優、モデル、声優" className={FIELD} />
+              </Field>
+              <Field id="gender" label="性別">
                 <Select name="gender">
-                  <SelectTrigger>
+                  <SelectTrigger id="gender" className={SELECT_TRIGGER}>
                     <SelectValue placeholder="選択">{(v) => v ? ({ MALE: "男性", FEMALE: "女性", OTHER: "その他" } as Record<string, string>)[v] ?? v : "選択"}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -623,136 +696,101 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
                     <SelectItem value="OTHER" label="その他">その他</SelectItem>
                   </SelectContent>
                 </Select>
-              </div>
+              </Field>
+              <Field id="birthDate" label="生年月日">
+                <input
+                  id="birthDate"
+                  name="birthDate"
+                  type="date"
+                  className={`${FIELD} appearance-none [&::-webkit-date-and-time-value]:text-left`}
+                />
+              </Field>
+              <Field id="birthplace" label="出身地">
+                <input id="birthplace" name="birthplace" placeholder="例: 東京都" className={FIELD} />
+              </Field>
+              <Field id="nearestStation" label="最寄駅">
+                <input id="nearestStation" name="nearestStation" placeholder="例: 渋谷駅" className={FIELD} />
+              </Field>
+              <Field id="address" label="現住所" className="sm:col-span-2">
+                <input id="address" name="address" className={FIELD} />
+              </Field>
             </div>
-
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="birthDate">生年月日</Label>
-                <Input id="birthDate" name="birthDate" type="date" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="birthplace">出身地</Label>
-                <Input id="birthplace" name="birthplace" placeholder="例: 東京都" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="nearestStation">最寄駅</Label>
-                <Input id="nearestStation" name="nearestStation" placeholder="例: 渋谷駅" />
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="address">現住所</Label>
-              <Input id="address" name="address" />
-            </div>
-          </section>
+          </Section>
         </div>
 
         {/* ステップ2: 身体情報・スキル */}
-        <div className={step === 2 ? "" : "hidden"}>
-          <section className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Ruler className="h-5 w-5 text-primary" />
-              <h2 className="text-base font-semibold">身体情報</h2>
+        <div className={step === 2 ? "space-y-5" : "hidden"}>
+          <Section title="身体情報">
+            <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-5">
+              <Field id="height" label="身長 (cm)">
+                <input id="height" name="height" type="number" className={FIELD} />
+              </Field>
+              <Field id="bust" label="B (cm)">
+                <input id="bust" name="bust" type="number" className={FIELD} />
+              </Field>
+              <Field id="waist" label="W (cm)">
+                <input id="waist" name="waist" type="number" className={FIELD} />
+              </Field>
+              <Field id="hip" label="H (cm)">
+                <input id="hip" name="hip" type="number" className={FIELD} />
+              </Field>
+              <Field id="shoeSize" label="靴 (cm)">
+                <input id="shoeSize" name="shoeSize" type="number" step="0.5" className={FIELD} />
+              </Field>
             </div>
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-              <div className="space-y-2">
-                <Label htmlFor="height">身長 (cm)</Label>
-                <Input id="height" name="height" type="number" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bust">B (cm)</Label>
-                <Input id="bust" name="bust" type="number" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="waist">W (cm)</Label>
-                <Input id="waist" name="waist" type="number" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="hip">H (cm)</Label>
-                <Input id="hip" name="hip" type="number" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="shoeSize">靴 (cm)</Label>
-                <Input id="shoeSize" name="shoeSize" type="number" step="0.5" />
-              </div>
-            </div>
-          </section>
+          </Section>
 
-          <section className="space-y-4 mt-10">
-            <h2 className="text-base font-semibold">スキル・経歴</h2>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="skills">特技</Label>
-                <Input id="skills" name="skills" placeholder="例: インドネシア語、殺陣" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="hobbies">趣味</Label>
-                <Input id="hobbies" name="hobbies" placeholder="例: 釣り、料理、ゴルフ" />
-              </div>
+          <Section title="スキル・経歴">
+            <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
+              <Field id="skills" label="特技">
+                <input id="skills" name="skills" placeholder="例: インドネシア語、殺陣" className={FIELD} />
+              </Field>
+              <Field id="hobbies" label="趣味">
+                <input id="hobbies" name="hobbies" placeholder="例: 釣り、料理、ゴルフ" className={FIELD} />
+              </Field>
+              <Field id="qualifications" label="資格" className="sm:col-span-2">
+                <input id="qualifications" name="qualifications" placeholder="例: 普通自動車免許、英検2級" className={FIELD} />
+              </Field>
+              <Field id="career" label="経歴" className="sm:col-span-2">
+                <textarea id="career" name="career" rows={4} placeholder="出演歴・受賞歴など" className={TEXTAREA} />
+              </Field>
+              <Field id="representativeWork" label="代表作" className="sm:col-span-2">
+                <textarea id="representativeWork" name="representativeWork" rows={2} placeholder="代表的な出演作品" className={TEXTAREA} />
+              </Field>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="qualifications">資格</Label>
-              <Input id="qualifications" name="qualifications" placeholder="例: 普通自動車免許、英検2級" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="career">経歴</Label>
-              <Textarea id="career" name="career" rows={4} placeholder="出演歴・受賞歴など" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="representativeWork">代表作</Label>
-              <Textarea id="representativeWork" name="representativeWork" rows={2} placeholder="代表的な出演作品" />
-            </div>
-          </section>
+          </Section>
         </div>
 
         {/* ステップ3: SNS・振込先 */}
-        <div className={step === 3 ? "" : "hidden"}>
-          <section className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Share2 className="h-5 w-5 text-primary" />
-              <h2 className="text-base font-semibold">SNS</h2>
+        <div className={step === 3 ? "space-y-5" : "hidden"}>
+          <Section title="SNS">
+            <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
+              <Field id="instagramUrl" label="Instagram">
+                <input id="instagramUrl" name="instagramUrl" type="url" inputMode="url" autoCapitalize="none" spellCheck={false} placeholder="https://instagram.com/..." className={FIELD} />
+              </Field>
+              <Field id="xUrl" label="X (Twitter)">
+                <input id="xUrl" name="xUrl" type="url" inputMode="url" autoCapitalize="none" spellCheck={false} placeholder="https://x.com/..." className={FIELD} />
+              </Field>
+              <Field id="tiktokUrl" label="TikTok">
+                <input id="tiktokUrl" name="tiktokUrl" type="url" inputMode="url" autoCapitalize="none" spellCheck={false} placeholder="https://tiktok.com/..." className={FIELD} />
+              </Field>
+              <Field id="websiteUrl" label="公式HP等">
+                <input id="websiteUrl" name="websiteUrl" type="url" inputMode="url" autoCapitalize="none" spellCheck={false} placeholder="https://..." className={FIELD} />
+              </Field>
             </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="instagramUrl">Instagram</Label>
-                <Input id="instagramUrl" name="instagramUrl" placeholder="https://instagram.com/..." />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="xUrl">X (Twitter)</Label>
-                <Input id="xUrl" name="xUrl" placeholder="https://x.com/..." />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="tiktokUrl">TikTok</Label>
-                <Input id="tiktokUrl" name="tiktokUrl" placeholder="https://tiktok.com/..." />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="websiteUrl">公式HP等</Label>
-                <Input id="websiteUrl" name="websiteUrl" placeholder="https://..." />
-              </div>
-            </div>
-          </section>
+          </Section>
 
-          <section className="space-y-4 mt-10">
-            <div className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-primary" />
-              <h2 className="text-base font-semibold">振込先情報 *</h2>
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-              <div className="space-y-2">
-                <Label htmlFor="bankName">銀行名 *</Label>
-                <Input id="bankName" name="bankName" onBlur={handleBlur} />
-                <FieldError name="bankName" clientErrors={fieldErrors} serverErrors={serverErrors} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bankBranch">支店名 *</Label>
-                <Input id="bankBranch" name="bankBranch" onBlur={handleBlur} />
-                <FieldError name="bankBranch" clientErrors={fieldErrors} serverErrors={serverErrors} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bankAccountType">種別 *</Label>
+          <Section title="振込先情報">
+            <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
+              <Field id="bankName" label="銀行名" required error={fieldError("bankName")}>
+                <input id="bankName" name="bankName" onBlur={handleBlur} className={FIELD} {...errorProps("bankName")} />
+              </Field>
+              <Field id="bankBranch" label="支店名" required error={fieldError("bankBranch")}>
+                <input id="bankBranch" name="bankBranch" onBlur={handleBlur} className={FIELD} {...errorProps("bankBranch")} />
+              </Field>
+              <Field id="bankAccountType" label="種別" required error={fieldError("bankAccountType")}>
                 <Select name="bankAccountType">
-                  <SelectTrigger>
+                  <SelectTrigger id="bankAccountType" className={SELECT_TRIGGER} {...errorProps("bankAccountType")}>
                     <SelectValue placeholder="選択">{(v) => v || "選択"}</SelectValue>
                   </SelectTrigger>
                   <SelectContent>
@@ -760,64 +798,64 @@ export function TalentSetupForm({ email, talentId, photos }: { email: string; ta
                     <SelectItem value="当座" label="当座">当座</SelectItem>
                   </SelectContent>
                 </Select>
-                <FieldError name="bankAccountType" clientErrors={fieldErrors} serverErrors={serverErrors} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bankAccountNumber">口座番号 *</Label>
-                <Input id="bankAccountNumber" name="bankAccountNumber" onBlur={handleBlur} />
-                <FieldError name="bankAccountNumber" clientErrors={fieldErrors} serverErrors={serverErrors} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="bankAccountHolder">口座名義 *</Label>
-                <Input id="bankAccountHolder" name="bankAccountHolder" onBlur={handleBlur} />
-                <FieldError name="bankAccountHolder" clientErrors={fieldErrors} serverErrors={serverErrors} />
-              </div>
+              </Field>
+              <Field id="bankAccountNumber" label="口座番号" required error={fieldError("bankAccountNumber")}>
+                <input id="bankAccountNumber" name="bankAccountNumber" onBlur={handleBlur} inputMode="numeric" className={FIELD} {...errorProps("bankAccountNumber")} />
+              </Field>
+              <Field id="bankAccountHolder" label="口座名義" required error={fieldError("bankAccountHolder")} className="sm:col-span-2">
+                <input id="bankAccountHolder" name="bankAccountHolder" onBlur={handleBlur} className={FIELD} {...errorProps("bankAccountHolder")} />
+              </Field>
             </div>
-          </section>
+          </Section>
         </div>
 
         {/* ステップ4: パスワード */}
         <div className={step === 4 ? "" : "hidden"}>
-          <section className="space-y-4">
-            <div className="flex items-center gap-2">
-              <Lock className="h-5 w-5 text-primary" />
-              <h2 className="text-base font-semibold">パスワード設定 *</h2>
+          <Section
+            title="パスワード設定"
+            description={
+              <>
+                <span className="inline-block">ログインに使用するパスワードを</span>
+                <span className="inline-block">設定してください（8文字以上）</span>
+              </>
+            }
+          >
+            <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
+              <Field id="password" label="パスワード" required error={fieldError("password")}>
+                <input id="password" name="password" type="password" onBlur={handleBlur} autoComplete="new-password" className={FIELD} {...errorProps("password")} />
+              </Field>
+              <Field id="passwordConfirm" label="パスワード確認" required error={fieldError("passwordConfirm")}>
+                <input id="passwordConfirm" name="passwordConfirm" type="password" onBlur={handleBlur} autoComplete="new-password" className={FIELD} {...errorProps("passwordConfirm")} />
+              </Field>
             </div>
-            <p className="text-sm text-muted-foreground">
-              ログインに使用するパスワードを設定してください（8文字以上）
-            </p>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="password">パスワード *</Label>
-                <Input id="password" name="password" type="password" onBlur={handleBlur} />
-                <FieldError name="password" clientErrors={fieldErrors} serverErrors={serverErrors} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="passwordConfirm">パスワード確認 *</Label>
-                <Input id="passwordConfirm" name="passwordConfirm" type="password" onBlur={handleBlur} />
-                <FieldError name="passwordConfirm" clientErrors={fieldErrors} serverErrors={serverErrors} />
-              </div>
-            </div>
-          </section>
+          </Section>
         </div>
 
         {/* ナビゲーションボタン */}
-        <div className="flex gap-3">
+        <div className="flex gap-3 pt-1">
           {step > 1 && (
-            <Button type="button" variant="outline" size="lg" className="flex-1" onClick={goPrev}>
-              <ChevronLeft className="h-4 w-4 mr-1" />
-              戻る
-            </Button>
+            // スマホでは「戻る」を矢印だけにして、進むボタンの文言が1行に収まるようにする
+            <button type="button" className={`${BTN_SECONDARY} w-12 px-0 sm:w-auto sm:flex-1 sm:px-4`} onClick={goPrev}>
+              <ChevronLeft aria-hidden="true" />
+              <span className="max-sm:sr-only">戻る</span>
+            </button>
           )}
           {step < TOTAL_STEPS ? (
-            <Button type="button" size="lg" className="flex-1" onClick={goNext}>
+            <button type="button" className={`${BTN_PRIMARY} flex-1 sm:flex-[2]`} onClick={goNext}>
               次へ
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
+              <ChevronRight aria-hidden="true" />
+            </button>
           ) : (
-            <Button type="button" disabled={isSubmitting} size="lg" className="flex-1" onClick={handleSubmit}>
-              {isSubmitting ? "登録中..." : "プロフィールを登録してはじめる"}
-            </Button>
+            <button type="button" disabled={isSubmitting} className={`${BTN_PRIMARY} flex-1 sm:flex-[2]`} onClick={handleSubmit}>
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="animate-spin" aria-hidden="true" />
+                  登録中…
+                </>
+              ) : (
+                "プロフィールを登録してはじめる"
+              )}
+            </button>
           )}
         </div>
       </form>

@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { requireTalent } from "@/lib/auth"
 import { getTalentByToken } from "@/lib/actions/talent"
@@ -9,6 +10,10 @@ import { TalentNav } from "@/components/talent-nav"
 export type JobWithMatch = Awaited<ReturnType<typeof getOpenJobs>>[number] & {
   matchStatus: MatchStatus
   unmatchReasons: UnmatchReason[]
+}
+
+export const metadata: Metadata = {
+  title: "案件一覧 | VOZEL",
 }
 
 export default async function TalentJobsPage({
@@ -41,14 +46,14 @@ export default async function TalentJobsPage({
   const matchCount = jobsWithMatch.filter((j) => j.matchStatus === "match").length
 
   return (
-    <>
+    <div className="min-h-[100dvh] bg-white">
       {!t && <TalentNav talentName={displayName} />}
-      <div className="mx-auto max-w-7xl px-4 py-8 space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">案件一覧</h1>
+      <main className="mx-auto max-w-7xl px-4 pb-[calc(3rem+env(safe-area-inset-bottom))] pt-8 text-neutral-950 sm:pt-10">
+        <h1 className="text-2xl font-semibold tracking-tight">案件一覧</h1>
+        <div className="mt-2">
+          <TalentJobList jobs={jobsWithMatch} token={t || ""} matchCount={matchCount} />
         </div>
-        <TalentJobList jobs={jobsWithMatch} token={t || ""} matchCount={matchCount} />
-      </div>
-    </>
+      </main>
+    </div>
   )
 }

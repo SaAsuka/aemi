@@ -1,6 +1,12 @@
+import type { Metadata } from "next"
 import { redirect } from "next/navigation"
 import { requireTalent, isSubscriptionActive } from "@/lib/auth"
+import { AuthShell } from "@/components/auth/auth-shell"
 import { WelcomeTutorial } from "@/components/welcome-tutorial"
+
+export const metadata: Metadata = {
+  title: "ようこそ | VOZEL",
+}
 
 export default async function WelcomePage() {
   const talent = await requireTalent()
@@ -9,10 +15,8 @@ export default async function WelcomePage() {
   const hasLine = !!talent.lineUserId
 
   return (
-    <div className="min-h-dvh flex items-center justify-center px-4 py-12">
-      <div className="w-full max-w-md">
-        <WelcomeTutorial talentName={displayName} hasLine={hasLine} />
-      </div>
-    </div>
+    <AuthShell>
+      <WelcomeTutorial talentName={displayName} hasLine={hasLine} />
+    </AuthShell>
   )
 }
