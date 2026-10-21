@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
 import { Briefcase, Send, MessageCircle, ChevronRight, ChevronLeft, PartyPopper } from "lucide-react"
+import { BTN_LINE, BTN_PRIMARY, BTN_SECONDARY } from "@/components/talent/styles"
 
 const slides = [
   {
@@ -32,65 +32,78 @@ export function WelcomeTutorial({ talentName, hasLine }: { talentName: string; h
   const Icon = slide.icon
 
   return (
-    <div className="space-y-8 text-center">
-      <div className="space-y-2">
-        <PartyPopper className="h-8 w-8 text-primary mx-auto" />
-        <h1 className="text-xl font-bold">ようこそ、{talentName}さん！</h1>
-        <p className="text-sm text-muted-foreground">登録が完了しました。VOZELの使い方をご紹介します。</p>
+    <div>
+      <div className="flex size-12 items-center justify-center rounded-full bg-neutral-950">
+        <PartyPopper className="size-6 text-white" aria-hidden="true" />
+      </div>
+      <h1 className="mt-6 text-2xl font-semibold tracking-tight">ようこそ、{talentName}さん！</h1>
+      <p className="mt-2 text-sm leading-relaxed text-neutral-500">
+        登録が完了しました。
+        <span className="inline-block">VOZELの使い方をご紹介します。</span>
+      </p>
+
+      {/* スライドコンテンツ */}
+      <div className="mt-8 rounded-xl border border-neutral-200 p-6" aria-live="polite">
+        <div className="flex items-center justify-between">
+          <div className="flex size-11 items-center justify-center rounded-full bg-neutral-100">
+            <Icon className="size-5 text-neutral-950" aria-hidden="true" />
+          </div>
+          <span className="text-xs tabular-nums text-neutral-400">
+            {current + 1} / {slides.length}
+          </span>
+        </div>
+        <h2 className="mt-4 text-lg font-semibold">{slide.title}</h2>
+        <p className="mt-2 min-h-[6.5rem] text-sm leading-relaxed text-neutral-600">{slide.description}</p>
       </div>
 
       {/* ドットインジケーター */}
-      <div className="flex justify-center gap-2">
-        {slides.map((_, idx) => (
+      <div className="mt-5 flex justify-center gap-1">
+        {slides.map((s, idx) => (
           <button
             key={idx}
+            type="button"
             onClick={() => setCurrent(idx)}
-            className={`h-2 rounded-full transition-all ${idx === current ? "w-6 bg-primary" : "w-2 bg-muted-foreground/30"}`}
-          />
+            aria-label={`${idx + 1}枚目：${s.title}`}
+            aria-current={idx === current ? "step" : undefined}
+            className="flex h-6 items-center px-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950/30 rounded-full"
+          >
+            <span className={`block h-1.5 rounded-full transition-all duration-300 ${idx === current ? "w-6 bg-neutral-950" : "w-1.5 bg-neutral-300"}`} />
+          </button>
         ))}
       </div>
 
-      {/* スライドコンテンツ */}
-      <div className="rounded-xl border bg-card p-6 space-y-4 min-h-[200px] flex flex-col items-center justify-center">
-        <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-          <Icon className="h-6 w-6 text-primary" />
-        </div>
-        <h2 className="text-lg font-semibold">{slide.title}</h2>
-        <p className="text-sm text-muted-foreground leading-relaxed">{slide.description}</p>
-      </div>
-
       {/* ナビゲーション */}
-      <div className="flex gap-3">
+      {isLast && !hasLine && (
+        <p className="mt-6 text-sm text-neutral-500">マイページに進むにはLINE連携が必要です</p>
+      )}
+      <div className={`${isLast && !hasLine ? "mt-3" : "mt-6"} flex gap-3`}>
         {current > 0 && (
-          <Button variant="outline" size="lg" className="flex-1" onClick={() => setCurrent((c) => c - 1)}>
-            <ChevronLeft className="h-4 w-4 mr-1" />
-            戻る
-          </Button>
+          <button type="button" className={`${BTN_SECONDARY} ${isLast ? "w-12 px-0" : "flex-1"}`} onClick={() => setCurrent((c) => c - 1)} aria-label="戻る">
+            <ChevronLeft aria-hidden="true" />
+            {!isLast && "戻る"}
+          </button>
         )}
         {!isLast ? (
-          <Button size="lg" className="flex-1" onClick={() => setCurrent((c) => c + 1)}>
+          <button type="button" className={`${BTN_PRIMARY} flex-[2]`} onClick={() => setCurrent((c) => c + 1)}>
             次へ
-            <ChevronRight className="h-4 w-4 ml-1" />
-          </Button>
+            <ChevronRight aria-hidden="true" />
+          </button>
+        ) : !hasLine ? (
+          <button
+            type="button"
+            className={`${BTN_LINE} flex-1`}
+            onClick={() => { window.location.href = "/api/line/auth?returnTo=/welcome" }}
+          >
+            <MessageCircle aria-hidden="true" />
+            LINEで連携する
+          </button>
         ) : (
-          <div className="flex-1 space-y-3">
-            {!hasLine ? (
-              <>
-                <p className="text-sm text-muted-foreground">マイページに進むにはLINE連携が必要です</p>
-                <Button size="lg" className="w-full bg-[#06C755] hover:bg-[#05b34d]" onClick={() => { window.location.href = "/api/line/auth?returnTo=/welcome" }}>
-                  <MessageCircle className="h-4 w-4 mr-2" />
-                  LINEで連携する
-                </Button>
-              </>
-            ) : (
-              <Button size="lg" className="w-full" onClick={() => router.push("/mypage")}>
-                マイページへ
-              </Button>
-            )}
-          </div>
+          <button type="button" className={`${BTN_PRIMARY} flex-1`} onClick={() => router.push("/mypage")}>
+            マイページへ
+            <ChevronRight aria-hidden="true" />
+          </button>
         )}
       </div>
-
     </div>
   )
 }
