@@ -60,7 +60,12 @@ export function VerifyingView() {
       </div>
       <AuthHeading
         title="確認しています"
-        description="メールアドレスを確認しています。このままお待ちください。"
+        description={
+          <>
+            <span className="inline-block">メールアドレスを確認しています。</span>
+            <span className="inline-block">このままお待ちください。</span>
+          </>
+        }
         className="mt-6"
       />
     </div>
