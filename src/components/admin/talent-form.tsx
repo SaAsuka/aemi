@@ -4,10 +4,8 @@ import { useActionState } from "react"
 import { useRouter } from "next/navigation"
 import { useEffect } from "react"
 import { createTalent, updateTalent } from "@/lib/actions/talent"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
+import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react"
+import { BTN_PRIMARY, FIELD, SELECT_TRIGGER, TEXTAREA } from "@/components/talent/styles"
 import {
   Select,
   SelectContent,
@@ -34,6 +32,51 @@ type TalentFormProps = {
 
 function getSocialUrl(links: TalentSocialLink[] | undefined, platform: string): string {
   return links?.find((l) => l.platform === platform)?.url ?? ""
+}
+
+// 入力欄の枠（ラベル・必須・サーバーからのエラー）
+function Field({
+  id,
+  label,
+  required,
+  error,
+  className = "",
+  children,
+}: {
+  id: string
+  label: string
+  required?: boolean
+  error?: string[]
+  className?: string
+  children: React.ReactNode
+}) {
+  return (
+    <div className={`min-w-0 ${className}`}>
+      <label htmlFor={id} className="mb-1.5 flex items-center gap-1.5 text-sm font-medium text-neutral-900">
+        {label}
+        {required && (
+          <span className="rounded bg-neutral-950 px-1.5 py-px text-[10px] font-semibold leading-4 text-white">必須</span>
+        )}
+      </label>
+      {children}
+      {error?.[0] && (
+        <p id={`${id}-error`} className="mt-1.5 flex items-start gap-1 text-xs text-red-600">
+          <AlertCircle className="mt-px size-3.5 shrink-0" aria-hidden="true" />
+          {error[0]}
+        </p>
+      )}
+    </div>
+  )
+}
+
+// フォームの中の区切り（見出し＋項目）
+function Group({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <fieldset className="border-t border-neutral-200 pt-6 first:border-t-0 first:pt-0">
+      <legend className="float-left mb-4 w-full text-sm font-semibold text-neutral-950">{title}</legend>
+      <div className="clear-both grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">{children}</div>
+    </fieldset>
+  )
 }
 
 function talentAction(talent?: TalentWithRelations, customAction?: (formData: FormData) => Promise<ActionResult>) {
@@ -64,70 +107,45 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
 
   const bankRequired = isTalent
 
+  const err = (name: string) => state?.error?.[name]
+  const invalid = (name: string) => ({
+    "aria-invalid": Boolean(err(name)?.length) || undefined,
+    "aria-describedby": err(name)?.length ? `${name}-error` : undefined,
+  })
+
   return (
     <form action={action} className="space-y-6">
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="lastName">姓 *</Label>
-          <Input id="lastName" name="lastName" defaultValue={talent?.lastName ?? ""} required />
-          {state?.error?.lastName && (
-            <p className="text-sm text-destructive">{state.error.lastName[0]}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="firstName">名 *</Label>
-          <Input id="firstName" name="firstName" defaultValue={talent?.firstName ?? ""} required />
-          {state?.error?.firstName && (
-            <p className="text-sm text-destructive">{state.error.firstName[0]}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="lastNameKana">セイ *</Label>
-          <Input id="lastNameKana" name="lastNameKana" defaultValue={talent?.lastNameKana ?? ""} required />
-          {state?.error?.lastNameKana && (
-            <p className="text-sm text-destructive">{state.error.lastNameKana[0]}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="firstNameKana">メイ *</Label>
-          <Input id="firstNameKana" name="firstNameKana" defaultValue={talent?.firstNameKana ?? ""} required />
-          {state?.error?.firstNameKana && (
-            <p className="text-sm text-destructive">{state.error.firstNameKana[0]}</p>
-          )}
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="stageName">芸名</Label>
-          <Input
-            id="stageName"
-            name="stageName"
-            defaultValue={talent?.stageName ?? ""}
-            placeholder="コンポジPDFに表記される名前"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="email">メールアドレス</Label>
-          <Input id="email" name="email" type="email" defaultValue={talent?.email ?? ""} />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="phone">電話番号</Label>
-          <Input id="phone" name="phone" defaultValue={talent?.phone ?? ""} />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-        <div className="space-y-2">
-          <Label htmlFor="gender">性別</Label>
+      <Group title="基本情報">
+        <Field id="lastName" label="姓" required error={err("lastName")}>
+          <input id="lastName" name="lastName" defaultValue={talent?.lastName ?? ""} required autoComplete="family-name" className={FIELD} {...invalid("lastName")} />
+        </Field>
+        <Field id="firstName" label="名" required error={err("firstName")}>
+          <input id="firstName" name="firstName" defaultValue={talent?.firstName ?? ""} required autoComplete="given-name" className={FIELD} {...invalid("firstName")} />
+        </Field>
+        <Field id="lastNameKana" label="セイ" required error={err("lastNameKana")}>
+          <input id="lastNameKana" name="lastNameKana" defaultValue={talent?.lastNameKana ?? ""} required className={FIELD} {...invalid("lastNameKana")} />
+        </Field>
+        <Field id="firstNameKana" label="メイ" required error={err("firstNameKana")}>
+          <input id="firstNameKana" name="firstNameKana" defaultValue={talent?.firstNameKana ?? ""} required className={FIELD} {...invalid("firstNameKana")} />
+        </Field>
+        <Field id="stageName" label="芸名">
+          <input id="stageName" name="stageName" defaultValue={talent?.stageName ?? ""} placeholder="コンポジPDFに表記される名前" className={FIELD} />
+        </Field>
+        <Field id="nameRomaji" label="ローマ字名">
+          <input id="nameRomaji" name="nameRomaji" defaultValue={talent?.nameRomaji ?? ""} placeholder="例: Taro Yamada" className={FIELD} />
+        </Field>
+        <Field id="email" label="メールアドレス">
+          <input id="email" name="email" type="email" defaultValue={talent?.email ?? ""} autoComplete="email" className={FIELD} />
+        </Field>
+        <Field id="phone" label="電話番号">
+          <input id="phone" name="phone" type="tel" defaultValue={talent?.phone ?? ""} autoComplete="tel" className={FIELD} />
+        </Field>
+        <Field id="category" label="芸能カテゴリ">
+          <input id="category" name="category" defaultValue={talent?.category ?? ""} placeholder="例: 俳優、モデル、声優" className={FIELD} />
+        </Field>
+        <Field id="gender" label="性別">
           <Select name="gender" defaultValue={talent?.gender ?? ""}>
-            <SelectTrigger>
+            <SelectTrigger id="gender" className={SELECT_TRIGGER}>
               <SelectValue placeholder="選択">{(v) => v ? GENDER_LABELS[v] ?? v : "選択"}</SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -136,10 +154,9 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
               <SelectItem value="OTHER" label="その他">その他</SelectItem>
             </SelectContent>
           </Select>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="birthDate">生年月日</Label>
-          <Input
+        </Field>
+        <Field id="birthDate" label="生年月日">
+          <input
             id="birthDate"
             name="birthDate"
             type="date"
@@ -148,218 +165,27 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
                 ? new Date(talent.birthDate).toISOString().split("T")[0]
                 : ""
             }
+            className={`${FIELD} appearance-none [&::-webkit-date-and-time-value]:text-left`}
           />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="height">身長 (cm)</Label>
-          <Input
-            id="height"
-            name="height"
-            type="number"
-            defaultValue={talent?.height ?? ""}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
-        <div className="space-y-2">
-          <Label htmlFor="bust">バスト (cm)</Label>
-          <Input
-            id="bust"
-            name="bust"
-            type="number"
-            defaultValue={talent?.bust ?? ""}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="waist">ウエスト (cm)</Label>
-          <Input
-            id="waist"
-            name="waist"
-            type="number"
-            defaultValue={talent?.waist ?? ""}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="hip">ヒップ (cm)</Label>
-          <Input
-            id="hip"
-            name="hip"
-            type="number"
-            defaultValue={talent?.hip ?? ""}
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="shoeSize">靴サイズ (cm)</Label>
-          <Input
-            id="shoeSize"
-            name="shoeSize"
-            type="number"
-            step="0.5"
-            defaultValue={talent?.shoeSize ?? ""}
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="skills">特技</Label>
-          <Input
-            id="skills"
-            name="skills"
-            defaultValue={talent?.skills ?? ""}
-            placeholder="例: インドネシア語、殺陣"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="hobbies">趣味</Label>
-          <Input
-            id="hobbies"
-            name="hobbies"
-            defaultValue={talent?.hobbies ?? ""}
-            placeholder="例: 釣り、料理、ゴルフ"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="nameRomaji">ローマ字名</Label>
-          <Input
-            id="nameRomaji"
-            name="nameRomaji"
-            defaultValue={talent?.nameRomaji ?? ""}
-            placeholder="例: Taro Yamada"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="category">芸能カテゴリ</Label>
-          <Input
-            id="category"
-            name="category"
-            defaultValue={talent?.category ?? ""}
-            placeholder="例: 俳優、モデル、声優"
-          />
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="qualifications">資格</Label>
-          <Input
-            id="qualifications"
-            name="qualifications"
-            defaultValue={talent?.qualifications ?? ""}
-            placeholder="例: 普通自動車免許、英検2級"
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="birthplace">出身地</Label>
-          <Input
-            id="birthplace"
-            name="birthplace"
-            defaultValue={talent?.birthplace ?? ""}
-            placeholder="例: 東京都"
-          />
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="address">現住所</Label>
-        <Input
-          id="address"
-          name="address"
-          defaultValue={talent?.address ?? ""}
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="career">経歴</Label>
-        <Textarea
-          id="career"
-          name="career"
-          rows={6}
-          defaultValue={talent?.career ?? ""}
-          placeholder="出演歴・受賞歴など"
-        />
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="representativeWork">代表作</Label>
-        <Textarea
-          id="representativeWork"
-          name="representativeWork"
-          rows={3}
-          defaultValue={talent?.representativeWork ?? ""}
-          placeholder="代表的な出演作品"
-        />
-      </div>
-
-      <h3 className="text-sm font-semibold text-muted-foreground pt-2">SNS情報</h3>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="instagramUrl">Instagram URL</Label>
-          <Input
-            id="instagramUrl"
-            name="instagramUrl"
-            defaultValue={getSocialUrl(talent?.socialLinks, "INSTAGRAM")}
-            placeholder="https://instagram.com/..."
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="xUrl">X (Twitter) URL</Label>
-          <Input
-            id="xUrl"
-            name="xUrl"
-            defaultValue={getSocialUrl(talent?.socialLinks, "X")}
-            placeholder="https://x.com/..."
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="tiktokUrl">TikTok URL</Label>
-          <Input
-            id="tiktokUrl"
-            name="tiktokUrl"
-            defaultValue={getSocialUrl(talent?.socialLinks, "TIKTOK")}
-            placeholder="https://tiktok.com/..."
-          />
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="websiteUrl">公式HP等</Label>
-          <Input
-            id="websiteUrl"
-            name="websiteUrl"
-            defaultValue={getSocialUrl(talent?.socialLinks, "WEBSITE")}
-            placeholder="https://..."
-          />
-        </div>
-      </div>
-
-      <div className={`grid grid-cols-1 gap-4 ${isAdmin ? "sm:grid-cols-3" : ""}`}>
-        <div className="space-y-2">
-          <Label htmlFor="nearestStation">最寄駅</Label>
-          <Input
-            id="nearestStation"
-            name="nearestStation"
-            defaultValue={talent?.nearestStation ?? ""}
-            placeholder="例: 渋谷駅"
-          />
-        </div>
+        </Field>
+        <Field id="birthplace" label="出身地">
+          <input id="birthplace" name="birthplace" defaultValue={talent?.birthplace ?? ""} placeholder="例: 東京都" className={FIELD} />
+        </Field>
+        <Field id="nearestStation" label="最寄駅">
+          <input id="nearestStation" name="nearestStation" defaultValue={talent?.nearestStation ?? ""} placeholder="例: 渋谷駅" className={FIELD} />
+        </Field>
+        <Field id="address" label="現住所" className="sm:col-span-2">
+          <input id="address" name="address" defaultValue={talent?.address ?? ""} className={FIELD} />
+        </Field>
         {isAdmin && (
-          <div className="space-y-2">
-            <Label htmlFor="lineUserId">LINE ユーザーID</Label>
-            <Input
-              id="lineUserId"
-              name="lineUserId"
-              defaultValue={talent?.lineUserId ?? ""}
-            />
-          </div>
+          <Field id="lineUserId" label="LINE ユーザーID">
+            <input id="lineUserId" name="lineUserId" defaultValue={talent?.lineUserId ?? ""} className={FIELD} />
+          </Field>
         )}
         {isAdmin && (
-          <div className="space-y-2">
-            <Label htmlFor="status">ステータス</Label>
+          <Field id="status" label="ステータス">
             <Select name="status" defaultValue={talent?.status ?? "ACTIVE"}>
-              <SelectTrigger>
+              <SelectTrigger id="status" className={SELECT_TRIGGER}>
                 <SelectValue>{(v) => TALENT_STATUS_LABELS[v] ?? v}</SelectValue>
               </SelectTrigger>
               <SelectContent>
@@ -368,42 +194,73 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
                 <SelectItem value="WITHDRAWN" label="退会">退会</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+          </Field>
         )}
-      </div>
+      </Group>
 
-      <h3 className="text-sm font-semibold text-muted-foreground pt-2">
-        振込先情報{bankRequired && " *"}
-      </h3>
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-        <div className="space-y-2">
-          <Label htmlFor="bankName">銀行名{bankRequired && " *"}</Label>
-          <Input
-            id="bankName"
-            name="bankName"
-            defaultValue={talent?.bankAccount?.bankName ?? ""}
-            required={bankRequired}
-          />
-          {state?.error?.bankName && (
-            <p className="text-sm text-destructive">{state.error.bankName[0]}</p>
-          )}
+      <Group title="身体情報">
+        <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:col-span-2 sm:grid-cols-5">
+          <Field id="height" label="身長 (cm)">
+            <input id="height" name="height" type="number" defaultValue={talent?.height ?? ""} className={FIELD} />
+          </Field>
+          <Field id="bust" label="バスト (cm)">
+            <input id="bust" name="bust" type="number" defaultValue={talent?.bust ?? ""} className={FIELD} />
+          </Field>
+          <Field id="waist" label="ウエスト (cm)">
+            <input id="waist" name="waist" type="number" defaultValue={talent?.waist ?? ""} className={FIELD} />
+          </Field>
+          <Field id="hip" label="ヒップ (cm)">
+            <input id="hip" name="hip" type="number" defaultValue={talent?.hip ?? ""} className={FIELD} />
+          </Field>
+          <Field id="shoeSize" label="靴サイズ (cm)">
+            <input id="shoeSize" name="shoeSize" type="number" step="0.5" defaultValue={talent?.shoeSize ?? ""} className={FIELD} />
+          </Field>
         </div>
-        <div className="space-y-2">
-          <Label htmlFor="bankBranch">支店名{bankRequired && " *"}</Label>
-          <Input
-            id="bankBranch"
-            name="bankBranch"
-            defaultValue={talent?.bankAccount?.branchName ?? ""}
-            required={bankRequired}
-          />
-          {state?.error?.bankBranch && (
-            <p className="text-sm text-destructive">{state.error.bankBranch[0]}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="bankAccountType">種別{bankRequired && " *"}</Label>
+      </Group>
+
+      <Group title="スキル・経歴">
+        <Field id="skills" label="特技">
+          <input id="skills" name="skills" defaultValue={talent?.skills ?? ""} placeholder="例: インドネシア語、殺陣" className={FIELD} />
+        </Field>
+        <Field id="hobbies" label="趣味">
+          <input id="hobbies" name="hobbies" defaultValue={talent?.hobbies ?? ""} placeholder="例: 釣り、料理、ゴルフ" className={FIELD} />
+        </Field>
+        <Field id="qualifications" label="資格" className="sm:col-span-2">
+          <input id="qualifications" name="qualifications" defaultValue={talent?.qualifications ?? ""} placeholder="例: 普通自動車免許、英検2級" className={FIELD} />
+        </Field>
+        <Field id="career" label="経歴" className="sm:col-span-2">
+          <textarea id="career" name="career" rows={6} defaultValue={talent?.career ?? ""} placeholder="出演歴・受賞歴など" className={TEXTAREA} />
+        </Field>
+        <Field id="representativeWork" label="代表作" className="sm:col-span-2">
+          <textarea id="representativeWork" name="representativeWork" rows={3} defaultValue={talent?.representativeWork ?? ""} placeholder="代表的な出演作品" className={TEXTAREA} />
+        </Field>
+      </Group>
+
+      <Group title="SNS情報">
+        <Field id="instagramUrl" label="Instagram URL">
+          <input id="instagramUrl" name="instagramUrl" defaultValue={getSocialUrl(talent?.socialLinks, "INSTAGRAM")} placeholder="https://instagram.com/..." inputMode="url" autoCapitalize="none" spellCheck={false} className={FIELD} />
+        </Field>
+        <Field id="xUrl" label="X (Twitter) URL">
+          <input id="xUrl" name="xUrl" defaultValue={getSocialUrl(talent?.socialLinks, "X")} placeholder="https://x.com/..." inputMode="url" autoCapitalize="none" spellCheck={false} className={FIELD} />
+        </Field>
+        <Field id="tiktokUrl" label="TikTok URL">
+          <input id="tiktokUrl" name="tiktokUrl" defaultValue={getSocialUrl(talent?.socialLinks, "TIKTOK")} placeholder="https://tiktok.com/..." inputMode="url" autoCapitalize="none" spellCheck={false} className={FIELD} />
+        </Field>
+        <Field id="websiteUrl" label="公式HP等">
+          <input id="websiteUrl" name="websiteUrl" defaultValue={getSocialUrl(talent?.socialLinks, "WEBSITE")} placeholder="https://..." inputMode="url" autoCapitalize="none" spellCheck={false} className={FIELD} />
+        </Field>
+      </Group>
+
+      <Group title="振込先情報">
+        <Field id="bankName" label="銀行名" required={bankRequired} error={err("bankName")}>
+          <input id="bankName" name="bankName" defaultValue={talent?.bankAccount?.bankName ?? ""} required={bankRequired} className={FIELD} {...invalid("bankName")} />
+        </Field>
+        <Field id="bankBranch" label="支店名" required={bankRequired} error={err("bankBranch")}>
+          <input id="bankBranch" name="bankBranch" defaultValue={talent?.bankAccount?.branchName ?? ""} required={bankRequired} className={FIELD} {...invalid("bankBranch")} />
+        </Field>
+        <Field id="bankAccountType" label="種別" required={bankRequired} error={err("bankAccountType")}>
           <Select name="bankAccountType" defaultValue={talent?.bankAccount?.accountType ?? ""}>
-            <SelectTrigger>
+            <SelectTrigger id="bankAccountType" className={SELECT_TRIGGER} {...invalid("bankAccountType")}>
               <SelectValue placeholder="選択">{(v) => v || "選択"}</SelectValue>
             </SelectTrigger>
             <SelectContent>
@@ -411,46 +268,35 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
               <SelectItem value="当座" label="当座">当座</SelectItem>
             </SelectContent>
           </Select>
-          {state?.error?.bankAccountType && (
-            <p className="text-sm text-destructive">{state.error.bankAccountType[0]}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="bankAccountNumber">口座番号{bankRequired && " *"}</Label>
-          <Input
-            id="bankAccountNumber"
-            name="bankAccountNumber"
-            defaultValue={talent?.bankAccount?.accountNumber ?? ""}
-            required={bankRequired}
-          />
-          {state?.error?.bankAccountNumber && (
-            <p className="text-sm text-destructive">{state.error.bankAccountNumber[0]}</p>
-          )}
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="bankAccountHolder">口座名義{bankRequired && " *"}</Label>
-          <Input
-            id="bankAccountHolder"
-            name="bankAccountHolder"
-            defaultValue={talent?.bankAccount?.accountHolder ?? ""}
-            required={bankRequired}
-          />
-          {state?.error?.bankAccountHolder && (
-            <p className="text-sm text-destructive">{state.error.bankAccountHolder[0]}</p>
-          )}
-        </div>
-      </div>
+        </Field>
+        <Field id="bankAccountNumber" label="口座番号" required={bankRequired} error={err("bankAccountNumber")}>
+          <input id="bankAccountNumber" name="bankAccountNumber" defaultValue={talent?.bankAccount?.accountNumber ?? ""} required={bankRequired} inputMode="numeric" className={FIELD} {...invalid("bankAccountNumber")} />
+        </Field>
+        <Field id="bankAccountHolder" label="口座名義" required={bankRequired} error={err("bankAccountHolder")} className="sm:col-span-2">
+          <input id="bankAccountHolder" name="bankAccountHolder" defaultValue={talent?.bankAccount?.accountHolder ?? ""} required={bankRequired} className={FIELD} {...invalid("bankAccountHolder")} />
+        </Field>
+      </Group>
 
       {isAdmin && (
-        <div className="space-y-2">
-          <Label htmlFor="note">備考</Label>
-          <Textarea id="note" name="note" defaultValue={talent?.note ?? ""} />
-        </div>
+        <Group title="備考">
+          <Field id="note" label="備考" className="sm:col-span-2">
+            <textarea id="note" name="note" defaultValue={talent?.note ?? ""} className={TEXTAREA} />
+          </Field>
+        </Group>
       )}
 
-      <Button type="submit" disabled={isPending}>
-        {isPending ? "保存中..." : talent ? "更新" : "登録"}
-      </Button>
+      <div className="flex flex-col-reverse items-stretch gap-3 border-t border-neutral-200 pt-6 sm:flex-row sm:items-center sm:justify-end">
+        {state?.success && !isPending && (
+          <p role="status" className="flex items-center justify-center gap-1.5 text-sm text-green-700">
+            <CheckCircle2 className="size-4" aria-hidden="true" />
+            保存しました
+          </p>
+        )}
+        <button type="submit" disabled={isPending} className={`${BTN_PRIMARY} sm:min-w-40`}>
+          {isPending && <Loader2 className="animate-spin" aria-hidden="true" />}
+          {isPending ? "保存中..." : talent ? "更新" : "登録"}
+        </button>
+      </div>
     </form>
   )
 }
