@@ -1,3 +1,4 @@
+import type { Metadata } from "next"
 import { notFound } from "next/navigation"
 import { requireTalent } from "@/lib/auth"
 import { prisma } from "@/lib/db"
@@ -5,8 +6,13 @@ import { createOptionCheckout } from "@/lib/actions/option-purchase"
 import { resolveStorageUrl } from "@/lib/storage-url"
 import { isOptionClosed } from "@/lib/option-deadline"
 import { TalentNav } from "@/components/talent-nav"
-import { CheckCircle2, Clock, ArrowLeft } from "lucide-react"
+import { AlertCircle, AlertTriangle, CalendarClock, CheckCircle2, ChevronLeft, Clock, Lock } from "lucide-react"
 import Link from "next/link"
+import { PurchaseButton } from "./purchase-button"
+
+export const metadata: Metadata = {
+  title: "レッスン詳細 | VOZEL",
+}
 
 export default async function OptionDetailPage({
   params,
@@ -40,68 +46,80 @@ export default async function OptionDetailPage({
   const imageUrl = await resolveStorageUrl(option.imageUrl)
 
   return (
-    <>
+    <div className="min-h-[100dvh] bg-white">
       <TalentNav talentName={talent.stageName || talent.name} />
-      <div className="mx-auto max-w-2xl px-4 py-8 space-y-6">
-        <Link href="/mypage/options" className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground">
-          <ArrowLeft className="h-4 w-4" />
+      <main className="mx-auto max-w-2xl space-y-6 px-4 pb-[calc(3rem+env(safe-area-inset-bottom))] pt-6 text-neutral-950 sm:pt-8">
+        <Link
+          href="/mypage/options"
+          className="-ml-1 inline-flex items-center gap-0.5 rounded-md px-1 py-0.5 text-sm text-neutral-500 transition-colors hover:text-neutral-950 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950/30"
+        >
+          <ChevronLeft className="size-4" aria-hidden="true" />
           レッスン一覧に戻る
         </Link>
 
         {option.imageUrl && (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={imageUrl!} alt={option.name} className="w-full rounded-lg aspect-video object-cover" />
+          <img src={imageUrl!} alt="" className="aspect-video w-full rounded-xl bg-neutral-100 object-cover" />
         )}
 
-        <div className="space-y-4">
-          <h1 className="text-2xl font-bold">{option.name}</h1>
-          <p className="text-2xl font-bold">¥{option.price.toLocaleString()}</p>
-
+        <div>
+          <h1 className="text-2xl font-semibold leading-snug tracking-tight">{option.name}</h1>
+          <p className="mt-2 text-3xl font-semibold tracking-tight tabular-nums">¥{option.price.toLocaleString()}</p>
           {option.deadline && (
-            <p className="text-sm text-muted-foreground">
+            <p className="mt-3 flex items-center gap-1.5 text-sm text-neutral-500">
+              <CalendarClock className="size-4" aria-hidden="true" />
               申込締切: {new Date(option.deadline).toLocaleDateString("ja-JP", { year: "numeric", month: "long", day: "numeric" })}
             </p>
           )}
-
-          {option.description && (
-            <div className="rounded-lg border p-4">
-              <p className="text-sm whitespace-pre-wrap leading-relaxed">{option.description}</p>
-            </div>
-          )}
-
-          {error && errorMessages[error] && (
-            <div className={`rounded-lg border p-4 text-sm ${error === "paid" ? "border-amber-200 bg-amber-50 text-amber-800" : "border-red-200 bg-red-50 text-red-800"}`}>
-              {errorMessages[error]}
-            </div>
-          )}
-
-          {purchaseStatus === "PAID" ? (
-            <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 p-4 text-green-800">
-              <CheckCircle2 className="h-5 w-5 shrink-0" />
-              <p className="text-sm font-medium">購入済み</p>
-            </div>
-          ) : purchaseStatus === "PENDING" ? (
-            <div className="flex items-center gap-2 rounded-lg border p-4 text-muted-foreground">
-              <Clock className="h-5 w-5 shrink-0" />
-              <p className="text-sm">決済処理中</p>
-            </div>
-          ) : closed ? (
-            <div className="flex items-center gap-2 rounded-lg border p-4 text-muted-foreground">
-              <Clock className="h-5 w-5 shrink-0" />
-              <p className="text-sm">申込締切を過ぎたため、受付を終了しました</p>
-            </div>
-          ) : (
-            <form action={createOptionCheckout.bind(null, option.id)}>
-              <button
-                type="submit"
-                className="w-full rounded-md bg-primary px-4 py-3 text-sm font-medium text-primary-foreground hover:bg-primary/90 transition-colors"
-              >
-                購入する
-              </button>
-            </form>
-          )}
         </div>
-      </div>
-    </>
+
+        {option.description && (
+          <div className="rounded-xl border border-neutral-200 p-5">
+            <p className="whitespace-pre-wrap text-sm leading-relaxed text-neutral-800">{option.description}</p>
+          </div>
+        )}
+
+        {error && errorMessages[error] && (
+          <div
+            role="alert"
+            className={`flex items-start gap-2 rounded-xl border px-4 py-3 text-sm ${error === "paid" ? "border-amber-300 bg-amber-50 text-amber-900" : "border-red-200 bg-red-50 text-red-700"}`}
+          >
+            {error === "paid" ? (
+              <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            ) : (
+              <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            )}
+            {errorMessages[error]}
+          </div>
+        )}
+
+        {purchaseStatus === "PAID" ? (
+          <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3.5 text-green-800">
+            <CheckCircle2 className="size-5 shrink-0" aria-hidden="true" />
+            <p className="text-sm font-medium">購入済み</p>
+          </div>
+        ) : purchaseStatus === "PENDING" ? (
+          <div className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3.5 text-neutral-600">
+            <Clock className="size-5 shrink-0" aria-hidden="true" />
+            <p className="text-sm">決済処理中</p>
+          </div>
+        ) : closed ? (
+          <div className="flex items-center gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3.5 text-neutral-600">
+            <Clock className="size-5 shrink-0" aria-hidden="true" />
+            <p className="text-sm">申込締切を過ぎたため、受付を終了しました</p>
+          </div>
+        ) : (
+          <div>
+            <form action={createOptionCheckout.bind(null, option.id)}>
+              <PurchaseButton />
+            </form>
+            <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-neutral-500">
+              <Lock className="size-3.5" aria-hidden="true" />
+              お支払いは Stripe の決済画面で行います
+            </p>
+          </div>
+        )}
+      </main>
+    </div>
   )
 }
