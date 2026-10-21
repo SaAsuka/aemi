@@ -1,8 +1,7 @@
 "use client"
 
-import { useActionState } from "react"
+import { startTransition, useActionState, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
 import { createTalent, updateTalent } from "@/lib/actions/talent"
 import { AlertCircle, CheckCircle2, Loader2 } from "lucide-react"
 import { BTN_PRIMARY, FIELD, SELECT_TRIGGER, TEXTAREA } from "@/components/talent/styles"
@@ -107,14 +106,47 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
 
   const bankRequired = isTalent
 
-  const err = (name: string) => state?.error?.[name]
+  // サーバーの入力チェックのエラー。英語のまま返ってくるもの（数字の形など）は日本語の案内に置き換える
+  const err = (name: string): string[] | undefined => {
+    const msgs = state?.error?.[name]
+    if (!msgs?.length) return undefined
+    return /[\u3000-\u9fff]/.test(msgs[0]) ? msgs : ["入力内容を確認してください"]
+  }
   const invalid = (name: string) => ({
     "aria-invalid": Boolean(err(name)?.length) || undefined,
     "aria-describedby": err(name)?.length ? `${name}-error` : undefined,
   })
+  const errorCount = state?.error ? Object.entries(state.error).filter(([k, v]) => k !== "_form" && v?.length).length : 0
+
+  // 入力チェックはブラウザ標準に頼らずサーバーで行い、エラーは項目の場所に出す（iOS Safari で独自の表示が出ないのを避ける）
+  const formRef = useRef<HTMLFormElement>(null)
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    // フォームの action に渡すと送信後に入力欄が空に戻る（React 19）ため、ここで受け取って送る。エラーで戻っても入力が消えない
+    e.preventDefault()
+    if (isPending) return
+    const fd = new FormData(e.currentTarget)
+    startTransition(() => action(fd))
+  }
+
+  // エラーで戻ったら、最初のエラーの項目へ移動する
+  useEffect(() => {
+    if (!state?.error || !formRef.current) return
+    const first = formRef.current.querySelector<HTMLElement>("[aria-invalid=true]")
+    first?.scrollIntoView({ behavior: "smooth", block: "center" })
+    first?.focus({ preventScroll: true })
+  }, [state])
 
   return (
-    <form action={action} className="space-y-6">
+    <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-6">
+      {(errorCount > 0 || state?.error?._form) && (
+        <div role="alert" className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+          <p>
+            {state?.error?._form?.[0] ??
+              `入力内容に確認が必要な項目が${errorCount}件あります。赤字の項目を直してから、もう一度保存してください。`}
+          </p>
+        </div>
+      )}
       <Group title="基本情報">
         <Field id="lastName" label="姓" required error={err("lastName")}>
           <input id="lastName" name="lastName" defaultValue={talent?.lastName ?? ""} required autoComplete="family-name" className={FIELD} {...invalid("lastName")} />
@@ -134,8 +166,8 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
         <Field id="nameRomaji" label="ローマ字名">
           <input id="nameRomaji" name="nameRomaji" defaultValue={talent?.nameRomaji ?? ""} placeholder="例: Taro Yamada" className={FIELD} />
         </Field>
-        <Field id="email" label="メールアドレス">
-          <input id="email" name="email" type="email" defaultValue={talent?.email ?? ""} autoComplete="email" className={FIELD} />
+        <Field id="email" label="メールアドレス" required error={err("email")}>
+          <input id="email" name="email" type="email" defaultValue={talent?.email ?? ""} autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false} className={FIELD} {...invalid("email")} />
         </Field>
         <Field id="phone" label="電話番号">
           <input id="phone" name="phone" type="tel" defaultValue={talent?.phone ?? ""} autoComplete="tel" className={FIELD} />
@@ -200,20 +232,20 @@ export function TalentForm({ talent, onSuccess, mode = "admin", customAction }: 
 
       <Group title="身体情報">
         <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:col-span-2 sm:grid-cols-5">
-          <Field id="height" label="身長 (cm)">
-            <input id="height" name="height" type="number" defaultValue={talent?.height ?? ""} className={FIELD} />
+          <Field id="height" label="身長 (cm)" error={err("height")}>
+            <input id="height" name="height" type="number" defaultValue={talent?.height ?? ""} className={FIELD} {...invalid("height")} />
           </Field>
-          <Field id="bust" label="バスト (cm)">
-            <input id="bust" name="bust" type="number" defaultValue={talent?.bust ?? ""} className={FIELD} />
+          <Field id="bust" label="バスト (cm)" error={err("bust")}>
+            <input id="bust" name="bust" type="number" defaultValue={talent?.bust ?? ""} className={FIELD} {...invalid("bust")} />
           </Field>
-          <Field id="waist" label="ウエスト (cm)">
-            <input id="waist" name="waist" type="number" defaultValue={talent?.waist ?? ""} className={FIELD} />
+          <Field id="waist" label="ウエスト (cm)" error={err("waist")}>
+            <input id="waist" name="waist" type="number" defaultValue={talent?.waist ?? ""} className={FIELD} {...invalid("waist")} />
           </Field>
-          <Field id="hip" label="ヒップ (cm)">
-            <input id="hip" name="hip" type="number" defaultValue={talent?.hip ?? ""} className={FIELD} />
+          <Field id="hip" label="ヒップ (cm)" error={err("hip")}>
+            <input id="hip" name="hip" type="number" defaultValue={talent?.hip ?? ""} className={FIELD} {...invalid("hip")} />
           </Field>
-          <Field id="shoeSize" label="靴サイズ (cm)">
-            <input id="shoeSize" name="shoeSize" type="number" step="0.5" defaultValue={talent?.shoeSize ?? ""} className={FIELD} />
+          <Field id="shoeSize" label="靴サイズ (cm)" error={err("shoeSize")}>
+            <input id="shoeSize" name="shoeSize" type="number" step="0.5" defaultValue={talent?.shoeSize ?? ""} className={FIELD} {...invalid("shoeSize")} />
           </Field>
         </div>
       </Group>
