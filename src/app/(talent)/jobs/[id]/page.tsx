@@ -10,6 +10,7 @@ import { JobApplicationForm } from "@/components/job-application-form"
 import { isAgeLocked, parseSubmissionFields, profileInitialValue, visibleFields } from "@/lib/submission-fields"
 import { TalentNav } from "@/components/talent-nav"
 import { BackToJobsLink } from "@/components/back-to-jobs-link"
+import { Info } from "lucide-react"
 
 export const metadata: Metadata = {
   title: "案件詳細 | VOZEL",
@@ -46,7 +47,7 @@ export default async function TalentJobDetailPage({
   }
 
   const displayName = talent.name
-  const [job, talentResume, activeApps, myApplication] = await Promise.all([
+  const [openJob, talentResume, activeApps, myApplication] = await Promise.all([
     getOpenJob(id),
     prisma.talent.findUnique({ where: { id: talent.id }, select: { resume: true, name: true, birthDate: true, height: true } }),
     prisma.application.findMany({
@@ -61,6 +62,23 @@ export default async function TalentJobDetailPage({
     prisma.application.findUnique({ where: { talentId_jobId: { talentId: talent.id, jobId: id } }, select: { id: true } }),
   ])
   const hasResume = !!talentResume?.resume
+
+  // 募集が終わった（締切切れ・募集終了・中止）案件でも、応募した本人には内容を見せる
+  // （マイページの応募状況から開けるように）。応募フォームは出さない
+  const closedJob =
+    openJob || !myApplication
+      ? null
+      : await prisma.job.findUnique({
+          where: { id },
+          select: {
+            id: true, title: true, description: true, location: true, fee: true,
+            genderReq: true, ageMin: true, ageMax: true, heightMin: true, heightMax: true,
+            deadline: true, capacity: true, status: true,
+            client: { select: { companyName: true } },
+            dates: { orderBy: { date: "asc" as const } },
+          },
+        })
+  const job = openJob ?? closedJob
   if (!job) redirect("/jobs")
 
   const typeLabels: Record<string, string> = { AUDITION: "オーディション", SHOOTING: "撮影", OTHER: "予定" }
@@ -81,7 +99,7 @@ export default async function TalentJobDetailPage({
   }
 
   // 自由な提出項目（コンポジの項目はフォームに出さない）
-  const fields = visibleFields(parseSubmissionFields(job.submissionFields))
+  const fields = openJob ? visibleFields(parseSubmissionFields(openJob.submissionFields)) : []
   // 名前・年齢・身長はプロフィールの値を最初から入れる（プロフィールは書き換えない）。年齢はここで1回だけ計算する
   const profile = { name: talentResume?.name ?? null, birthDate: talentResume?.birthDate ?? null, height: talentResume?.height ?? null }
   const today = new Date()
@@ -155,10 +173,20 @@ export default async function TalentJobDetailPage({
           </section>
         )}
 
-        <section className="space-y-4 border-t border-neutral-200 pt-6">
-          <h2 className="text-lg font-semibold">応募する</h2>
-          <JobApplicationForm jobId={job.id} talentId={talent.id} talentName={talent.name} requirements={job.requirements} hasResume={hasResume} dateConflict={dateConflict} token={t ?? null} fields={fields} alreadyApplied={!!myApplication} prefill={prefill} />
-        </section>
+        {openJob ? (
+          <section className="space-y-4 border-t border-neutral-200 pt-6">
+            <h2 className="text-lg font-semibold">応募する</h2>
+            <JobApplicationForm jobId={openJob.id} talentId={talent.id} talentName={talent.name} requirements={openJob.requirements} hasResume={hasResume} dateConflict={dateConflict} token={t ?? null} fields={fields} alreadyApplied={!!myApplication} prefill={prefill} />
+          </section>
+        ) : (
+          <div role="status" className="flex items-start gap-2 rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-700">
+            <Info className="mt-0.5 size-4 shrink-0 text-neutral-500" aria-hidden="true" />
+            <span>
+              {closedJob?.status === "CANCELLED" ? "この案件は中止になりました。" : "この案件の募集は終了しました。"}
+              <span className="inline-block">応募の状況はマイページで確認できます。</span>
+            </span>
+          </div>
+        )}
       </main>
     </div>
   )
