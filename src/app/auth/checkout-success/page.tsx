@@ -1,24 +1,29 @@
-"use client"
+import type { Metadata } from "next"
+import { Check, Loader2 } from "lucide-react"
+import { AuthShell } from "@/components/auth/auth-shell"
+import { AuthHeading } from "@/components/auth/auth-form"
+import { RedirectToWelcome } from "./redirect-to-welcome"
 
-import { useEffect } from "react"
-import { useRouter } from "next/navigation"
+export const metadata: Metadata = {
+  title: "登録完了 | VOZEL",
+}
 
 export default function CheckoutSuccessPage() {
-  const router = useRouter()
-
-  useEffect(() => {
-    const timer = setTimeout(() => router.push("/welcome"), 3000)
-    return () => clearTimeout(timer)
-  }, [router])
-
   return (
-    <div className="flex min-h-screen items-center justify-center">
-      <div className="w-full max-w-sm space-y-4 p-6 text-center">
-        <h1 className="text-2xl font-bold">登録完了</h1>
-        <p className="text-sm text-muted-foreground">
-          サブスクリプションの登録が完了しました。<br />案件一覧に移動します...
-        </p>
+    <AuthShell>
+      <RedirectToWelcome />
+      <div className="flex size-12 items-center justify-center rounded-full bg-neutral-950">
+        <Check className="size-6 text-white" aria-hidden="true" />
       </div>
-    </div>
+      <AuthHeading
+        title="登録完了"
+        description="サブスクリプションの登録が完了しました。"
+        className="mt-6"
+      />
+      <p role="status" className="mt-8 flex items-center gap-2 text-sm text-neutral-500">
+        <Loader2 className="size-4 animate-spin motion-reduce:animate-none" aria-hidden="true" />
+        使い方のご案内に移動します…
+      </p>
+    </AuthShell>
   )
 }
