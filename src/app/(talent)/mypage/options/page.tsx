@@ -59,9 +59,14 @@ export default async function OptionsPage({
                   href={`/mypage/options/${opt.id}`}
                   className="group flex h-full flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white transition-[border-color,background-color,transform] duration-150 hover:border-neutral-300 hover:bg-neutral-50/60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950/30 active:scale-[0.99]"
                 >
-                  {opt.imageUrl && (
+                  {/* 画像が無いレッスンも同じ高さの枠を置き、カードの中が空いて見えないようにする */}
+                  {opt.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={opt.imageUrl!} alt="" className="aspect-video w-full bg-neutral-100 object-cover" />
+                    <img src={opt.imageUrl} alt="" className="aspect-video w-full bg-neutral-100 object-cover" />
+                  ) : (
+                    <div className="flex aspect-video w-full items-center justify-center bg-neutral-100">
+                      <BookOpen className="size-8 text-neutral-300" aria-hidden="true" />
+                    </div>
                   )}
                   <div className="flex flex-1 flex-col p-4 sm:p-5">
                     <div className="flex items-start justify-between gap-2">
