@@ -1,14 +1,16 @@
 import Link from "next/link"
-import { Badge } from "@/components/ui/badge"
-import { CalendarDays, MapPin, Briefcase, Check, X, Circle } from "lucide-react"
+import { CalendarDays, MapPin, Briefcase, Check, X, ChevronRight } from "lucide-react"
+import { APPLICATION_TONE, StatusChip } from "@/components/admin/status-chip"
+import { BTN_SECONDARY } from "@/components/talent/styles"
 
-const statusConfig: Record<string, { label: string; variant: "default" | "secondary" | "destructive" | "outline"; color: string }> = {
-  APPLIED: { label: "応募済み", variant: "default", color: "border-l-blue-400" },
-  RESUME_SENT: { label: "書類送付済", variant: "secondary", color: "border-l-yellow-400" },
-  ACCEPTED: { label: "合格", variant: "default", color: "border-l-green-500" },
-  REJECTED: { label: "不合格", variant: "destructive", color: "border-l-red-400" },
-  CANCELLED: { label: "キャンセル", variant: "outline", color: "border-l-gray-400" },
-  AUTO_REJECTED: { label: "自動不合格", variant: "destructive", color: "border-l-red-400" },
+// 札の色は管理画面の応募管理と同じ（応募中＝青・書類送付済＝黄・合格＝緑・不合格＝赤）
+const statusConfig: Record<string, { label: string }> = {
+  APPLIED: { label: "応募済み" },
+  RESUME_SENT: { label: "書類送付済" },
+  ACCEPTED: { label: "合格" },
+  REJECTED: { label: "不合格" },
+  CANCELLED: { label: "キャンセル" },
+  AUTO_REJECTED: { label: "自動不合格" },
 }
 
 const ACTIVE_STATUSES = new Set(["APPLIED", "RESUME_SENT", "ACCEPTED"])
@@ -53,42 +55,37 @@ function ApplicationTimeline({ status }: { status: string }) {
   if (isCancelled) return null
 
   return (
-    <div className="flex items-center gap-0 mt-3">
+    <ol className="mt-4 flex items-start" aria-label="選考の進み具合">
       {TIMELINE_STEPS.map((step, idx) => {
         const isCompleted = currentIdx >= idx
-        const isCurrent = currentIdx === idx
         const isLast = idx === TIMELINE_STEPS.length - 1
         const showRejected = isRejected && idx === currentIdx + 1
 
         return (
-          <div key={step.status} className="flex items-center flex-1 last:flex-none">
-            <div className="flex flex-col items-center">
+          <li key={step.status} className="flex flex-1 items-start last:flex-none">
+            <div className="flex w-12 flex-col items-center">
               <div
-                className={`h-6 w-6 rounded-full flex items-center justify-center text-xs ${
+                className={`flex size-6 items-center justify-center rounded-full ${
                   showRejected
-                    ? "bg-red-100 text-red-600 border-2 border-red-400"
+                    ? "bg-red-600 text-white"
                     : isCompleted
-                    ? "bg-primary text-primary-foreground"
-                    : isCurrent
-                    ? "bg-primary/20 text-primary border-2 border-primary"
-                    : "bg-muted text-muted-foreground"
+                    ? "bg-neutral-950 text-white"
+                    : "border border-neutral-300 bg-white"
                 }`}
               >
                 {showRejected ? (
-                  <X className="h-3 w-3" />
+                  <X className="size-3.5" aria-hidden="true" />
                 ) : isCompleted ? (
-                  <Check className="h-3 w-3" />
-                ) : (
-                  <Circle className="h-3 w-3" />
-                )}
+                  <Check className="size-3.5" aria-hidden="true" />
+                ) : null}
               </div>
               <span
-                className={`text-[10px] mt-1 ${
+                className={`mt-1.5 text-[11px] ${
                   showRejected
-                    ? "text-red-600 font-medium"
+                    ? "font-medium text-red-600"
                     : isCompleted
-                    ? "text-foreground font-medium"
-                    : "text-muted-foreground"
+                    ? "font-medium text-neutral-950"
+                    : "text-neutral-400"
                 }`}
               >
                 {showRejected ? "不合格" : step.label}
@@ -96,68 +93,78 @@ function ApplicationTimeline({ status }: { status: string }) {
             </div>
             {!isLast && (
               <div
-                className={`h-0.5 flex-1 mx-1 ${
-                  currentIdx > idx ? "bg-primary" : "bg-muted"
+                className={`mt-3 h-px flex-1 ${
+                  currentIdx > idx ? "bg-neutral-950" : "bg-neutral-200"
                 }`}
               />
             )}
-          </div>
+          </li>
         )
       })}
-    </div>
+    </ol>
   )
 }
 
 function ApplicationCard({ app }: { app: Application }) {
-  const s = statusConfig[app.status] ?? { label: app.status, variant: "outline" as const, color: "border-l-gray-400" }
+  const s = statusConfig[app.status] ?? { label: app.status }
   const schedule = app.schedule
   const jobLocation = schedule?.location || app.job.location
   const showTimeline = ACTIVE_STATUSES.has(app.status) || app.status === "REJECTED" || app.status === "AUTO_REJECTED"
 
   return (
-    <div className={`border rounded-lg p-4 border-l-4 ${s.color}`}>
-      <div className="flex items-center justify-between">
-        <Link href={`/jobs/${app.job.id}`} className="text-sm font-medium hover:underline line-clamp-1">
+    <li className="relative rounded-xl border border-neutral-200 bg-white p-4 transition-colors hover:border-neutral-300 hover:bg-neutral-50/60 sm:p-5">
+      <div className="flex items-start justify-between gap-3">
+        {/* カード全体を押せるようにする（行き先はタイトルのリンクと同じ） */}
+        <Link
+          href={`/jobs/${app.job.id}`}
+          className="line-clamp-2 text-[15px] font-medium leading-snug text-neutral-950 after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-neutral-950/30"
+        >
           {app.job.title}
         </Link>
-        <Badge variant={s.variant} className="ml-2 shrink-0">{s.label}</Badge>
+        <div className="flex shrink-0 items-center gap-1">
+          <StatusChip tone={APPLICATION_TONE[app.status] ?? "gray"} label={s.label} />
+          <ChevronRight className="size-4 text-neutral-400" aria-hidden="true" />
+        </div>
       </div>
 
       {showTimeline && <ApplicationTimeline status={app.status} />}
 
       {app.status === "ACCEPTED" && schedule && (
-        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
-          <span className="inline-flex items-center gap-1">
-            <CalendarDays className="h-4 w-4" />
+        <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 rounded-lg bg-neutral-50 px-3 py-2.5 text-sm text-neutral-700">
+          <span className="inline-flex items-center gap-1.5">
+            <CalendarDays className="size-4 text-neutral-500" aria-hidden="true" />
             {new Date(schedule.date).toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" })}
             {schedule.startTime && (
               <> {schedule.startTime}{schedule.endTime && `〜${schedule.endTime}`}</>
             )}
           </span>
           {jobLocation && (
-            <span className="inline-flex items-center gap-1">
-              <MapPin className="h-4 w-4" />
+            <span className="inline-flex items-center gap-1.5">
+              <MapPin className="size-4 text-neutral-500" aria-hidden="true" />
               {jobLocation}
             </span>
           )}
         </div>
       )}
 
-      <p className="text-xs text-muted-foreground mt-1.5">
+      <p className="mt-3 text-xs tabular-nums text-neutral-500">
         応募日: {new Date(app.appliedAt).toLocaleDateString("ja-JP")}
       </p>
-    </div>
+    </li>
   )
 }
 
 export function TalentApplicationHistory({ applications }: { applications: Application[] }) {
   if (applications.length === 0) {
     return (
-      <div className="text-center py-8 space-y-3">
-        <Briefcase className="h-10 w-10 text-muted-foreground/40 mx-auto" />
-        <p className="text-sm text-muted-foreground">応募履歴はありません</p>
-        <Link href="/jobs" className="text-sm text-primary hover:underline">
-          案件一覧を見る →
+      <div className="flex flex-col items-center rounded-xl border border-dashed border-neutral-300 px-4 py-10 text-center">
+        <div className="flex size-11 items-center justify-center rounded-full bg-neutral-100">
+          <Briefcase className="size-5 text-neutral-500" aria-hidden="true" />
+        </div>
+        <p className="mt-3 text-sm text-neutral-500">応募履歴はありません</p>
+        <Link href="/jobs" className={`${BTN_SECONDARY} mt-5 h-10 text-sm`}>
+          案件一覧を見る
+          <ChevronRight aria-hidden="true" />
         </Link>
       </div>
     )
@@ -167,22 +174,30 @@ export function TalentApplicationHistory({ applications }: { applications: Appli
   const past = applications.filter((a) => !ACTIVE_STATUSES.has(a.status))
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       {active.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-muted-foreground">進行中</h3>
-          {active.map((app) => (
-            <ApplicationCard key={app.id} app={app} />
-          ))}
+        <div>
+          <h3 className="text-sm font-medium text-neutral-500">
+            進行中<span className="ml-1.5 tabular-nums text-neutral-400">{active.length}</span>
+          </h3>
+          <ul className="mt-3 space-y-3">
+            {active.map((app) => (
+              <ApplicationCard key={app.id} app={app} />
+            ))}
+          </ul>
         </div>
       )}
 
       {past.length > 0 && (
-        <div className="space-y-3">
-          <h3 className="text-sm font-medium text-muted-foreground">過去の応募</h3>
-          {past.map((app) => (
-            <ApplicationCard key={app.id} app={app} />
-          ))}
+        <div>
+          <h3 className="text-sm font-medium text-neutral-500">
+            過去の応募<span className="ml-1.5 tabular-nums text-neutral-400">{past.length}</span>
+          </h3>
+          <ul className="mt-3 space-y-3">
+            {past.map((app) => (
+              <ApplicationCard key={app.id} app={app} />
+            ))}
+          </ul>
         </div>
       )}
     </div>

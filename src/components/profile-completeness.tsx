@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { CheckCircle2, Circle } from "lucide-react"
+import { ArrowRight, CheckCircle2 } from "lucide-react"
 
 type Props = {
   percentage: number
@@ -9,47 +9,55 @@ type Props = {
 export function ProfileCompleteness({ percentage, incomplete }: Props) {
   if (percentage === 100) {
     return (
-      <div className="rounded-lg border border-green-200 bg-green-50 p-4 flex items-center gap-3">
-        <CheckCircle2 className="h-5 w-5 text-green-600 shrink-0" />
-        <p className="text-sm text-green-800 font-medium">プロフィール完成度 100% — すべての情報が登録されています</p>
+      <div className="flex items-center gap-3 rounded-xl border border-neutral-200 p-5">
+        <CheckCircle2 className="size-5 shrink-0 text-green-700" aria-hidden="true" />
+        <p className="text-sm font-medium text-neutral-950">プロフィール完成度 100% — すべての情報が登録されています</p>
       </div>
     )
   }
 
-  const color =
-    percentage >= 80 ? "bg-green-500" :
-    percentage >= 50 ? "bg-yellow-500" :
-    "bg-red-500"
-
   return (
-    <div className="rounded-lg border p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium">プロフィール完成度</p>
-        <span className="text-sm font-bold">{percentage}%</span>
+    <div className="rounded-xl border border-neutral-200 p-5">
+      <div className="flex items-baseline justify-between gap-3">
+        <p className="text-sm font-medium text-neutral-950">プロフィール完成度</p>
+        <span className="text-2xl font-semibold tracking-tight tabular-nums">
+          {percentage}
+          <span className="ml-0.5 text-sm font-normal text-neutral-500">%</span>
+        </span>
       </div>
 
-      <div className="h-2 rounded-full bg-muted overflow-hidden">
-        <div className={`h-full rounded-full transition-all ${color}`} style={{ width: `${percentage}%` }} />
+      <div
+        className="mt-3 h-1.5 overflow-hidden rounded-full bg-neutral-100"
+        role="progressbar"
+        aria-valuenow={percentage}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label="プロフィール完成度"
+      >
+        <div className="h-full rounded-full bg-neutral-950 transition-all" style={{ width: `${percentage}%` }} />
       </div>
 
       {incomplete.length > 0 && (
-        <div className="space-y-1.5">
-          <p className="text-xs text-muted-foreground">未入力の項目:</p>
-          <div className="flex flex-wrap gap-1.5">
+        <div className="mt-4">
+          <p className="text-xs text-neutral-500">未入力の項目</p>
+          <div className="mt-2 flex flex-wrap gap-1.5">
             {incomplete.slice(0, 6).map((item) => (
-              <span key={item.label} className="inline-flex items-center gap-1 text-xs bg-muted px-2 py-1 rounded-md">
-                <Circle className="h-3 w-3 text-muted-foreground" />
+              <span key={item.label} className="inline-flex h-7 items-center rounded-full border border-neutral-200 bg-neutral-50 px-2.5 text-xs text-neutral-700">
                 {item.label}
               </span>
             ))}
             {incomplete.length > 6 && (
-              <span className="text-xs text-muted-foreground px-2 py-1">
+              <span className="inline-flex h-7 items-center px-1 text-xs text-neutral-500">
                 他{incomplete.length - 6}件
               </span>
             )}
           </div>
-          <Link href="/mypage/settings" className="text-xs text-primary hover:underline inline-block mt-1">
-            プロフィールを編集する →
+          <Link
+            href="/mypage/settings"
+            className="mt-4 inline-flex items-center gap-1 rounded-sm text-sm font-medium text-neutral-950 underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950/30"
+          >
+            プロフィールを編集する
+            <ArrowRight className="size-4" aria-hidden="true" />
           </Link>
         </div>
       )}
