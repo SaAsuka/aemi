@@ -3,10 +3,6 @@
 import { useState, useRef, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { registerTalent } from "@/lib/actions/talent-register"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import {
   Select,
   SelectContent,
@@ -14,7 +10,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { X, ImagePlus, Loader2, RefreshCw } from "lucide-react"
+import { AlertCircle, CheckCircle2, ChevronLeft, ChevronRight, X, ImagePlus, Loader2, RefreshCw } from "lucide-react"
+import { BTN_PRIMARY, BTN_SECONDARY, FIELD, SELECT_TRIGGER, TEXTAREA } from "@/components/talent/styles"
+import { Field, Section, errorAttrs } from "@/components/talent/form-parts"
 import { validateTalentTabFields, validateBankTabFields } from "@/lib/validations/talent-register-form"
 
 type ActionResult = { success?: boolean; redirect?: string; error?: Record<string, string[]> } | null
@@ -219,16 +217,23 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
 
   if (state?.success) {
     return (
-      <div className="text-center py-12 space-y-4">
-        <div className="text-4xl">&#10003;</div>
-        <h2 className="text-xl font-bold">登録が完了しました</h2>
-        <p className="text-muted-foreground">ご登録ありがとうございます。担当者より追ってご連絡いたします。</p>
+      <div className="flex flex-col items-center rounded-xl border border-neutral-200 px-5 py-12 text-center" role="status">
+        <CheckCircle2 className="size-12 text-green-700" aria-hidden="true" />
+        <h2 className="mt-4 text-xl font-semibold">登録が完了しました</h2>
+        <p className="mt-2 text-sm leading-relaxed text-neutral-500">
+          <span className="inline-block">ご登録ありがとうございます。</span>
+          <span className="inline-block">担当者より追ってご連絡いたします。</span>
+        </p>
       </div>
     )
   }
 
+  // 入力欄の共通の見た目（エラーなら赤枠）
+  const input = (id: string) => ({ id, name: id, className: FIELD, ...errorAttrs(id, getFieldError(id)) })
+  const urlInput = { inputMode: "url" as const, autoCapitalize: "none", spellCheck: false }
+
   return (
-    <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-6">
+    <form ref={formRef} onSubmit={handleSubmit} noValidate className="space-y-5">
       {priceToken && <input type="hidden" name="priceToken" value={priceToken} />}
       <input
         ref={fileInputRef}
@@ -238,288 +243,271 @@ export function TalentRegisterForm({ priceToken }: { priceToken?: string }) {
         onChange={handleFileChange}
       />
 
-      <div ref={tabTopRef} className="flex border-b">
-        {TABS.map(tab => (
+      {/* タブ（押して切り替え。先へ進むときは入力を確かめてから） */}
+      <div ref={tabTopRef} role="tablist" aria-label="入力する内容" className="grid scroll-mt-20 grid-cols-3 gap-1 rounded-xl bg-neutral-100 p-1">
+        {TABS.map((tab, i) => (
           <button
             key={tab.key}
             type="button"
+            role="tab"
+            aria-selected={activeTab === tab.key}
             onClick={() => handleTabClick(tab.key)}
-            className={`flex-1 pb-3 text-sm font-medium border-b-2 transition-colors ${
+            className={`flex h-10 items-center justify-center gap-1.5 rounded-lg text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950/30 ${
               activeTab === tab.key
-                ? "border-primary text-primary"
-                : "border-transparent text-muted-foreground hover:text-foreground"
+                ? "bg-white font-medium text-neutral-950 shadow-sm"
+                : "text-neutral-500 hover:text-neutral-950"
             }`}
           >
+            <span className="tabular-nums text-xs text-neutral-400">{i + 1}</span>
             {tab.label}
           </button>
         ))}
       </div>
 
       {/* タレント情報 */}
-      <div className={activeTab === "talent" ? "space-y-6" : "hidden"}>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="lastName">姓 *</Label>
-            <Input id="lastName" name="lastName" required />
-            {getFieldError("lastName") && <p className="text-sm text-destructive">{getFieldError("lastName")}</p>}
+      <div className={activeTab === "talent" ? "space-y-5" : "hidden"}>
+        <Section title="基本情報">
+          <div className="grid grid-cols-2 gap-x-3 gap-y-5 sm:gap-x-4">
+            <Field id="lastName" label="姓" required error={getFieldError("lastName")}>
+              <input {...input("lastName")} required autoComplete="family-name" />
+            </Field>
+            <Field id="firstName" label="名" required error={getFieldError("firstName")}>
+              <input {...input("firstName")} required autoComplete="given-name" />
+            </Field>
+            <Field id="lastNameKana" label="セイ" required error={getFieldError("lastNameKana")}>
+              <input {...input("lastNameKana")} required />
+            </Field>
+            <Field id="firstNameKana" label="メイ" required error={getFieldError("firstNameKana")}>
+              <input {...input("firstNameKana")} required />
+            </Field>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="firstName">名 *</Label>
-            <Input id="firstName" name="firstName" required />
-            {getFieldError("firstName") && <p className="text-sm text-destructive">{getFieldError("firstName")}</p>}
+          <div className="mt-5 grid grid-cols-1 gap-x-4 gap-y-5 border-t border-neutral-100 pt-5 sm:grid-cols-2">
+            <Field id="nameRomaji" label="ローマ字名">
+              <input {...input("nameRomaji")} placeholder="例: Taro Yamada" />
+            </Field>
+            <Field id="category" label="芸能カテゴリ">
+              <input {...input("category")} placeholder="例: 俳優、モデル、声優" />
+            </Field>
+            <Field id="email" label="メールアドレス" required error={getFieldError("email")}>
+              <input {...input("email")} type="email" required autoComplete="email" inputMode="email" autoCapitalize="none" spellCheck={false} />
+            </Field>
+            <Field id="phone" label="電話番号">
+              <input {...input("phone")} type="tel" autoComplete="tel" />
+            </Field>
+            <Field id="gender" label="性別">
+              <Select name="gender">
+                <SelectTrigger id="gender" className={SELECT_TRIGGER}>
+                  <SelectValue placeholder="選択">{(v) => v ? ({ MALE: "男性", FEMALE: "女性", OTHER: "その他" } as Record<string, string>)[v] ?? v : "選択"}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="MALE" label="男性">男性</SelectItem>
+                  <SelectItem value="FEMALE" label="女性">女性</SelectItem>
+                  <SelectItem value="OTHER" label="その他">その他</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field id="birthDate" label="生年月日">
+              <input {...input("birthDate")} type="date" className={`${FIELD} appearance-none [&::-webkit-date-and-time-value]:text-left`} />
+            </Field>
+            <Field id="birthplace" label="出身地">
+              <input {...input("birthplace")} placeholder="例: 東京都" />
+            </Field>
+            <Field id="nearestStation" label="最寄駅">
+              <input {...input("nearestStation")} placeholder="例: 渋谷駅" />
+            </Field>
+            <Field id="address" label="現住所" className="sm:col-span-2">
+              <input {...input("address")} />
+            </Field>
           </div>
-        </div>
+        </Section>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="lastNameKana">セイ *</Label>
-            <Input id="lastNameKana" name="lastNameKana" required />
-            {getFieldError("lastNameKana") && <p className="text-sm text-destructive">{getFieldError("lastNameKana")}</p>}
+        <Section title="身体情報">
+          <div className="grid grid-cols-3 gap-x-3 gap-y-5 sm:grid-cols-5">
+            <Field id="height" label="身長 (cm)">
+              <input {...input("height")} type="number" />
+            </Field>
+            <Field id="bust" label="バスト (cm)">
+              <input {...input("bust")} type="number" />
+            </Field>
+            <Field id="waist" label="ウエスト (cm)">
+              <input {...input("waist")} type="number" />
+            </Field>
+            <Field id="hip" label="ヒップ (cm)">
+              <input {...input("hip")} type="number" />
+            </Field>
+            <Field id="shoeSize" label="靴サイズ (cm)">
+              <input {...input("shoeSize")} type="number" step="0.5" />
+            </Field>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="firstNameKana">メイ *</Label>
-            <Input id="firstNameKana" name="firstNameKana" required />
-            {getFieldError("firstNameKana") && <p className="text-sm text-destructive">{getFieldError("firstNameKana")}</p>}
-          </div>
-        </div>
+        </Section>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="nameRomaji">ローマ字名</Label>
-            <Input id="nameRomaji" name="nameRomaji" placeholder="例: Taro Yamada" />
+        <Section title="スキル・経歴">
+          <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
+            <Field id="skills" label="特技">
+              <input {...input("skills")} placeholder="例: インドネシア語、殺陣" />
+            </Field>
+            <Field id="hobbies" label="趣味">
+              <input {...input("hobbies")} placeholder="例: 釣り、料理、ゴルフ" />
+            </Field>
+            <Field id="qualifications" label="資格" className="sm:col-span-2">
+              <input {...input("qualifications")} placeholder="例: 普通自動車免許、英検2級" />
+            </Field>
+            <Field id="career" label="経歴" className="sm:col-span-2">
+              <textarea id="career" name="career" rows={4} placeholder="出演歴・受賞歴など" className={TEXTAREA} />
+            </Field>
+            <Field id="representativeWork" label="代表作" className="sm:col-span-2">
+              <textarea id="representativeWork" name="representativeWork" rows={2} placeholder="代表的な出演作品" className={TEXTAREA} />
+            </Field>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="category">芸能カテゴリ</Label>
-            <Input id="category" name="category" placeholder="例: 俳優、モデル、声優" />
-          </div>
-        </div>
+        </Section>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="email">メールアドレス *</Label>
-            <Input id="email" name="email" type="email" required />
-            {getFieldError("email") && <p className="text-sm text-destructive">{getFieldError("email")}</p>}
+        <Section title="SNS情報">
+          <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
+            <Field id="instagramUrl" label="Instagram URL">
+              <input {...input("instagramUrl")} {...urlInput} placeholder="https://instagram.com/..." />
+            </Field>
+            <Field id="xUrl" label="X (Twitter) URL">
+              <input {...input("xUrl")} {...urlInput} placeholder="https://x.com/..." />
+            </Field>
+            <Field id="tiktokUrl" label="TikTok URL">
+              <input {...input("tiktokUrl")} {...urlInput} placeholder="https://tiktok.com/..." />
+            </Field>
+            <Field id="websiteUrl" label="公式HP等">
+              <input {...input("websiteUrl")} {...urlInput} placeholder="https://..." />
+            </Field>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="phone">電話番号</Label>
-            <Input id="phone" name="phone" />
-          </div>
-        </div>
+        </Section>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="gender">性別</Label>
-            <Select name="gender">
-              <SelectTrigger>
-                <SelectValue placeholder="選択">{(v) => v ? ({ MALE: "男性", FEMALE: "女性", OTHER: "その他" } as Record<string, string>)[v] ?? v : "選択"}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="MALE" label="男性">男性</SelectItem>
-                <SelectItem value="FEMALE" label="女性">女性</SelectItem>
-                <SelectItem value="OTHER" label="その他">その他</SelectItem>
-              </SelectContent>
-            </Select>
+        <Section title="ログイン情報" description="マイページへのログインに使います。">
+          <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
+            <Field id="password" label="パスワード" required error={getFieldError("password")}>
+              <input {...input("password")} type="password" placeholder="8文字以上" required autoComplete="new-password" />
+            </Field>
+            <Field id="passwordConfirm" label="パスワード（確認）" required error={getFieldError("passwordConfirm")}>
+              <input {...input("passwordConfirm")} type="password" placeholder="もう一度入力" required autoComplete="new-password" />
+            </Field>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="birthDate">生年月日</Label>
-            <Input id="birthDate" name="birthDate" type="date" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="height">身長 (cm)</Label>
-            <Input id="height" name="height" type="number" />
-          </div>
-        </div>
+        </Section>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
-          <div className="space-y-2">
-            <Label htmlFor="bust">バスト (cm)</Label>
-            <Input id="bust" name="bust" type="number" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="waist">ウエスト (cm)</Label>
-            <Input id="waist" name="waist" type="number" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="hip">ヒップ (cm)</Label>
-            <Input id="hip" name="hip" type="number" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="shoeSize">靴サイズ (cm)</Label>
-            <Input id="shoeSize" name="shoeSize" type="number" step="0.5" />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="birthplace">出身地</Label>
-            <Input id="birthplace" name="birthplace" placeholder="例: 東京都" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="address">現住所</Label>
-            <Input id="address" name="address" />
-          </div>
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="skills">特技</Label>
-            <Input id="skills" name="skills" placeholder="例: インドネシア語、殺陣" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="hobbies">趣味</Label>
-            <Input id="hobbies" name="hobbies" placeholder="例: 釣り、料理、ゴルフ" />
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="qualifications">資格</Label>
-          <Input id="qualifications" name="qualifications" placeholder="例: 普通自動車免許、英検2級" />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="career">経歴</Label>
-          <Textarea id="career" name="career" rows={4} placeholder="出演歴・受賞歴など" />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="representativeWork">代表作</Label>
-          <Textarea id="representativeWork" name="representativeWork" rows={2} placeholder="代表的な出演作品" />
-        </div>
-
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="nearestStation">最寄駅</Label>
-            <Input id="nearestStation" name="nearestStation" placeholder="例: 渋谷駅" />
-          </div>
-        </div>
-
-        <h3 className="text-sm font-semibold text-muted-foreground pt-2">SNS情報</h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="instagramUrl">Instagram URL</Label>
-            <Input id="instagramUrl" name="instagramUrl" placeholder="https://instagram.com/..." />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="xUrl">X (Twitter) URL</Label>
-            <Input id="xUrl" name="xUrl" placeholder="https://x.com/..." />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="tiktokUrl">TikTok URL</Label>
-            <Input id="tiktokUrl" name="tiktokUrl" placeholder="https://tiktok.com/..." />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="websiteUrl">公式HP等</Label>
-            <Input id="websiteUrl" name="websiteUrl" placeholder="https://..." />
-          </div>
-        </div>
-
-        <h3 className="text-sm font-semibold text-muted-foreground pt-2">ログイン情報</h3>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label htmlFor="password">パスワード *</Label>
-            <Input id="password" name="password" type="password" placeholder="8文字以上" required />
-            {getFieldError("password") && <p className="text-sm text-destructive">{getFieldError("password")}</p>}
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="passwordConfirm">パスワード（確認） *</Label>
-            <Input id="passwordConfirm" name="passwordConfirm" type="password" placeholder="もう一度入力" required />
-            {getFieldError("passwordConfirm") && <p className="text-sm text-destructive">{getFieldError("passwordConfirm")}</p>}
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-2">
-          <Button type="button" onClick={handleNextFromTalent}>次へ</Button>
+        <div className="flex justify-end pt-1">
+          <button type="button" onClick={handleNextFromTalent} className={`${BTN_PRIMARY} w-full sm:w-auto sm:min-w-40`}>
+            次へ
+            <ChevronRight aria-hidden="true" />
+          </button>
         </div>
       </div>
 
       {/* 口座情報 */}
-      <div className={activeTab === "bank" ? "space-y-6" : "hidden"}>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-3">
-          <div className="space-y-2">
-            <Label htmlFor="bankName">銀行名</Label>
-            <Input id="bankName" name="bankName" />
+      <div className={activeTab === "bank" ? "space-y-5" : "hidden"}>
+        <Section title="口座情報" description="報酬のお振込先です。あとからマイページの設定でも入力できます。">
+          <div className="grid grid-cols-1 gap-x-4 gap-y-5 sm:grid-cols-2">
+            <Field id="bankName" label="銀行名">
+              <input {...input("bankName")} />
+            </Field>
+            <Field id="bankBranch" label="支店名">
+              <input {...input("bankBranch")} />
+            </Field>
+            <Field id="bankAccountType" label="種別">
+              <Select name="bankAccountType">
+                <SelectTrigger id="bankAccountType" className={SELECT_TRIGGER}>
+                  <SelectValue placeholder="選択">{(v) => v || "選択"}</SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="普通" label="普通">普通</SelectItem>
+                  <SelectItem value="当座" label="当座">当座</SelectItem>
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field id="bankAccountNumber" label="口座番号">
+              <input {...input("bankAccountNumber")} inputMode="numeric" />
+            </Field>
+            <Field id="bankAccountHolder" label="口座名義" className="sm:col-span-2">
+              <input {...input("bankAccountHolder")} />
+            </Field>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="bankBranch">支店名</Label>
-            <Input id="bankBranch" name="bankBranch" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="bankAccountType">種別</Label>
-            <Select name="bankAccountType">
-              <SelectTrigger>
-                <SelectValue placeholder="選択">{(v) => v || "選択"}</SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="普通" label="普通">普通</SelectItem>
-                <SelectItem value="当座" label="当座">当座</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="bankAccountNumber">口座番号</Label>
-            <Input id="bankAccountNumber" name="bankAccountNumber" />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="bankAccountHolder">口座名義</Label>
-            <Input id="bankAccountHolder" name="bankAccountHolder" />
-          </div>
-        </div>
+        </Section>
 
-        <div className="flex justify-between pt-2">
-          <Button type="button" variant="outline" onClick={() => goBackTo("talent")}>戻る</Button>
-          <Button type="button" onClick={handleNextFromBank}>次へ</Button>
+        <div className="flex gap-3 pt-1 sm:justify-between">
+          <button type="button" onClick={() => goBackTo("talent")} className={`${BTN_SECONDARY} flex-1 sm:flex-none sm:min-w-32`}>
+            <ChevronLeft aria-hidden="true" />
+            戻る
+          </button>
+          <button type="button" onClick={handleNextFromBank} className={`${BTN_PRIMARY} flex-[2] sm:flex-none sm:min-w-40`}>
+            次へ
+            <ChevronRight aria-hidden="true" />
+          </button>
         </div>
       </div>
 
       {/* 写真 */}
-      <div className={activeTab === "photos" ? "space-y-6" : "hidden"}>
-        <h3 className="text-sm font-semibold text-muted-foreground pt-2">宣材写真 *</h3>
-        <p className="text-xs text-muted-foreground">6枚すべて必須です。コンポジPDFに使用されます。</p>
-        <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          {PHOTO_SLOTS.map((slot, i) => (
-            <div key={i} className="space-y-1">
-              <p className="text-xs font-medium">
-                {slot.label} <span className="text-destructive">*</span>
-              </p>
-              {"description" in slot && (
-                <p className="text-[10px] text-muted-foreground">{slot.description}</p>
-              )}
-              {photos[i] ? (
-                <div className="relative aspect-[3/4] rounded border overflow-hidden group">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={photos[i]!.preview} alt={slot.label} className="w-full h-full object-cover" />
-                  <div className="absolute inset-0 bg-black/40 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                    <button type="button" onClick={() => openFilePicker(i)} className="bg-white text-black rounded-full p-2" title="変更">
-                      <RefreshCw className="h-4 w-4" />
-                    </button>
-                    <button type="button" onClick={() => removePhoto(i)} className="bg-destructive text-destructive-foreground rounded-full p-2" title="削除">
-                      <X className="h-4 w-4" />
-                    </button>
+      <div className={activeTab === "photos" ? "space-y-5" : "hidden"}>
+        <Section
+          title="宣材写真"
+          description={
+            <>
+              <span className="inline-block">6枚すべて必須です。</span>
+              <span className="inline-block">コンポジPDFに使用されます。</span>
+            </>
+          }
+        >
+          <p className="mb-4 text-sm text-neutral-500">
+            選択済み
+            <span className="ml-1.5 font-semibold tabular-nums text-neutral-950">{filledCount} / 6</span> 枚
+          </p>
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {PHOTO_SLOTS.map((slot, i) => (
+              <div key={i} className="min-w-0">
+                <p className="flex items-center gap-1.5 text-xs font-medium text-neutral-900">
+                  {slot.label}
+                  <span className="rounded bg-neutral-950 px-1 py-px text-[10px] font-semibold leading-4 text-white">必須</span>
+                </p>
+                <p className="mt-0.5 h-4 text-[11px] text-neutral-500">{"description" in slot ? slot.description : ""}</p>
+                {photos[i] ? (
+                  <div className="group relative mt-1.5 aspect-[3/4] overflow-hidden rounded-xl bg-neutral-100 ring-1 ring-neutral-200">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={photos[i]!.preview} alt={slot.label} className="size-full object-cover" />
+                    <div className="absolute inset-x-0 bottom-0 flex justify-end gap-1.5 bg-gradient-to-t from-black/60 to-transparent p-2 pt-8">
+                      <button type="button" onClick={() => openFilePicker(i)} className="rounded-lg bg-white p-2 text-neutral-950" title="変更" aria-label={`${slot.label}の写真を変更`}>
+                        <RefreshCw className="size-4" aria-hidden="true" />
+                      </button>
+                      <button type="button" onClick={() => removePhoto(i)} className="rounded-lg bg-red-600 p-2 text-white" title="削除" aria-label={`${slot.label}の写真を削除`}>
+                        <X className="size-4" aria-hidden="true" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <button
-                  type="button"
-                  onClick={() => openFilePicker(i)}
-                  className="w-full aspect-[3/4] border-2 border-dashed rounded flex flex-col items-center justify-center text-muted-foreground hover:border-primary hover:text-primary transition-colors"
-                >
-                  <ImagePlus className="h-6 w-6" />
-                  <span className="text-xs mt-1">選択</span>
-                </button>
-              )}
-            </div>
-          ))}
-        </div>
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => openFilePicker(i)}
+                    aria-label={`${slot.label}の写真を選ぶ`}
+                    className="mt-1.5 flex aspect-[3/4] w-full flex-col items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-neutral-50 text-neutral-400 transition-colors hover:border-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-neutral-950/10"
+                  >
+                    <ImagePlus className="size-6" aria-hidden="true" />
+                    <span className="mt-1.5 text-xs font-medium">選択</span>
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </Section>
 
-        {submitError && <p ref={submitErrorRef} className="text-sm text-destructive">{submitError}</p>}
+        {submitError && (
+          <p ref={submitErrorRef} role="alert" className="flex items-start gap-2 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+            <AlertCircle className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+            {submitError}
+          </p>
+        )}
 
-        <div className="flex justify-between pt-2">
-          <Button type="button" variant="outline" onClick={() => goBackTo("bank")}>戻る</Button>
-          <Button type="submit" disabled={isPending || filledCount < 6}>
+        <div className="flex gap-3 pt-1 sm:justify-between">
+          <button type="button" onClick={() => goBackTo("bank")} className={`${BTN_SECONDARY} w-12 px-0 sm:w-auto sm:min-w-32 sm:px-4`} aria-label="戻る">
+            <ChevronLeft aria-hidden="true" />
+            <span className="max-sm:sr-only">戻る</span>
+          </button>
+          <button type="submit" disabled={isPending || filledCount < 6} className={`${BTN_PRIMARY} flex-1 sm:flex-none sm:min-w-56 disabled:bg-neutral-300 disabled:text-neutral-600 disabled:opacity-100`}>
             {uploading ? (
-              <><Loader2 className="h-4 w-4 animate-spin mr-2" />写真アップロード中...</>
+              <><Loader2 className="animate-spin" aria-hidden="true" />写真アップロード中...</>
             ) : isPending ? "送信中..." : filledCount < 6 ? "写真を6枚以上設定してください" : "登録する"}
-          </Button>
+          </button>
         </div>
       </div>
     </form>
